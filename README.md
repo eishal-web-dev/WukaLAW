@@ -100,15 +100,15 @@ To empower legal professionals with intelligent, explainable, and ethical AI tec
                      React Frontend
                             │
                             ▼
-                 Spring Boot REST API
+                  FastAPI REST Backend
                             │
                             ▼
-               Legal Intelligence Engine
-                     (Python + FastAPI)
+               Legal Intelligence Modules
+                        (Python)
                             │
         ┌───────────────────┼───────────────────┐
         ▼                   ▼                   ▼
- Prediction Engine   Similarity Engine   Summarization Engine
+  RAG Q&A Engine     Similarity Engine   Summarization Engine
         │                   │                   │
         └───────────────┬───┴───────────────────┘
                         ▼
@@ -116,8 +116,10 @@ To empower legal professionals with intelligent, explainable, and ethical AI tec
                         │
         ┌───────────────┴────────────────┐
         ▼                                ▼
-     MongoDB                         FAISS Index
+   SQLite / SQL                      FAISS Index
 ```
+
+> The current MVP architecture is documented in [`docs/00_MVP/ARCHITECTURE_MVP.md`](docs/00_MVP/ARCHITECTURE_MVP.md). The MVP scope is defined in [`docs/00_MVP/MVP_SCOPE.md`](docs/00_MVP/MVP_SCOPE.md); advanced engines below are future scope.
 
 ---
 
@@ -154,10 +156,9 @@ The AI Engine consists of multiple intelligent modules working together.
 
 ## Backend
 
-- Spring Boot
-- Java 21
-- Spring Security
-- JWT Authentication
+- Python
+- FastAPI
+- SQLAlchemy
 - REST APIs
 
 ---
@@ -175,7 +176,7 @@ The AI Engine consists of multiple intelligent modules working together.
 
 ## Database
 
-- MongoDB
+- SQLite (MVP) — PostgreSQL/MongoDB planned for later phases
 
 ---
 
@@ -199,29 +200,31 @@ The AI Engine consists of multiple intelligent modules working together.
 ```
 WakuLaw
 
-├── .github
+├── .github          # issue/PR templates, workflows
 ├── apps
-│   ├── web
-│   ├── backend
-│   └── ai-service
-│
-├── packages
-│
+│   ├── web          # React + Vite + TypeScript + Tailwind frontend
+│   └── api          # FastAPI backend + AI modules (ai/)
 ├── docs
-│
-├── datasets
-│
-├── infrastructure
-│
-├── docker
-│
-├── scripts
-│
-├── tests
-│
+│   ├── 00_MVP       # authoritative scope & architecture for current version
+│   └── 01–12_...    # full long-term vision documentation
+├── datasets         # dataset registry + small committed samples
 ├── README.md
 └── LICENSE
 ```
+
+## 🚀 Getting Started (local)
+
+```bash
+# backend
+cd apps/api && python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+uvicorn app.main:app --reload --port 8000
+
+# frontend (new terminal)
+cd apps/web && npm install && npm run dev
+```
+
+Open http://localhost:5173 — see `apps/api/README.md` and `apps/web/README.md` for details.
 
 ---
 
