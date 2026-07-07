@@ -1,0 +1,40 @@
+# WakuLaw — local development stack (free, runs entirely on your machine)
+# Usage:  docker compose -f docker/docker-compose.yml up --build
+#    or:  make docker-up   (from the repo root)
+#
+# First startup downloads Python/Node dependencies and, on the first
+# document upload, the embedding model (~90 MB, cached in a volume).
+
+services:
+  api:
+    build: ../apps/api
+    container_name: wakulaw-api
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: sqlite:////data/wakulaw.db
+      UPLOAD_DIR: /data/uploads
+      STORAGE_DIR: /data/storage
+      SECRET_KEY: ${SECRET_KEY:-dev-only-change-me}
+      # Ollama on the host machine is reachable from the container like this;
+      # if Ollama isn't running, the API automatically uses its free fallback.
+      OLLAMA_BASE_URL: http://host.docker.internal:11434
+    volumes:
+      - api_data:/data
+      - hf_cache:/root/.cache/huggingface
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  web:
+    build: ../apps/web
+    container_name: wakulaw-web
+    ports:
+      - "5173:5173"
+    environment:
+      VITE_API_BASE_URL: http://localhost:8000/api/v1
+    depends_on:
+      - api
+
+volumes:
+  api_data:
+  hf_cache:

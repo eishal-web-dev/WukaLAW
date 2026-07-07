@@ -212,19 +212,45 @@ WakuLaw
 └── LICENSE
 ```
 
-## 🚀 Getting Started (local)
+## ✅ Current Status (MVP implemented)
+
+Working today, fully local and free:
+
+| Feature | Status |
+|---------|--------|
+| User registration & login (JWT, per-user documents) | ✅ |
+| Document upload (.txt/.pdf) with validation | ✅ |
+| Text extraction, cleaning, chunking | ✅ |
+| Structured document summarization (extractive) | ✅ |
+| Legal Q&A grounded in uploaded documents (RAG) with sources & confidence | ✅ |
+| Similar case search (embeddings + FAISS) with relevance threshold | ✅ |
+| Dashboard, responsive UI, disclaimers on all AI output | ✅ |
+| Backend test suite (20 tests) | ✅ |
+| Outcome prediction, courtroom simulation, Urdu, bias detection | 🔭 future scope |
+
+## 🚀 Getting Started
+
+**Option A — Docker (easiest, one command):**
 
 ```bash
-# backend
-cd apps/api && python3 -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-uvicorn app.main:app --reload --port 8000
-
-# frontend (new terminal)
-cd apps/web && npm install && npm run dev
+docker compose -f docker/docker-compose.yml up --build
 ```
 
-Open http://localhost:5173 — see `apps/api/README.md` and `apps/web/README.md` for details.
+**Option B — native (with Make):**
+
+```bash
+make setup       # install backend + frontend dependencies
+make api         # terminal 1 — backend on :8000
+make web         # terminal 2 — frontend on :5173
+make test        # run the backend test suite
+```
+
+Then open **http://localhost:5173**, create an account, and upload a judgment (.txt/.pdf).
+Run `make help` for all commands. Details: `apps/api/README.md`, `apps/web/README.md`.
+
+Notes:
+- The first document upload downloads the embedding model once (~90 MB); afterwards everything runs offline.
+- Q&A answers are extractive by default; install [Ollama](https://ollama.com) (free) for generated answers — auto-detected, no configuration.
 
 ---
 
