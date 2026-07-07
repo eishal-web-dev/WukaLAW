@@ -1,0 +1,52 @@
+@import "tailwindcss";
+
+@theme {
+  /* WakuLaw palette — see docs/08_UI_UX/UI_UX_Guidelines.md */
+  --color-ink-950: #0f0f0f;
+  --color-ink-900: #151515;
+  --color-ink-850: #1b1b1b;
+  --color-ink-800: #242424;
+  --color-line: #262626;
+  --color-gold: #d4af37;
+  --color-gold-light: #f3d27a;
+  --color-gold-bright: #f0c24b;
+
+  /* Landing page (Figma): blue-tinted near-black navy */
+  --color-navy-950: #0b0f19;
+  --color-navy-900: #101623;
+  --color-navy-800: #182033;
+
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+
+  --radius-card: 14px;
+  --radius-panel: 18px;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-ink-950 font-sans text-neutral-300 antialiased;
+}
+
+::selection {
+  background-color: rgb(212 175 55 / 0.3);
+}
+
+/* Subtle scrollbars that fit the dark theme */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #333333 transparent;
+}
+
+/* Subtle dotted-grid texture (landing hero background) */
+.dot-grid {
+  background-image: radial-gradient(
+    rgb(229 185 78 / 0.09) 1px,
+    transparent 1px
+  );
+  background-size: 26px 26px;
+}
