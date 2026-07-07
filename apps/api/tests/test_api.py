@@ -123,3 +123,18 @@ def test_irrelevant_question_refuses_without_sources(client):
     assert "Not enough information" in body["answer"]
     assert body["sources"] == []
     assert body["confidence"]["level"] == "low"
+
+
+def test_ask_about_named_entity_returns_matching_passage(client):
+    headers = register_user(client)
+    _upload(client, headers)
+    response = client.post(
+        "/api/v1/ask",
+        json={
+            "question": "What did the medical evidence of Dr. Nasreen Akhtar confirm about the deceased?"
+        },
+        headers=headers,
+    )
+    body = response.json()
+    # keyword boost must surface the sentence that actually mentions her
+    assert "Nasreen Akhtar" in body["answer"] or "gunshot" in body["answer"]

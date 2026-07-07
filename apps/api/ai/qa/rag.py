@@ -19,6 +19,7 @@ import httpx
 import numpy as np
 
 from ai.embeddings.embedder import embed
+from ai.preprocessing.sentences import split_sentences
 from app.config import settings
 
 NOT_ENOUGH = (
@@ -26,7 +27,19 @@ NOT_ENOUGH = (
     "Try uploading a document that covers this topic, or rephrase the question."
 )
 
-_SENTENCE_SPLIT = re.compile(r"(?<=[.!?])\s+(?=[A-Z0-9“\"'])")
+_STOPWORDS = frozenset(
+    "the a an and or but was were is are be been did does do has have had for that this "
+    "with from what who whom whose why how when where which will would can could shall "
+    "should may might must not into onto about their there they them his her its our".split()
+)
+
+
+def _content_terms(text: str) -> set[str]:
+    return {
+        word
+        for word in re.findall(r"[a-z]+", text.lower())
+        if len(word) >= 3 and word not in _STOPWORDS
+    }
 
 
 def confidence_from_score(best_score: float) -> tuple[str, str]:
@@ -67,19 +80,32 @@ def _generate_with_ollama(question: str, contexts: list[str]) -> str | None:
 
 
 def _extractive_answer(question: str, contexts: list[str]) -> str:
-    """Free fallback: pick the sentences across contexts closest to the question."""
+    """Free fallback: pick the sentences across contexts closest to the question.
+
+    Hybrid sentence scoring: semantic similarity PLUS an exact-term overlap
+    boost, so a question naming "Justice Kakar" surfaces the sentences that
+    actually mention Kakar instead of generic look-alike passages.
+    """
     sentences: list[str] = []
     for context in contexts:
-        sentences.extend(
-            s.strip() for s in _SENTENCE_SPLIT.split(context.replace("\n", " "))
-            if len(s.split()) >= 5
-        )
+        sentences.extend(split_sentences(context))
     if not sentences:
         return NOT_ENOUGH
+
     question_vec = embed([question])
     sentence_vecs = embed(sentences)
-    scores = (sentence_vecs @ question_vec.T).ravel()
-    top = np.argsort(-scores)[:3]
+    semantic = (sentence_vecs @ question_vec.T).ravel()
+
+    query_terms = _content_terms(question)
+    overlap = np.array(
+        [
+            len(query_terms & _content_terms(sentence)) / max(1, len(query_terms))
+            for sentence in sentences
+        ]
+    )
+    combined = semantic + 0.6 * overlap
+
+    top = np.argsort(-combined)[:3]
     picked = [sentences[i] for i in sorted(top)]
     return (
         "Based on the most relevant passages in your documents: " + " ".join(picked)

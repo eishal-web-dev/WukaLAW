@@ -11,8 +11,7 @@ import re
 import numpy as np
 
 from ai.embeddings.embedder import embed
-
-_SENTENCE_SPLIT = re.compile(r"(?<=[.!?])\s+(?=[A-Z0-9“\"'])")
+from ai.preprocessing.sentences import split_sentences
 
 _ISSUE_WORDS = re.compile(
     r"\b(whether|issue|question (of|for)|petition|appeal|application|prayed|challenge[ds]?)\b",
@@ -31,8 +30,7 @@ MAX_SENTENCES_CONSIDERED = 300
 
 
 def _sentences(text: str) -> list[str]:
-    parts = _SENTENCE_SPLIT.split(text.replace("\n", " "))
-    return [s.strip() for s in parts if len(s.split()) >= 6][:MAX_SENTENCES_CONSIDERED]
+    return split_sentences(text, min_words=6)[:MAX_SENTENCES_CONSIDERED]
 
 
 def summarize(text: str) -> dict:
