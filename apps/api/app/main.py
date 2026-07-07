@@ -1,3 +1,11 @@
+import sys
+from pathlib import Path
+
+# make `app` and `ai` importable no matter which directory uvicorn starts from
+_API_ROOT = str(Path(__file__).resolve().parents[1])
+if _API_ROOT not in sys.path:
+    sys.path.insert(0, _API_ROOT)
+
 from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 

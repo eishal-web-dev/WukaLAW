@@ -230,13 +230,21 @@ Working today, fully local and free:
 
 ## 🚀 Getting Started
 
-**Option A — Docker (easiest, one command):**
+**One command (Windows / macOS / Linux — needs Python 3.10+ and Node 18+):**
+
+```bash
+python run.py
+```
+
+First run installs everything automatically (one-time ~1.5 GB download of AI libraries), then starts the API on :8000 and the app on :5173. Later runs start in seconds. `python run.py --setup` installs without starting.
+
+**Alternative — Docker (one command, needs Docker Desktop):**
 
 ```bash
 docker compose -f docker/docker-compose.yml up --build
 ```
 
-**Option B — native (with Make):**
+**Alternative — manual (with Make, macOS/Linux):**
 
 ```bash
 make setup       # install backend + frontend dependencies

@@ -6,10 +6,13 @@ WEB_DIR := apps/web
 VENV := $(API_DIR)/.venv
 PYTHON := $(shell command -v python3.13 || command -v python3.12 || command -v python3.11 || command -v python3)
 
-.PHONY: help setup setup-api setup-web api web test test-api build lint docker-up docker-down docker-logs clean
+.PHONY: help run setup setup-api setup-web api web test test-api build lint docker-up docker-down docker-logs clean
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*## "}; {printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
+
+run: ## One command: install everything and start backend + frontend
+	$(PYTHON) run.py
 
 setup: setup-api setup-web ## Install backend and frontend dependencies
 
