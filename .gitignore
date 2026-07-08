@@ -41,10 +41,12 @@ datasets/raw/
 datasets/processed/
 
 # ---- AI artifacts ----
+# NOTE: patterns are root-anchored — an unanchored "embeddings/" once ignored
+# the SOURCE package apps/api/ai/embeddings and broke fresh clones.
 *.faiss
 *.index
-models/
-embeddings/
+/models/
+/embeddings/
 *.pt
 *.bin
 *.safetensors
