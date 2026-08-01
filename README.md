@@ -1,6 +1,6 @@
 <div align="center">
 
-# ⚖️ WakuLaw
+# ⚖️ WukaLAW
 
 ### Explainable AI Legal Intelligence Platform
 
@@ -27,9 +27,9 @@ Department of Software Engineering
 
 # 📖 Overview
 
-WakuLaw is an Explainable Artificial Intelligence platform developed to assist legal professionals, researchers, students, and judicial institutions in analyzing legal cases using Machine Learning and Natural Language Processing.
+WukaLAW is an Explainable Artificial Intelligence platform developed to assist legal professionals, researchers, students, and judicial institutions in analyzing legal cases using Machine Learning and Natural Language Processing.
 
-Unlike traditional AI systems that only generate predictions, WakuLaw focuses on **Explainable AI (XAI)** by providing transparent reasoning, confidence scores, supporting evidence, and similar historical cases behind every prediction.
+Unlike traditional AI systems that only generate predictions, WukaLAW focuses on **Explainable AI (XAI)** by providing transparent reasoning, confidence scores, supporting evidence, and similar historical cases behind every prediction.
 
 The platform is designed as a **Legal Decision Support System**, **not** as a replacement for judges, lawyers, or courts.
 
@@ -95,7 +95,7 @@ To empower legal professionals with intelligent, explainable, and ethical AI tec
 # 🏗 System Architecture
 
 ```
-                        WakuLaw
+                        WukaLAW
 
                      React Frontend
                             │
@@ -198,7 +198,7 @@ The AI Engine consists of multiple intelligent modules working together.
 # 📂 Repository Structure
 
 ```
-WakuLaw
+WukaLAW
 
 ├── .github          # issue/PR templates, workflows
 ├── apps
@@ -264,7 +264,7 @@ Notes:
 
 # 🧩 Development Philosophy
 
-WakuLaw follows professional software engineering practices.
+WukaLAW follows professional software engineering practices.
 
 ### Documentation First
 
@@ -388,7 +388,7 @@ This project is licensed under the MIT License.
 
 # ⭐ Future Scope
 
-Future versions of WakuLaw may include:
+Future versions of WukaLAW may include:
 
 - Voice-based legal assistant
 - OCR for scanned legal documents
@@ -417,7 +417,7 @@ For academic or development-related queries, please contact the project contribu
 
 <div align="center">
 
-### ⚖️ WakuLaw
+### ⚖️ WukaLAW
 
 ### Explainable AI Legal Intelligence Platform
 
