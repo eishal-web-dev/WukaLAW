@@ -1,4 +1,4 @@
-"""Typed contracts for grounded RAG orchestration."""
+﻿"""Typed contracts for grounded RAG orchestration."""
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
@@ -66,9 +66,16 @@ class RagResult:
     processing_time_ms: float
     validation: ValidationResult
     analysis: QueryAnalysis
+    original_question: str = ""
+    retrieval_query: str = ""
+    legal_intelligence: dict[str, Any] | None = None
+    applied_filters: dict[str, Any] = field(default_factory=dict)
+    pipeline_warnings: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
         value = asdict(self)
         value["validation"]["status"] = self.validation.status.value
         value["analysis"]["intent"] = self.analysis.intent.value
         return value
+
+
