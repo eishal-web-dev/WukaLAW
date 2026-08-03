@@ -1,4 +1,4 @@
-import sys
+﻿import sys
 from pathlib import Path
 
 # make `app` and the repository-level `ai` package importable regardless of cwd
@@ -14,12 +14,12 @@ from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.db import Base, engine
-from app.routers import auth_routes, cases, documents, legal_intelligence, qa, rag, search
+from app.routers import auth_routes, cases, documents, legal_intelligence, qa, rag, search, similar_cases
 
 app = FastAPI(
     title="WakuLaw API",
     description=(
-        "Explainable AI Legal Intelligence Platform — MVP. "
+        "Explainable AI Legal Intelligence Platform â€” MVP. "
         "Decision-support only; not legal advice."
     ),
     version="0.1.0",
@@ -59,3 +59,6 @@ api.include_router(qa.router)
 app.include_router(api)
 app.include_router(rag.router)
 app.include_router(legal_intelligence.router)
+app.include_router(similar_cases.router)
+
+
