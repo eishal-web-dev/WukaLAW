@@ -1,16 +1,20 @@
 import sys
 from pathlib import Path
 
-# make `app` and `ai` importable no matter which directory uvicorn starts from
+# make `app` and the repository-level `ai` package importable regardless of cwd
 _API_ROOT = str(Path(__file__).resolve().parents[1])
-if _API_ROOT not in sys.path:
-    sys.path.insert(0, _API_ROOT)
+_REPO_ROOT = str(Path(__file__).resolve().parents[3])
+for _path in (_API_ROOT, _REPO_ROOT):
+    if _path in sys.path:
+        sys.path.remove(_path)
+sys.path.insert(0, _REPO_ROOT)
+sys.path.insert(1, _API_ROOT)
 
 from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.db import Base, engine
-from app.routers import auth_routes, cases, documents, qa, search
+from app.routers import auth_routes, cases, documents, qa, rag, search
 
 app = FastAPI(
     title="WakuLaw API",
@@ -53,3 +57,4 @@ api.include_router(documents.router)
 api.include_router(search.router)
 api.include_router(qa.router)
 app.include_router(api)
+app.include_router(rag.router)
