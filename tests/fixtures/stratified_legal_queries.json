@@ -1,0 +1,1142 @@
+[
+  {
+    "query_id": "sq001",
+    "query": "21D. Bail. − (1) Notwithstanding the provisions of sections 439, 491, 496, 497, 498, 498A and",
+    "domain": "bail",
+    "expected_document_types": [
+      "law"
+    ],
+    "expected_case_categories": [],
+    "expected_keywords": [
+      "terrorism",
+      "notwithstanding",
+      "provisions"
+    ],
+    "expected_laws": [
+      "Anti -terrorism (Second Amendment) Act, 2013",
+      "Anti -terrorism (Amendment) Ordinance, 2002"
+    ],
+    "expected_sections": [
+      "1",
+      "8"
+    ],
+    "expected_articles": [],
+    "relevant_chunk_ids": [
+      "wc_c38bce9c9924403410e7dcb105e23414"
+    ],
+    "relevance_notes": "Ground truth is sampled chunk wc_c38bce9c9924403410e7dcb105e23414 selected from its text and metadata.",
+    "difficulty": "easy",
+    "query_style": "exact_lookup",
+    "filtered": false
+  },
+  {
+    "query_id": "sq002",
+    "query": "legal rules concerning supreme cannot sight",
+    "domain": "civil",
+    "expected_document_types": [
+      "judgment"
+    ],
+    "expected_case_categories": [
+      "Civil Appeals"
+    ],
+    "expected_keywords": [
+      "supreme",
+      "cannot",
+      "sight"
+    ],
+    "expected_laws": [
+      "Punjab Civil Servants Act, 1974",
+      "Servants Act, 1974"
+    ],
+    "expected_sections": [
+      "8-A",
+      "6"
+    ],
+    "expected_articles": [
+      "25",
+      "7"
+    ],
+    "relevant_chunk_ids": [
+      "wc_0188bedd0c712f9e0b5306263989d835"
+    ],
+    "relevance_notes": "Ground truth is sampled chunk wc_0188bedd0c712f9e0b5306263989d835 selected from its text and metadata.",
+    "difficulty": "medium",
+    "query_style": "paraphrased_lookup",
+    "filtered": true
+  },
+  {
+    "query_id": "sq003",
+    "query": "What law applies to a dispute involving supreme learned counsel?",
+    "domain": "constitutional",
+    "expected_document_types": [
+      "judgment"
+    ],
+    "expected_case_categories": [
+      "Constitutional Petitions"
+    ],
+    "expected_keywords": [
+      "supreme",
+      "learned",
+      "counsel"
+    ],
+    "expected_laws": [],
+    "expected_sections": [
+      "302",
+      "302(c)"
+    ],
+    "expected_articles": [],
+    "relevant_chunk_ids": [
+      "wc_01ab1d46276ce34d96f4689d845ac1b8"
+    ],
+    "relevance_notes": "Ground truth is sampled chunk wc_01ab1d46276ce34d96f4689d845ac1b8 selected from its text and metadata.",
+    "difficulty": "hard",
+    "query_style": "fact_pattern",
+    "filtered": true
+  },
+  {
+    "query_id": "sq004",
+    "query": "Find similar Pakistani cases about supreme observed system",
+    "domain": "criminal",
+    "expected_document_types": [
+      "judgment"
+    ],
+    "expected_case_categories": [
+      "Criminal Appeals"
+    ],
+    "expected_keywords": [
+      "supreme",
+      "observed",
+      "system"
+    ],
+    "expected_laws": [],
+    "expected_sections": [
+      "3"
+    ],
+    "expected_articles": [],
+    "relevant_chunk_ids": [
+      "wc_065dc2e73028bdabfe376fcb25e19462"
+    ],
+    "relevance_notes": "Ground truth is sampled chunk wc_065dc2e73028bdabfe376fcb25e19462 selected from its text and metadata.",
+    "difficulty": "easy",
+    "query_style": "similar_case",
+    "filtered": true
+  },
+  {
+    "query_id": "sq005",
+    "query": "What outcome was recorded regarding electronic transaction ordinance",
+    "domain": "evidence",
+    "expected_document_types": [
+      "law"
+    ],
+    "expected_case_categories": [],
+    "expected_keywords": [
+      "electronic",
+      "transaction",
+      "ordinance"
+    ],
+    "expected_laws": [
+      "In the said Order",
+      "Transactions Ordinance, 2002"
+    ],
+    "expected_sections": [],
+    "expected_articles": [
+      "2",
+      "5"
+    ],
+    "relevant_chunk_ids": [
+      "wc_5cb2b4d192812b8ccc6e4ce400821110"
+    ],
+    "relevance_notes": "Ground truth is sampled chunk wc_5cb2b4d192812b8ccc6e4ce400821110 selected from its text and metadata.",
+    "difficulty": "medium",
+    "query_style": "outcome",
+    "filtered": false
+  },
+  {
+    "query_id": "sq006",
+    "query": "11. Removal of an offender in custody to any other place in Pakistan :___ (1) Any offender",
+    "domain": "family",
+    "expected_document_types": [
+      "law"
+    ],
+    "expected_case_categories": [],
+    "expected_keywords": [
+      "transfer",
+      "offenders",
+      "ordinance"
+    ],
+    "expected_laws": [
+      "This Ordinance",
+      "In this Ordinance"
+    ],
+    "expected_sections": [
+      "4",
+      "9"
+    ],
+    "expected_articles": [],
+    "relevant_chunk_ids": [
+      "wc_011a52ffc120eb8e3b07c8a9b72359c0"
+    ],
+    "relevance_notes": "Ground truth is sampled chunk wc_011a52ffc120eb8e3b07c8a9b72359c0 selected from its text and metadata.",
+    "difficulty": "hard",
+    "query_style": "exact_lookup",
+    "filtered": false
+  },
+  {
+    "query_id": "sq007",
+    "query": "legal rules concerning supreme civil application",
+    "domain": "human_rights",
+    "expected_document_types": [
+      "judgment"
+    ],
+    "expected_case_categories": [
+      "Human Rights Cases"
+    ],
+    "expected_keywords": [
+      "supreme",
+      "civil",
+      "application"
+    ],
+    "expected_laws": [],
+    "expected_sections": [],
+    "expected_articles": [],
+    "relevant_chunk_ids": [
+      "wc_016911b11c340fbe8b39b6adf5fabcb9"
+    ],
+    "relevance_notes": "Ground truth is sampled chunk wc_016911b11c340fbe8b39b6adf5fabcb9 selected from its text and metadata.",
+    "difficulty": "easy",
+    "query_style": "paraphrased_lookup",
+    "filtered": true
+  },
+  {
+    "query_id": "sq008",
+    "query": "What law applies to a dispute involving bahria university ordinance?",
+    "domain": "labour",
+    "expected_document_types": [
+      "law"
+    ],
+    "expected_case_categories": [],
+    "expected_keywords": [
+      "bahria",
+      "university",
+      "ordinance"
+    ],
+    "expected_laws": [
+      "Subject to the provisions of this Ordinance",
+      "Rules and Regulations made under this Ordinance"
+    ],
+    "expected_sections": [
+      "4"
+    ],
+    "expected_articles": [],
+    "relevant_chunk_ids": [
+      "wc_00051f465222d935744d6b3a6eb2d9ea"
+    ],
+    "relevance_notes": "Ground truth is sampled chunk wc_00051f465222d935744d6b3a6eb2d9ea selected from its text and metadata.",
+    "difficulty": "medium",
+    "query_style": "fact_pattern",
+    "filtered": false
+  },
+  {
+    "query_id": "sq009",
+    "query": "Find similar Pakistani cases about institute culture powers",
+    "domain": "laws",
+    "expected_document_types": [
+      "law"
+    ],
+    "expected_case_categories": [],
+    "expected_keywords": [
+      "institute",
+      "culture",
+      "powers"
+    ],
+    "expected_laws": [],
+    "expected_sections": [],
+    "expected_articles": [],
+    "relevant_chunk_ids": [
+      "wc_0104846dea32345a78fa75bd0992a4ec"
+    ],
+    "relevance_notes": "Ground truth is sampled chunk wc_0104846dea32345a78fa75bd0992a4ec selected from its text and metadata.",
+    "difficulty": "hard",
+    "query_style": "similar_case",
+    "filtered": false
+  },
+  {
+    "query_id": "sq010",
+    "query": "What outcome was recorded regarding supreme dated balochistan",
+    "domain": "review",
+    "expected_document_types": [
+      "judgment"
+    ],
+    "expected_case_categories": [
+      "Review Petitions"
+    ],
+    "expected_keywords": [
+      "supreme",
+      "dated",
+      "balochistan"
+    ],
+    "expected_laws": [],
+    "expected_sections": [],
+    "expected_articles": [
+      "2"
+    ],
+    "relevant_chunk_ids": [
+      "wc_08b20805f2a612c43f50240d365254d2"
+    ],
+    "relevance_notes": "Ground truth is sampled chunk wc_08b20805f2a612c43f50240d365254d2 selected from its text and metadata.",
+    "difficulty": "easy",
+    "query_style": "outcome",
+    "filtered": true
+  },
+  {
+    "query_id": "sq011",
+    "query": "7. Functions of Board of Advanced Studies and Research.___ The functions of the Board of",
+    "domain": "service",
+    "expected_document_types": [
+      "law"
+    ],
+    "expected_case_categories": [],
+    "expected_keywords": [
+      "foundation",
+      "university",
+      "ordinance"
+    ],
+    "expected_laws": [],
+    "expected_sections": [
+      "7"
+    ],
+    "expected_articles": [],
+    "relevant_chunk_ids": [
+      "wc_161107007e3aed5d34a8b7f4bef5d755"
+    ],
+    "relevance_notes": "Ground truth is sampled chunk wc_161107007e3aed5d34a8b7f4bef5d755 selected from its text and metadata.",
+    "difficulty": "medium",
+    "query_style": "exact_lookup",
+    "filtered": false
+  },
+  {
+    "query_id": "sq012",
+    "query": "legal rules concerning supreme learned counsel",
+    "domain": "suo_moto",
+    "expected_document_types": [
+      "judgment"
+    ],
+    "expected_case_categories": [
+      "Suo Moto Cases"
+    ],
+    "expected_keywords": [
+      "supreme",
+      "learned",
+      "counsel"
+    ],
+    "expected_laws": [
+      "Local Government Act, 2013",
+      "Sindh Local Government Act, 2013"
+    ],
+    "expected_sections": [
+      "36(1)",
+      "36 (1)"
+    ],
+    "expected_articles": [
+      "63(1)",
+      "63"
+    ],
+    "relevant_chunk_ids": [
+      "wc_02beffc19da9b1c893e8292f83cd977d"
+    ],
+    "relevance_notes": "Ground truth is sampled chunk wc_02beffc19da9b1c893e8292f83cd977d selected from its text and metadata.",
+    "difficulty": "hard",
+    "query_style": "paraphrased_lookup",
+    "filtered": true
+  },
+  {
+    "query_id": "sq013",
+    "query": "What law applies to a dispute involving supreme would attention?",
+    "domain": "tax",
+    "expected_document_types": [
+      "judgment"
+    ],
+    "expected_case_categories": [
+      "Tax Revenue Cases"
+    ],
+    "expected_keywords": [
+      "supreme",
+      "would",
+      "attention"
+    ],
+    "expected_laws": [],
+    "expected_sections": [
+      "5",
+      "100"
+    ],
+    "expected_articles": [],
+    "relevant_chunk_ids": [
+      "wc_0ff6e9f889a8660821d14b5ef3abcc93"
+    ],
+    "relevance_notes": "Ground truth is sampled chunk wc_0ff6e9f889a8660821d14b5ef3abcc93 selected from its text and metadata.",
+    "difficulty": "easy",
+    "query_style": "fact_pattern",
+    "filtered": true
+  },
+  {
+    "query_id": "sq014",
+    "query": "Find similar Pakistani cases about supreme regarding pensionary",
+    "domain": "civil",
+    "expected_document_types": [
+      "judgment"
+    ],
+    "expected_case_categories": [
+      "Civil Appeals"
+    ],
+    "expected_keywords": [
+      "supreme",
+      "regarding",
+      "pensionary"
+    ],
+    "expected_laws": [],
+    "expected_sections": [
+      "16",
+      "9"
+    ],
+    "expected_articles": [
+      "9",
+      "7"
+    ],
+    "relevant_chunk_ids": [
+      "wc_0acd63be322bab54f6c18084a6078836"
+    ],
+    "relevance_notes": "Ground truth is sampled chunk wc_0acd63be322bab54f6c18084a6078836 selected from its text and metadata.",
+    "difficulty": "medium",
+    "query_style": "similar_case",
+    "filtered": true
+  },
+  {
+    "query_id": "sq015",
+    "query": "What outcome was recorded regarding supreme mention arguments",
+    "domain": "constitutional",
+    "expected_document_types": [
+      "judgment"
+    ],
+    "expected_case_categories": [
+      "Constitutional Cases"
+    ],
+    "expected_keywords": [
+      "supreme",
+      "mention",
+      "arguments"
+    ],
+    "expected_laws": [],
+    "expected_sections": [
+      "6",
+      "497 (1)"
+    ],
+    "expected_articles": [],
+    "relevant_chunk_ids": [
+      "wc_04014226af15f6a7f385704254ef7775"
+    ],
+    "relevance_notes": "Ground truth is sampled chunk wc_04014226af15f6a7f385704254ef7775 selected from its text and metadata.",
+    "difficulty": "hard",
+    "query_style": "outcome",
+    "filtered": true
+  },
+  {
+    "query_id": "sq016",
+    "query": "4. We have seen the evaluation reports prepare d by the evaluators engaged by the",
+    "domain": "criminal",
+    "expected_document_types": [
+      "judgment"
+    ],
+    "expected_case_categories": [
+      "Criminal Appeals"
+    ],
+    "expected_keywords": [
+      "supreme",
+      "evaluation",
+      "reports"
+    ],
+    "expected_laws": [],
+    "expected_sections": [],
+    "expected_articles": [],
+    "relevant_chunk_ids": [
+      "wc_077404305925734902bbcb48edc49ae7"
+    ],
+    "relevance_notes": "Ground truth is sampled chunk wc_077404305925734902bbcb48edc49ae7 selected from its text and metadata.",
+    "difficulty": "easy",
+    "query_style": "exact_lookup",
+    "filtered": true
+  },
+  {
+    "query_id": "sq017",
+    "query": "legal rules concerning public recording evidence",
+    "domain": "evidence",
+    "expected_document_types": [
+      "law"
+    ],
+    "expected_case_categories": [],
+    "expected_keywords": [
+      "public",
+      "recording",
+      "evidence"
+    ],
+    "expected_laws": [
+      "This Act",
+      "For the purpose of making any order which it is empowered to make under this Act"
+    ],
+    "expected_sections": [
+      "2",
+      "3"
+    ],
+    "expected_articles": [
+      "2"
+    ],
+    "relevant_chunk_ids": [
+      "wc_fa622ba94fe63c15878742f5b4d3a746"
+    ],
+    "relevance_notes": "Ground truth is sampled chunk wc_fa622ba94fe63c15878742f5b4d3a746 selected from its text and metadata.",
+    "difficulty": "medium",
+    "query_style": "paraphrased_lookup",
+    "filtered": false
+  },
+  {
+    "query_id": "sq018",
+    "query": "What law applies to a dispute involving supreme heard learned?",
+    "domain": "family",
+    "expected_document_types": [
+      "judgment"
+    ],
+    "expected_case_categories": [
+      "Family Law Cases"
+    ],
+    "expected_keywords": [
+      "supreme",
+      "heard",
+      "learned"
+    ],
+    "expected_laws": [],
+    "expected_sections": [],
+    "expected_articles": [],
+    "relevant_chunk_ids": [
+      "wc_090134d55df207949ddaaa166428e228"
+    ],
+    "relevance_notes": "Ground truth is sampled chunk wc_090134d55df207949ddaaa166428e228 selected from its text and metadata.",
+    "difficulty": "hard",
+    "query_style": "fact_pattern",
+    "filtered": true
+  },
+  {
+    "query_id": "sq019",
+    "query": "Find similar Pakistani cases about supreme examination record",
+    "domain": "human_rights",
+    "expected_document_types": [
+      "judgment"
+    ],
+    "expected_case_categories": [
+      "Human Rights Cases"
+    ],
+    "expected_keywords": [
+      "supreme",
+      "examination",
+      "record"
+    ],
+    "expected_laws": [],
+    "expected_sections": [
+      "25"
+    ],
+    "expected_articles": [],
+    "relevant_chunk_ids": [
+      "wc_03414fcf3a85811b9203c6d4bb3ce8d3"
+    ],
+    "relevance_notes": "Ground truth is sampled chunk wc_03414fcf3a85811b9203c6d4bb3ce8d3 selected from its text and metadata.",
+    "difficulty": "easy",
+    "query_style": "similar_case",
+    "filtered": true
+  },
+  {
+    "query_id": "sq020",
+    "query": "What outcome was recorded regarding risks insurance ordinance",
+    "domain": "labour",
+    "expected_document_types": [
+      "law"
+    ],
+    "expected_case_categories": [],
+    "expected_keywords": [
+      "risks",
+      "insurance",
+      "ordinance"
+    ],
+    "expected_laws": [
+      "This Ordinance"
+    ],
+    "expected_sections": [
+      "9",
+      "16"
+    ],
+    "expected_articles": [],
+    "relevant_chunk_ids": [
+      "wc_0f7fb27fc3be3552515cdd2c0196eaa1"
+    ],
+    "relevance_notes": "Ground truth is sampled chunk wc_0f7fb27fc3be3552515cdd2c0196eaa1 selected from its text and metadata.",
+    "difficulty": "medium",
+    "query_style": "outcome",
+    "filtered": false
+  },
+  {
+    "query_id": "sq021",
+    "query": "4. Functions and Powers of the Institute. — The institute shall be an aut onomous body",
+    "domain": "laws",
+    "expected_document_types": [
+      "law"
+    ],
+    "expected_case_categories": [],
+    "expected_keywords": [
+      "pakistan",
+      "institute",
+      "research"
+    ],
+    "expected_laws": [],
+    "expected_sections": [],
+    "expected_articles": [],
+    "relevant_chunk_ids": [
+      "wc_03bb10da485f5c37627c7772f69aa775"
+    ],
+    "relevance_notes": "Ground truth is sampled chunk wc_03bb10da485f5c37627c7772f69aa775 selected from its text and metadata.",
+    "difficulty": "hard",
+    "query_style": "exact_lookup",
+    "filtered": false
+  },
+  {
+    "query_id": "sq022",
+    "query": "legal rules concerning supreme reasons recorded",
+    "domain": "review",
+    "expected_document_types": [
+      "judgment"
+    ],
+    "expected_case_categories": [
+      "Review Petitions"
+    ],
+    "expected_keywords": [
+      "supreme",
+      "reasons",
+      "recorded"
+    ],
+    "expected_laws": [
+      "The Constitution",
+      "Govern ment Act, 2013"
+    ],
+    "expected_sections": [
+      "8 to 10",
+      "1"
+    ],
+    "expected_articles": [
+      "218(3)",
+      "140A"
+    ],
+    "relevant_chunk_ids": [
+      "wc_15c91f8a9df361c50d7512b4bd2f58bb"
+    ],
+    "relevance_notes": "Ground truth is sampled chunk wc_15c91f8a9df361c50d7512b4bd2f58bb selected from its text and metadata.",
+    "difficulty": "easy",
+    "query_style": "paraphrased_lookup",
+    "filtered": true
+  },
+  {
+    "query_id": "sq023",
+    "query": "What law applies to a dispute involving bahria university ordinance?",
+    "domain": "service",
+    "expected_document_types": [
+      "law"
+    ],
+    "expected_case_categories": [],
+    "expected_keywords": [
+      "bahria",
+      "university",
+      "ordinance"
+    ],
+    "expected_laws": [],
+    "expected_sections": [
+      "4"
+    ],
+    "expected_articles": [],
+    "relevant_chunk_ids": [
+      "wc_1daa41d076a9a8a854859c3a35557dd8"
+    ],
+    "relevance_notes": "Ground truth is sampled chunk wc_1daa41d076a9a8a854859c3a35557dd8 selected from its text and metadata.",
+    "difficulty": "medium",
+    "query_style": "fact_pattern",
+    "filtered": false
+  },
+  {
+    "query_id": "sq024",
+    "query": "Find similar Pakistani cases about supreme moreover interpreting",
+    "domain": "suo_moto",
+    "expected_document_types": [
+      "judgment"
+    ],
+    "expected_case_categories": [
+      "Suo Moto Cases"
+    ],
+    "expected_keywords": [
+      "supreme",
+      "moreover",
+      "interpreting"
+    ],
+    "expected_laws": [
+      "A of the Act"
+    ],
+    "expected_sections": [
+      "11",
+      "11(8)"
+    ],
+    "expected_articles": [],
+    "relevant_chunk_ids": [
+      "wc_057fcf6fe0285bab935a254a1a1b43ea"
+    ],
+    "relevance_notes": "Ground truth is sampled chunk wc_057fcf6fe0285bab935a254a1a1b43ea selected from its text and metadata.",
+    "difficulty": "hard",
+    "query_style": "similar_case",
+    "filtered": true
+  },
+  {
+    "query_id": "sq025",
+    "query": "What outcome was recorded regarding counter duties ordinance",
+    "domain": "tax",
+    "expected_document_types": [
+      "law"
+    ],
+    "expected_case_categories": [],
+    "expected_keywords": [
+      "counter",
+      "duties",
+      "ordinance"
+    ],
+    "expected_laws": [],
+    "expected_sections": [
+      "1",
+      "2"
+    ],
+    "expected_articles": [],
+    "relevant_chunk_ids": [
+      "wc_177eed131ae81e71f69e92819a7358c4"
+    ],
+    "relevance_notes": "Ground truth is sampled chunk wc_177eed131ae81e71f69e92819a7358c4 selected from its text and metadata.",
+    "difficulty": "easy",
+    "query_style": "outcome",
+    "filtered": false
+  },
+  {
+    "query_id": "sq026",
+    "query": "9. In order to streamline the proper administration of a service, cadre",
+    "domain": "civil",
+    "expected_document_types": [
+      "judgment"
+    ],
+    "expected_case_categories": [
+      "Civil Appeals"
+    ],
+    "expected_keywords": [
+      "supreme",
+      "order",
+      "streamline"
+    ],
+    "expected_laws": [],
+    "expected_sections": [],
+    "expected_articles": [],
+    "relevant_chunk_ids": [
+      "wc_0c5c99be96dddd546ba44e23e84499d9"
+    ],
+    "relevance_notes": "Ground truth is sampled chunk wc_0c5c99be96dddd546ba44e23e84499d9 selected from its text and metadata.",
+    "difficulty": "medium",
+    "query_style": "exact_lookup",
+    "filtered": true
+  },
+  {
+    "query_id": "sq027",
+    "query": "legal rules concerning supreme petitioner apply",
+    "domain": "constitutional",
+    "expected_document_types": [
+      "judgment"
+    ],
+    "expected_case_categories": [
+      "Constitutional Cases"
+    ],
+    "expected_keywords": [
+      "supreme",
+      "petitioner",
+      "apply"
+    ],
+    "expected_laws": [],
+    "expected_sections": [
+      "4"
+    ],
+    "expected_articles": [],
+    "relevant_chunk_ids": [
+      "wc_0578ea1385eb0a8b4ae1c5f42afa81a0"
+    ],
+    "relevance_notes": "Ground truth is sampled chunk wc_0578ea1385eb0a8b4ae1c5f42afa81a0 selected from its text and metadata.",
+    "difficulty": "hard",
+    "query_style": "paraphrased_lookup",
+    "filtered": true
+  },
+  {
+    "query_id": "sq028",
+    "query": "What law applies to a dispute involving supreme great significance?",
+    "domain": "criminal",
+    "expected_document_types": [
+      "judgment"
+    ],
+    "expected_case_categories": [
+      "Criminal Appeals"
+    ],
+    "expected_keywords": [
+      "supreme",
+      "great",
+      "significance"
+    ],
+    "expected_laws": [],
+    "expected_sections": [
+      "14",
+      "3"
+    ],
+    "expected_articles": [],
+    "relevant_chunk_ids": [
+      "wc_114491a5a374cb3eeb55c5513a6bf0dd"
+    ],
+    "relevance_notes": "Ground truth is sampled chunk wc_114491a5a374cb3eeb55c5513a6bf0dd selected from its text and metadata.",
+    "difficulty": "easy",
+    "query_style": "fact_pattern",
+    "filtered": true
+  },
+  {
+    "query_id": "sq029",
+    "query": "Find similar Pakistani cases about supreme appears weighed",
+    "domain": "family",
+    "expected_document_types": [
+      "judgment"
+    ],
+    "expected_case_categories": [
+      "Family Law Cases"
+    ],
+    "expected_keywords": [
+      "supreme",
+      "appears",
+      "weighed"
+    ],
+    "expected_laws": [],
+    "expected_sections": [],
+    "expected_articles": [],
+    "relevant_chunk_ids": [
+      "wc_0aa37a945e14c2a20c8f9024865a4f36"
+    ],
+    "relevance_notes": "Ground truth is sampled chunk wc_0aa37a945e14c2a20c8f9024865a4f36 selected from its text and metadata.",
+    "difficulty": "medium",
+    "query_style": "similar_case",
+    "filtered": true
+  },
+  {
+    "query_id": "sq030",
+    "query": "What outcome was recorded regarding supreme words phrases",
+    "domain": "human_rights",
+    "expected_document_types": [
+      "judgment"
+    ],
+    "expected_case_categories": [
+      "Human Rights Cases"
+    ],
+    "expected_keywords": [
+      "supreme",
+      "words",
+      "phrases"
+    ],
+    "expected_laws": [
+      "Curative Act - Cross References - Healing Act"
+    ],
+    "expected_sections": [
+      "7",
+      "8"
+    ],
+    "expected_articles": [],
+    "relevant_chunk_ids": [
+      "wc_0a1192a91512b0d40cdeb28ad1ca7a19"
+    ],
+    "relevance_notes": "Ground truth is sampled chunk wc_0a1192a91512b0d40cdeb28ad1ca7a19 selected from its text and metadata.",
+    "difficulty": "hard",
+    "query_style": "outcome",
+    "filtered": true
+  },
+  {
+    "query_id": "sq031",
+    "query": "2. Definitions.― (1) In this Ordinance, unless there is anything repugnant in the",
+    "domain": "labour",
+    "expected_document_types": [
+      "law"
+    ],
+    "expected_case_categories": [],
+    "expected_keywords": [
+      "emigration",
+      "ordinance",
+      "definitions"
+    ],
+    "expected_laws": [
+      "This Ordinance",
+      "In this Ordinance"
+    ],
+    "expected_sections": [
+      "3",
+      "12"
+    ],
+    "expected_articles": [],
+    "relevant_chunk_ids": [
+      "wc_2faebd938a81a07e852ad156b383ef33"
+    ],
+    "relevance_notes": "Ground truth is sampled chunk wc_2faebd938a81a07e852ad156b383ef33 selected from its text and metadata.",
+    "difficulty": "easy",
+    "query_style": "exact_lookup",
+    "filtered": false
+  },
+  {
+    "query_id": "sq032",
+    "query": "legal rules concerning pakistan environmental protection",
+    "domain": "laws",
+    "expected_document_types": [
+      "law"
+    ],
+    "expected_case_categories": [],
+    "expected_keywords": [
+      "pakistan",
+      "environmental",
+      "protection"
+    ],
+    "expected_laws": [
+      "This Act",
+      "The provisions of this Act"
+    ],
+    "expected_sections": [
+      "3",
+      "4"
+    ],
+    "expected_articles": [],
+    "relevant_chunk_ids": [
+      "wc_0ca9f6b5090009bc7d17d50efa077c51"
+    ],
+    "relevance_notes": "Ground truth is sampled chunk wc_0ca9f6b5090009bc7d17d50efa077c51 selected from its text and metadata.",
+    "difficulty": "medium",
+    "query_style": "paraphrased_lookup",
+    "filtered": false
+  },
+  {
+    "query_id": "sq033",
+    "query": "What law applies to a dispute involving supreme pakistan appellate?",
+    "domain": "review",
+    "expected_document_types": [
+      "judgment"
+    ],
+    "expected_case_categories": [
+      "Review Petitions"
+    ],
+    "expected_keywords": [
+      "supreme",
+      "pakistan",
+      "appellate"
+    ],
+    "expected_laws": [
+      "Constitution or the Election s Act, 2017"
+    ],
+    "expected_sections": [],
+    "expected_articles": [],
+    "relevant_chunk_ids": [
+      "wc_1787229c3a60fb78ef63868f3697440e"
+    ],
+    "relevance_notes": "Ground truth is sampled chunk wc_1787229c3a60fb78ef63868f3697440e selected from its text and metadata.",
+    "difficulty": "hard",
+    "query_style": "fact_pattern",
+    "filtered": true
+  },
+  {
+    "query_id": "sq034",
+    "query": "Find similar Pakistani cases about pakistan halal authority",
+    "domain": "service",
+    "expected_document_types": [
+      "law"
+    ],
+    "expected_case_categories": [],
+    "expected_keywords": [
+      "pakistan",
+      "halal",
+      "authority"
+    ],
+    "expected_laws": [
+      "Halal products and processes for purposes of the Act"
+    ],
+    "expected_sections": [],
+    "expected_articles": [],
+    "relevant_chunk_ids": [
+      "wc_1e5851eb524d2a11c7493621dc79c83c"
+    ],
+    "relevance_notes": "Ground truth is sampled chunk wc_1e5851eb524d2a11c7493621dc79c83c selected from its text and metadata.",
+    "difficulty": "easy",
+    "query_style": "similar_case",
+    "filtered": false
+  },
+  {
+    "query_id": "sq035",
+    "query": "What outcome was recorded regarding supreme question urged",
+    "domain": "suo_moto",
+    "expected_document_types": [
+      "judgment"
+    ],
+    "expected_case_categories": [
+      "Suo Moto Cases"
+    ],
+    "expected_keywords": [
+      "supreme",
+      "question",
+      "urged"
+    ],
+    "expected_laws": [
+      "Impugned Order",
+      "High Court in the Impugned Order"
+    ],
+    "expected_sections": [
+      "7",
+      "9"
+    ],
+    "expected_articles": [
+      "14",
+      "4"
+    ],
+    "relevant_chunk_ids": [
+      "wc_09331775a50d568e3af79e2a8c10847c"
+    ],
+    "relevance_notes": "Ground truth is sampled chunk wc_09331775a50d568e3af79e2a8c10847c selected from its text and metadata.",
+    "difficulty": "medium",
+    "query_style": "outcome",
+    "filtered": true
+  },
+  {
+    "query_id": "sq036",
+    "query": "18. Provisions as to composite insurers.___(1) For the rem oval of doubt, it is hereby declared",
+    "domain": "tax",
+    "expected_document_types": [
+      "law"
+    ],
+    "expected_case_categories": [
+      "Tax Cases"
+    ],
+    "expected_keywords": [
+      "insurance",
+      "nationalisation",
+      "order"
+    ],
+    "expected_laws": [
+      "This Order",
+      "Corporation under this Order"
+    ],
+    "expected_sections": [
+      "2",
+      "3"
+    ],
+    "expected_articles": [
+      "6",
+      "19"
+    ],
+    "relevant_chunk_ids": [
+      "wc_216062d84d69724e3504919318799900"
+    ],
+    "relevance_notes": "Ground truth is sampled chunk wc_216062d84d69724e3504919318799900 selected from its text and metadata.",
+    "difficulty": "hard",
+    "query_style": "exact_lookup",
+    "filtered": true
+  },
+  {
+    "query_id": "sq037",
+    "query": "legal rules concerning supreme disputed petitioner",
+    "domain": "civil",
+    "expected_document_types": [
+      "judgment"
+    ],
+    "expected_case_categories": [
+      "Civil Appeals"
+    ],
+    "expected_keywords": [
+      "supreme",
+      "disputed",
+      "petitioner"
+    ],
+    "expected_laws": [],
+    "expected_sections": [
+      "3"
+    ],
+    "expected_articles": [],
+    "relevant_chunk_ids": [
+      "wc_0d9316cad16e6dddd941f5906f1de7c4"
+    ],
+    "relevance_notes": "Ground truth is sampled chunk wc_0d9316cad16e6dddd941f5906f1de7c4 selected from its text and metadata.",
+    "difficulty": "easy",
+    "query_style": "paraphrased_lookup",
+    "filtered": true
+  },
+  {
+    "query_id": "sq038",
+    "query": "What law applies to a dispute involving supreme learned counsel?",
+    "domain": "constitutional",
+    "expected_document_types": [
+      "judgment"
+    ],
+    "expected_case_categories": [
+      "Constitutional Cases"
+    ],
+    "expected_keywords": [
+      "supreme",
+      "learned",
+      "counsel"
+    ],
+    "expected_laws": [
+      "Property Act",
+      "Succession Act"
+    ],
+    "expected_sections": [
+      "41",
+      "2(h)"
+    ],
+    "expected_articles": [],
+    "relevant_chunk_ids": [
+      "wc_05c8ab4d3d1a85639682b4b93ff69df4"
+    ],
+    "relevance_notes": "Ground truth is sampled chunk wc_05c8ab4d3d1a85639682b4b93ff69df4 selected from its text and metadata.",
+    "difficulty": "medium",
+    "query_style": "fact_pattern",
+    "filtered": true
+  },
+  {
+    "query_id": "sq039",
+    "query": "quantum computing patents on Mars",
+    "domain": "no_match",
+    "expected_document_types": [],
+    "expected_case_categories": [],
+    "expected_keywords": [],
+    "expected_laws": [],
+    "expected_sections": [],
+    "expected_articles": [],
+    "relevant_chunk_ids": [],
+    "relevance_notes": "Deliberate no-match control query.",
+    "difficulty": "hard",
+    "query_style": "no_match",
+    "filtered": false
+  },
+  {
+    "query_id": "sq040",
+    "query": "Antarctic maritime whaling treaty dispute",
+    "domain": "no_match",
+    "expected_document_types": [],
+    "expected_case_categories": [],
+    "expected_keywords": [],
+    "expected_laws": [],
+    "expected_sections": [],
+    "expected_articles": [],
+    "relevant_chunk_ids": [],
+    "relevance_notes": "Deliberate no-match control query.",
+    "difficulty": "hard",
+    "query_style": "no_match",
+    "filtered": false
+  }
+]

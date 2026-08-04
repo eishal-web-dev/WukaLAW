@@ -22,7 +22,7 @@ class FakeEmbeddingProvider(EmbeddingProvider):
    norms=np.linalg.norm(vectors,axis=1,keepdims=True);norms[norms==0]=1;vectors/=norms
   return vectors,used
 class SentenceTransformerProvider(EmbeddingProvider):
- def __init__(self,model_name="BAAI/bge-m3",device="auto",revision=None,*,cache_dir=None,local_files_only=False,download_timeout=60,retries=3):
+ def __init__(self,model_name="BAAI/bge-m3",device="auto",revision=None,*,cache_dir=None,local_files_only=False,download_timeout=60,retries=3,max_input_tokens=None):
   os.environ["HF_HUB_DOWNLOAD_TIMEOUT"]=str(download_timeout);os.environ.setdefault("HF_HUB_ETAG_TIMEOUT",str(min(download_timeout,30)))
   import torch
   from sentence_transformers import SentenceTransformer
@@ -39,12 +39,12 @@ class SentenceTransformerProvider(EmbeddingProvider):
     LOGGER.warning("Embedding model loaded in %.2f seconds",time.monotonic()-started);last=None;break
    except Exception as exc:
     last=exc
-    if local_files_only or attempt>=max(1,retries):break
+    if attempt>=max(1,retries):break
     delay=min(2**(attempt-1),8);LOGGER.warning("Model load/download attempt failed: %s; retrying in %s seconds",exc,delay);time.sleep(delay)
   if last is not None:
    mode="cache-only" if local_files_only else "online/resumable"
    raise RuntimeError(f"Could not load exact embedding model {model_name!r} revision={revision!r} in {mode} mode from cache={cache!r}; no fallback was used. Verify network/cache space, increase --download-timeout, or pre-download with huggingface_hub.snapshot_download. Cause: {last}") from last
-  self.dimension=int(self.model.get_sentence_embedding_dimension());self.max_input_tokens=int(getattr(self.model,"max_seq_length",8192));self.pooling_method="sentence-transformers pooling"
+  self.dimension=int(self.model.get_sentence_embedding_dimension());model_limit=int(getattr(self.model,"max_seq_length",8192));self.max_input_tokens=min(model_limit,int(max_input_tokens)) if max_input_tokens else model_limit;self.model.max_seq_length=self.max_input_tokens;self.pooling_method="sentence-transformers pooling"
   try:self.model_revision=self.model._first_module().auto_model.config._commit_hash or revision
   except Exception:self.model_revision=revision
  def encode_dense(self,texts,batch_size,normalize=True):
@@ -58,7 +58,8 @@ class SentenceTransformerProvider(EmbeddingProvider):
      import torch
      if torch.cuda.is_available():torch.cuda.empty_cache()
     except Exception:pass
-def create_provider(model_name,device="auto",revision=None,dimension=None,cache_dir=None,local_files_only=False,download_timeout=60,retries=3):
+def create_provider(model_name,device="auto",revision=None,dimension=None,cache_dir=None,local_files_only=False,download_timeout=60,retries=3,max_input_tokens=None):
  if model_name=="fake-deterministic":return FakeEmbeddingProvider(dimension or 32)
- return SentenceTransformerProvider(model_name,device,revision,cache_dir=cache_dir,local_files_only=local_files_only,download_timeout=download_timeout,retries=retries)
+ return SentenceTransformerProvider(model_name,device,revision,cache_dir=cache_dir,local_files_only=local_files_only,download_timeout=download_timeout,retries=retries,max_input_tokens=max_input_tokens)
+
 
