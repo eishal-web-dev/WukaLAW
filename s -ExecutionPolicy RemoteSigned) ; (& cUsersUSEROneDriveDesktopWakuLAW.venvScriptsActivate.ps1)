@@ -1,0 +1,24 @@
+[33mcommit d263c4999db668c7921bbbea1e004f1554a48ac4[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mfeature/ai-pipeline[m[33m, [m[1;31morigin/feature/ai-pipeline[m[33m)[m
+Author: eishal-web-dev <eishal.cecos@gmail.com>
+Date:   Mon Aug 3 23:01:47 2026 -0700
+
+    feat: add stratified legal retrieval evaluation
+
+ ai/embeddings/model_provider.py              |   11 [32m+[m[31m-[m
+ ai/evaluation/__init__.py                    |    4 [32m+[m
+ ai/evaluation/models.py                      |   14 [32m+[m
+ ai/evaluation/retrieval_dataset.py           |   41 [32m+[m
+ ai/evaluation/retrieval_evaluator.py         |   32 [32m+[m
+ ai/evaluation/retrieval_metrics.py           |   11 [32m+[m
+ ai/evaluation/stratified_sampler.py          |   60 [32m++[m
+ apps/api/wakulaw.db-journal                  |  Bin [31m25136[m -> [32m25136[m bytes
+ docs/STRATIFIED_RETRIEVAL_REPORT.md          |  185 [32m+++++[m
+ scripts/build_stratified_sample.py           |   10 [32m+[m
+ scripts/evaluate_stratified_retrieval.py     |   11 [32m+[m
+ scripts/generate_embeddings.py               |    5 [32m+[m[31m-[m
+ tests/fixtures/stratified_legal_queries.json | 1142 [32m++++++++++++++++++++++++++[m
+ tests/test_retrieval_dataset.py              |    6 [32m+[m
+ tests/test_retrieval_metrics.py              |    5 [32m+[m
+ tests/test_stratified_retrieval.py           |    7 [32m+[m
+ tests/test_stratified_sampler.py             |    8 [32m+[m
+ 17 files changed, 1545 insertions(+), 7 deletions(-)
