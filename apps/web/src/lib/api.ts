@@ -383,7 +383,7 @@ export async function askQuestion(question: string): Promise<AskResponse> {
       top_k: 10,
       score_threshold: null,
       filters: {},
-      use_legal_intelligence: true,
+      use_legal_intelligence: false,
     }),
   })
 

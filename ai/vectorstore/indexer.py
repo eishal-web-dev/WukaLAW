@@ -6,7 +6,35 @@ import numpy as np
 from qdrant_client.http import models as qm
 from .collection_manager import CollectionManager
 from .models import IndexingSummary,stable_point_id
-PAYLOAD_FIELDS=("embedding_id","canonical_chunk_id","source_chunk_ids","document_id","source_dataset","source_path","document_type","court","jurisdiction","case_category","case_number","title","chunk_type","heading","section_number","article_number","language","explicit_outcome_phrase","legal_citations","laws_cited","sections_cited","articles_cited","duplicate_hash","text_hash","text_preview","pipeline_version")
+PAYLOAD_FIELDS=(
+    "embedding_id",
+    "canonical_chunk_id",
+    "source_chunk_ids",
+    "document_id",
+    "source_dataset",
+    "source_path",
+    "document_type",
+    "court",
+    "jurisdiction",
+    "case_category",
+    "case_number",
+    "title",
+    "chunk_type",
+    "heading",
+    "section_number",
+    "article_number",
+    "language",
+    "explicit_outcome_phrase",
+    "legal_citations",
+    "laws_cited",
+    "sections_cited",
+    "articles_cited",
+    "duplicate_hash",
+    "text_hash",
+    "text",
+    "text_preview",
+    "pipeline_version",
+)
 def index_embeddings(client,collection:str,metadata_path:Path,vectors_path:Path,index_path:Path,*,batch_size:int=100,limit:int|None=None,dry_run:bool=False,resume:bool=False)->IndexingSummary:
     started=time.monotonic();summary=IndexingSummary();metadata=[]
     with metadata_path.open(encoding="utf-8") as handle:
