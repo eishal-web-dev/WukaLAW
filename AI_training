@@ -1,0 +1,1593 @@
+{
+  "cells": [
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "view-in-github",
+        "colab_type": "text"
+      },
+      "source": [
+        "<a href=\"https://colab.research.google.com/github/eishal-web-dev/WukaLAW/blob/main/AI_training\" target=\"_parent\"><img src=\"https://colab.research.google.com/assets/colab-badge.svg\" alt=\"Open In Colab\"/></a>"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": 1,
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "PZ8ugHMuc72L",
+        "outputId": "6d5746c6-e3f2-4208-c7c7-220a28ab5412"
+      },
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Mounted at /content/drive\n"
+          ]
+        }
+      ],
+      "source": [
+        "from google.colab import drive\n",
+        "drive.mount('/content/drive')"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": 2,
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "7mpTiv2SwJ6g",
+        "outputId": "df568c63-f322-4f88-fba9-a10960df8f02"
+      },
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "/content\n",
+            "drive  sample_data\n"
+          ]
+        }
+      ],
+      "source": [
+        "!pwd\n",
+        "!ls /content"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": 3,
+      "metadata": {
+        "id": "A1APszoGwODn"
+      },
+      "outputs": [],
+      "source": [
+        "!find /content -maxdepth 2 -type d -name \"*Wuka*\""
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": 9,
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "V0yBI13Jv-NR",
+        "outputId": "3a02679f-2e44-4579-8c7c-b355464a9c7d"
+      },
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "/content/WukaLAW\n",
+            "/content/WukaLAW\n"
+          ]
+        }
+      ],
+      "source": [
+        "%cd /content/WukaLAW\n",
+        "!pwd"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": 8,
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "dcE5LY5hzvx5",
+        "outputId": "04f6bac6-4bec-4a36-c24f-4cd33697b04e"
+      },
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "/content\n",
+            "Cloning into 'WukaLAW'...\n",
+            "remote: Enumerating objects: 840, done.\u001b[K\n",
+            "remote: Counting objects: 100% (245/245), done.\u001b[K\n",
+            "remote: Compressing objects: 100% (202/202), done.\u001b[K\n",
+            "remote: Total 840 (delta 71), reused 191 (delta 43), pack-reused 595 (from 1)\u001b[K\n",
+            "Receiving objects: 100% (840/840), 763.78 KiB | 7.01 MiB/s, done.\n",
+            "Resolving deltas: 100% (273/273), done.\n",
+            "/content/WukaLAW\n",
+            "feature/ai-pipeline\n"
+          ]
+        }
+      ],
+      "source": [
+        "%cd /content\n",
+        "\n",
+        "!git clone -b feature/ai-pipeline https://github.com/eishal-web-dev/WukaLAW.git\n",
+        "\n",
+        "%cd /content/WukaLAW\n",
+        "!git branch --show-current"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "H8sPSY9Bvcuz",
+        "outputId": "124bbca7-be43-4f3c-df67-f8adb10412bf"
+      },
+      "outputs": [
+        {
+          "name": "stdout",
+          "output_type": "stream",
+          "text": [
+            "Loading exact embedding model BAAI/bge-m3 revision=5617a9f61b028005a4858fdac845db406aefb181 device=cuda cache=default offline=False (attempt 1/3)\n",
+            "modules.json: 100% 349/349 [00:00<00:00, 1.42MB/s]\n",
+            "Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.\n",
+            "config_sentence_transformers.json: 100% 123/123 [00:00<00:00, 802kB/s]\n",
+            "README.md: 100% 15.8k/15.8k [00:00<00:00, 38.5MB/s]\n",
+            "sentence_bert_config.json: 100% 54.0/54.0 [00:00<00:00, 270kB/s]\n",
+            "config.json: 100% 687/687 [00:00<00:00, 4.75MB/s]\n",
+            "\n",
+            "pytorch_model.bin: downloading bytes:   7% 157M/2.27G [00:01<00:13, 162MB/s, 13.0MB/s  ]\n",
+            "pytorch_model.bin: downloading bytes:   9% 207M/2.27G [00:01<00:15, 137MB/s, 18.0MB/s  ]\n",
+            "pytorch_model.bin: downloading bytes:  11% 249M/2.27G [00:02<00:16, 119MB/s, 21.2MB/s  ]\n",
+            "pytorch_model.bin: downloading bytes:  12% 272M/2.27G [00:02<00:17, 116MB/s, 23.0MB/s  ]\n",
+            "pytorch_model.bin: downloading bytes:  67% 1.51G/2.27G [00:08<00:03, 253MB/s,  103MB/s  ]\n",
+            "pytorch_model.bin: downloading bytes:  67% 1.52G/2.27G [00:19<00:02, 253MB/s,  103MB/s  ]\n",
+            "pytorch_model.bin: downloading bytes: 100% 1.52G/1.52G [00:20<00:00, 74.8MB/s,  103MB/s  ]\n",
+            "pytorch_model.bin: reconstructing file: 100% 2.27G/2.27G [00:20<00:00, 112MB/s,  137MB/s  ]\n",
+            "Loading weights: 100% 391/391 [00:00<00:00, 17854.32it/s]\n",
+            "\n",
+            "model.safetensors: downloading bytes:   0% 0.00/2.27G [00:00<?, ?B/s]\n",
+            "\n",
+            "tokenizer_config.json: 100% 444/444 [00:00<00:00, 2.12MB/s]\n",
+            "\n",
+            "sentencepiece.bpe.model: downloading bytes:  55% 2.80M/5.07M [00:00<00:00, 6.27MB/s, 21.0kB/s  ]\n",
+            "sentencepiece.bpe.model: downloading bytes: 100% 3.62M/3.62M [00:00<00:00, 4.74MB/s,  356kB/s  ]\n",
+            "sentencepiece.bpe.model: reconstructing file: 100% 5.07M/5.07M [00:00<00:00, 6.63MB/s,  499kB/s  ]\n",
+            "model.safetensors: downloading bytes:   7% 151M/2.27G [00:01<00:10, 199MB/s, 12.4MB/s  ]\n",
+            "model.safetensors: downloading bytes:   8% 176M/2.27G [00:01<00:12, 171MB/s, 15.5MB/s  ]\n",
+            "tokenizer.json: downloading bytes:  24% 4.14M/17.1M [00:01<00:01, 7.67MB/s, 96.1kB/s  ]\n",
+            "tokenizer.json: downloading bytes:  34% 5.88M/17.1M [00:01<00:01, 9.84MB/s,  404kB/s  ]\n",
+            "tokenizer.json: downloading bytes: 100% 5.88M/5.88M [00:01<00:00, 4.94MB/s,  570kB/s  ]\n",
+            "tokenizer.json: reconstructing file: 100% 17.1M/17.1M [00:01<00:00, 14.3MB/s, 1.67MB/s  ]\n",
+            "model.safetensors: downloading bytes:  19% 427M/2.27G [00:02<00:09, 198MB/s, 36.4MB/s  ]\n",
+            "\n",
+            "special_tokens_map.json: 100% 964/964 [00:00<00:00, 275kB/s]\n",
+            "model.safetensors: downloading bytes:  46% 1.03G/2.27G [00:08<00:14, 84.1MB/s, 69.1MB/s  ]\n",
+            "model.safetensors: downloading bytes:  61% 1.38G/2.27G [00:08<00:04, 207MB/s, 75.7MB/s  ] \n",
+            "model.safetensors: downloading bytes:  67% 1.52G/2.27G [00:09<00:05, 146MB/s, 89.7MB/s  ]\n",
+            "\n",
+            "config.json: 100% 191/191 [00:00<00:00, 702kB/s]\n",
+            "\n",
+            "model.safetensors: reconstructing file:  83% 1.88G/2.27G [00:14<00:02, 160MB/s, 75.6MB/s  ]\u001b[A\n",
+            "model.safetensors: downloading bytes: 100% 1.52G/1.52G [00:17<00:00, 87.1MB/s, 87.5MB/s  ]\n",
+            "model.safetensors: reconstructing file: 100% 2.27G/2.27G [00:17<00:00, 130MB/s,  119MB/s  ]\n",
+            "Embedding model loaded in 44.89 seconds\n",
+            "/content/WukaLAW/ai/embeddings/model_provider.py:47: FutureWarning: The `get_sentence_embedding_dimension` method has been renamed to `get_embedding_dimension`.\n",
+            "  self.dimension=int(self.model.get_sentence_embedding_dimension());model_limit=int(getattr(self.model,\"max_seq_length\",8192));self.max_input_tokens=min(model_limit,int(max_input_tokens)) if max_input_tokens else model_limit;self.model.max_seq_length=self.max_input_tokens;self.pooling_method=\"sentence-transformers pooling\"\n",
+            "embedding generation failed: /content/WukaLAW/datasets/processed/chunks.jsonl\n",
+            "Minutes: 1.29\n"
+          ]
+        }
+      ],
+      "source": [
+        "import time\n",
+        "\n",
+        "started = time.time()\n",
+        "\n",
+        "!python scripts/generate_embeddings.py \\\n",
+        "  --input datasets/processed/chunks.jsonl \\\n",
+        "  --metadata-output \"/content/drive/MyDrive/WakuLAW_AI/embeddings/embeddings_gpu_sample_1024.jsonl\" \\\n",
+        "  --vectors-output \"/content/drive/MyDrive/WakuLAW_AI/embeddings/embedding_vectors_gpu_sample_1024.npy\" \\\n",
+        "  --index-output \"/content/drive/MyDrive/WakuLAW_AI/embeddings/embedding_index_gpu_sample_1024.json\" \\\n",
+        "  --model BAAI/bge-m3 \\\n",
+        "  --model-revision 5617a9f61b028005a4858fdac845db406aefb181 \\\n",
+        "  --device cuda \\\n",
+        "  --batch-size 8 \\\n",
+        "  --max-input-tokens 1024 \\\n",
+        "  --limit 200 \\\n",
+        "  --overwrite\n",
+        "\n",
+        "print(\"Minutes:\", round((time.time() - started) / 60, 2))"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "IkCy4SN85o-_",
+        "outputId": "dedc8dbd-ef12-4b00-b011-e226acebd18d"
+      },
+      "outputs": [
+        {
+          "name": "stdout",
+          "output_type": "stream",
+          "text": [
+            "/content/WukaLAW\n",
+            "Loading exact embedding model BAAI/bge-m3 revision=5617a9f61b028005a4858fdac845db406aefb181 device=cuda cache=default offline=False (attempt 1/3)\n",
+            "Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.\n",
+            "Loading weights: 100% 391/391 [00:00<00:00, 18434.74it/s]\n",
+            "Embedding model loaded in 6.54 seconds\n",
+            "/content/WukaLAW/ai/embeddings/model_provider.py:47: FutureWarning: The `get_sentence_embedding_dimension` method has been renamed to `get_embedding_dimension`.\n",
+            "  self.dimension=int(self.model.get_sentence_embedding_dimension());model_limit=int(getattr(self.model,\"max_seq_length\",8192));self.max_input_tokens=min(model_limit,int(max_input_tokens)) if max_input_tokens else model_limit;self.model.max_seq_length=self.max_input_tokens;self.pooling_method=\"sentence-transformers pooling\"\n",
+            "{\n",
+            "  \"source_chunks\": 70244,\n",
+            "  \"canonical_chunks\": 200,\n",
+            "  \"embedded\": 200,\n",
+            "  \"duplicates_avoided\": 131,\n",
+            "  \"failures\": 0,\n",
+            "  \"truncations\": 6,\n",
+            "  \"model\": {\n",
+            "    \"model\": \"BAAI/bge-m3\",\n",
+            "    \"revision\": \"5617a9f61b028005a4858fdac845db406aefb181\",\n",
+            "    \"dimension\": 1024,\n",
+            "    \"device\": \"cuda\",\n",
+            "    \"pooling_method\": \"sentence-transformers pooling\",\n",
+            "    \"normalized\": true\n",
+            "  },\n",
+            "  \"effective_batch_size\": 8,\n",
+            "  \"elapsed_seconds\": 45.22\n",
+            "}\n",
+            "Minutes: 1.14\n"
+          ]
+        }
+      ],
+      "source": [
+        "%cd /content/WukaLAW\n",
+        "\n",
+        "import time\n",
+        "\n",
+        "started = time.time()\n",
+        "\n",
+        "!python scripts/generate_embeddings.py \\\n",
+        "  --input datasets/processed/chunks.jsonl \\\n",
+        "  --metadata-output \"/content/drive/MyDrive/WakuLAW_AI/embeddings/embeddings_gpu_sample_1024.jsonl\" \\\n",
+        "  --vectors-output \"/content/drive/MyDrive/WakuLAW_AI/embeddings/embedding_vectors_gpu_sample_1024.npy\" \\\n",
+        "  --index-output \"/content/drive/MyDrive/WakuLAW_AI/embeddings/embedding_index_gpu_sample_1024.json\" \\\n",
+        "  --model BAAI/bge-m3 \\\n",
+        "  --model-revision 5617a9f61b028005a4858fdac845db406aefb181 \\\n",
+        "  --device cuda \\\n",
+        "  --batch-size 8 \\\n",
+        "  --max-input-tokens 1024 \\\n",
+        "  --limit 200 \\\n",
+        "  --overwrite\n",
+        "\n",
+        "print(\"Minutes:\", round((time.time() - started) / 60, 2))"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": 5,
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "CTgsopmU0Gd4",
+        "outputId": "4e9e24ac-5d69-4c79-9579-40a42ad97d3b"
+      },
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "-rw------- 1 root root 249M Aug  4 10:18 datasets/processed/chunks.jsonl\n"
+          ]
+        }
+      ],
+      "source": [
+        "!mkdir -p datasets/processed\n",
+        "\n",
+        "!cp \"/content/drive/MyDrive/chunks.jsonl\" \\\n",
+        "  datasets/processed/chunks.jsonl\n",
+        "\n",
+        "!ls -lh datasets/processed/chunks.jsonl"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "colab": {
+          "background_save": true,
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "l9ovWAtB6765",
+        "outputId": "baba187d-26e7-4d54-c8a9-c3481dca95c2"
+      },
+      "outputs": [
+        {
+          "name": "stdout",
+          "output_type": "stream",
+          "text": [
+            "/content/WukaLAW\n",
+            "Loading exact embedding model BAAI/bge-m3 revision=5617a9f61b028005a4858fdac845db406aefb181 device=cuda cache=default offline=False (attempt 1/3)\n",
+            "Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.\n",
+            "Loading weights: 100% 391/391 [00:00<00:00, 35367.11it/s]\n",
+            "Embedding model loaded in 5.72 seconds\n",
+            "/content/WukaLAW/ai/embeddings/model_provider.py:47: FutureWarning: The `get_sentence_embedding_dimension` method has been renamed to `get_embedding_dimension`.\n",
+            "  self.dimension=int(self.model.get_sentence_embedding_dimension());model_limit=int(getattr(self.model,\"max_seq_length\",8192));self.max_input_tokens=min(model_limit,int(max_input_tokens)) if max_input_tokens else model_limit;self.model.max_seq_length=self.max_input_tokens;self.pooling_method=\"sentence-transformers pooling\"\n",
+            "{\n",
+            "  \"source_chunks\": 70244,\n",
+            "  \"canonical_chunks\": 5000,\n",
+            "  \"embedded\": 5000,\n",
+            "  \"duplicates_avoided\": 3353,\n",
+            "  \"failures\": 0,\n",
+            "  \"truncations\": 233,\n",
+            "  \"model\": {\n",
+            "    \"model\": \"BAAI/bge-m3\",\n",
+            "    \"revision\": \"5617a9f61b028005a4858fdac845db406aefb181\",\n",
+            "    \"dimension\": 1024,\n",
+            "    \"device\": \"cuda\",\n",
+            "    \"pooling_method\": \"sentence-transformers pooling\",\n",
+            "    \"normalized\": true\n",
+            "  },\n",
+            "  \"effective_batch_size\": 8,\n",
+            "  \"elapsed_seconds\": 978.5\n",
+            "}\n"
+          ]
+        }
+      ],
+      "source": [
+        "%cd /content/WukaLAW\n",
+        "\n",
+        "!python scripts/generate_embeddings.py \\\n",
+        "  --input datasets/processed/chunks.jsonl \\\n",
+        "  --metadata-output \"/content/drive/MyDrive/WakuLAW_AI/embeddings/embeddings_first_5000.jsonl\" \\\n",
+        "  --vectors-output \"/content/drive/MyDrive/WakuLAW_AI/embeddings/embedding_vectors_first_5000.npy\" \\\n",
+        "  --index-output \"/content/drive/MyDrive/WakuLAW_AI/embeddings/embedding_index_first_5000.json\" \\\n",
+        "  --model BAAI/bge-m3 \\\n",
+        "  --model-revision 5617a9f61b028005a4858fdac845db406aefb181 \\\n",
+        "  --device cuda \\\n",
+        "  --batch-size 8 \\\n",
+        "  --max-input-tokens 1024 \\\n",
+        "  --limit 5000 \\\n",
+        "  --overwrite"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "from pathlib import Path\n",
+        "\n",
+        "base = Path(\"/content/drive/MyDrive/WakuLAW_AI/embeddings\")\n",
+        "\n",
+        "for name in [\n",
+        "    \"embeddings_first_5000.jsonl\",\n",
+        "    \"embedding_vectors_first_5000.npy\",\n",
+        "    \"embedding_index_first_5000.json\",\n",
+        "]:\n",
+        "    path = base / name\n",
+        "    print(name, path.exists(), round(path.stat().st_size / 1024 / 1024, 2) if path.exists() else None)"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "2UJDCIkSEWQU",
+        "outputId": "9e944023-dbd4-4ae0-eed5-e958284aa5ac"
+      },
+      "execution_count": 1,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "embeddings_first_5000.jsonl False None\n",
+            "embedding_vectors_first_5000.npy False None\n",
+            "embedding_index_first_5000.json False None\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "import json\n",
+        "import numpy as np\n",
+        "from pathlib import Path\n",
+        "\n",
+        "base = Path(\"/content/drive/MyDrive/WakuLAW_AI/embeddings\")\n",
+        "\n",
+        "metadata_path = base / \"embeddings_first_5000.jsonl\"\n",
+        "vectors_path = base / \"embedding_vectors_first_5000.npy\"\n",
+        "index_path = base / \"embedding_index_first_5000.json\"\n",
+        "\n",
+        "metadata_rows = sum(\n",
+        "    1 for line in metadata_path.open(encoding=\"utf-8\")\n",
+        "    if line.strip()\n",
+        ")\n",
+        "\n",
+        "vectors = np.load(vectors_path)\n",
+        "\n",
+        "with index_path.open(encoding=\"utf-8\") as file:\n",
+        "    index = json.load(file)\n",
+        "\n",
+        "print(\"Metadata rows:\", metadata_rows)\n",
+        "print(\"Vector shape:\", vectors.shape)\n",
+        "print(\"Finite:\", bool(np.isfinite(vectors).all()))\n",
+        "print(\"Model:\", index.get(\"model\"))"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 338
+        },
+        "id": "xuxgsL5gEd6j",
+        "outputId": "bc1e0427-d774-42a8-bb1a-1c105b3119f4"
+      },
+      "execution_count": 2,
+      "outputs": [
+        {
+          "output_type": "error",
+          "ename": "FileNotFoundError",
+          "evalue": "[Errno 2] No such file or directory: '/content/drive/MyDrive/WakuLAW_AI/embeddings/embeddings_first_5000.jsonl'",
+          "traceback": [
+            "\u001b[0;31m---------------------------------------------------------------------------\u001b[0m",
+            "\u001b[0;31mFileNotFoundError\u001b[0m                         Traceback (most recent call last)",
+            "\u001b[0;32m/tmp/ipykernel_654/1288120884.py\u001b[0m in \u001b[0;36m<cell line: 0>\u001b[0;34m()\u001b[0m\n\u001b[1;32m     10\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m     11\u001b[0m metadata_rows = sum(\n\u001b[0;32m---> 12\u001b[0;31m     \u001b[0;36m1\u001b[0m \u001b[0;32mfor\u001b[0m \u001b[0mline\u001b[0m \u001b[0;32min\u001b[0m \u001b[0mmetadata_path\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mopen\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mencoding\u001b[0m\u001b[0;34m=\u001b[0m\u001b[0;34m\"utf-8\"\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m     13\u001b[0m     \u001b[0;32mif\u001b[0m \u001b[0mline\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mstrip\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m     14\u001b[0m )\n",
+            "\u001b[0;32m/usr/lib/python3.12/pathlib.py\u001b[0m in \u001b[0;36mopen\u001b[0;34m(self, mode, buffering, encoding, errors, newline)\u001b[0m\n\u001b[1;32m   1011\u001b[0m         \u001b[0;32mif\u001b[0m \u001b[0;34m\"b\"\u001b[0m \u001b[0;32mnot\u001b[0m \u001b[0;32min\u001b[0m \u001b[0mmode\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m   1012\u001b[0m             \u001b[0mencoding\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0mio\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mtext_encoding\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mencoding\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m-> 1013\u001b[0;31m         \u001b[0;32mreturn\u001b[0m \u001b[0mio\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mopen\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mself\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0mmode\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0mbuffering\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0mencoding\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0merrors\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0mnewline\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m   1014\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m   1015\u001b[0m     \u001b[0;32mdef\u001b[0m \u001b[0mread_bytes\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mself\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n",
+            "\u001b[0;31mFileNotFoundError\u001b[0m: [Errno 2] No such file or directory: '/content/drive/MyDrive/WakuLAW_AI/embeddings/embeddings_first_5000.jsonl'"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "!find \"/content/drive/MyDrive\" -type f | grep -E \"embedding|embeddings|vector|index\""
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "vkpAi6qNGfhF",
+        "outputId": "e9da4c27-d863-4111-b0c9-7f1b29e5f1f4"
+      },
+      "execution_count": 3,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "find: ‘/content/drive/MyDrive’: No such file or directory\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "!find \"/content/WukaLAW\" -type f | grep -E \"embedding|embeddings|vector|index\""
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "U7tj0czSGhPu",
+        "outputId": "76d13d75-a335-4b0e-d9c2-f72daac26228"
+      },
+      "execution_count": 4,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "find: ‘/content/WukaLAW’: No such file or directory\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "!find \"/content/drive/MyDrive\" -type f | grep -E \"embedding|embeddings|vector|index\"\n",
+        "\n",
+        "!find \"/content/WukaLAW\" -type f | grep -E \"embedding|embeddings|vector|index\"\n",
+        "\n",
+        "!find /content -type f -size +1M | grep -E \"embedding|vector|jsonl|npy\""
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "_Br8wlmDGjKv",
+        "outputId": "2eaf16ac-6683-4a83-aeb2-b0d7e030332e"
+      },
+      "execution_count": 10,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "/content/drive/MyDrive/WakuLAW_AI/embeddings/embeddings_gpu_sample.jsonl\n",
+            "/content/drive/MyDrive/WakuLAW_AI/embeddings/embedding_vectors_gpu_sample.npy\n",
+            "/content/drive/MyDrive/WakuLAW_AI/embeddings/embedding_index_gpu_sample.json\n",
+            "/content/drive/MyDrive/WakuLAW_AI/embeddings/embeddings_gpu_sample_1024.jsonl\n",
+            "/content/drive/MyDrive/WakuLAW_AI/embeddings/embedding_vectors_gpu_sample_1024.npy\n",
+            "/content/drive/MyDrive/WakuLAW_AI/embeddings/embedding_index_gpu_sample_1024.json\n",
+            "/content/drive/MyDrive/WakuLAW_AI/embeddings/embeddings_first_5000.jsonl\n",
+            "/content/drive/MyDrive/WakuLAW_AI/embeddings/embedding_vectors_first_5000.npy\n",
+            "/content/drive/MyDrive/WakuLAW_AI/embeddings/embedding_index_first_5000.json\n",
+            "/content/WukaLAW/ai/vectorstore/config.py\n",
+            "/content/WukaLAW/ai/vectorstore/models.py\n",
+            "/content/WukaLAW/ai/vectorstore/collection_manager.py\n",
+            "/content/WukaLAW/ai/vectorstore/__init__.py\n",
+            "/content/WukaLAW/ai/vectorstore/indexer.py\n",
+            "/content/WukaLAW/ai/vectorstore/qdrant_client.py\n",
+            "/content/WukaLAW/ai/embeddings/similarity.py\n",
+            "/content/WukaLAW/ai/embeddings/model_provider.py\n",
+            "/content/WukaLAW/ai/embeddings/deduplication.py\n",
+            "/content/WukaLAW/ai/embeddings/models.py\n",
+            "/content/WukaLAW/ai/embeddings/embedding_pipeline.py\n",
+            "/content/WukaLAW/ai/embeddings/__init__.py\n",
+            "/content/WukaLAW/scripts/create_vector_collection.py\n",
+            "/content/WukaLAW/scripts/search_legal_index.py\n",
+            "/content/WukaLAW/scripts/evaluate_embeddings.py\n",
+            "/content/WukaLAW/scripts/index_embeddings.py\n",
+            "/content/WukaLAW/scripts/generate_embeddings.py\n",
+            "/content/WukaLAW/apps/api/ai/retrieval/index.py\n",
+            "/content/WukaLAW/apps/api/ai/embeddings/__init__.py\n",
+            "/content/WukaLAW/apps/api/ai/embeddings/embedder.py\n",
+            "/content/WukaLAW/apps/web/index.html\n",
+            "/content/WukaLAW/apps/web/src/styles/index.css\n",
+            "/content/WukaLAW/tests/test_vectorstore_models.py\n",
+            "/content/WukaLAW/tests/test_embedding_models.py\n",
+            "/content/WukaLAW/tests/test_vector_indexer.py\n",
+            "/content/WukaLAW/tests/test_embedding_pipeline.py\n",
+            "/content/WukaLAW/tests/test_embedding_deduplication.py\n",
+            "/content/WukaLAW/tests/test_embedding_similarity.py\n",
+            "/content/WukaLAW/.git/index\n",
+            "/content/datasets/processed/chunks.jsonl\n",
+            "/content/drive/MyDrive/chunks.jsonl\n",
+            "/content/drive/MyDrive/WakuLAW_AI/embeddings/embeddings_first_5000.jsonl\n",
+            "/content/drive/MyDrive/WakuLAW_AI/embeddings/embedding_vectors_first_5000.npy\n",
+            "/content/drive/MyDrive/WakuLAW_AI/embeddings/embedding_index_first_5000.json\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "import json\n",
+        "import numpy as np\n",
+        "from pathlib import Path\n",
+        "\n",
+        "base = Path(\"/content/drive/MyDrive/WakuLAW_AI/embeddings\")\n",
+        "\n",
+        "metadata_path = base / \"embeddings_first_5000.jsonl\"\n",
+        "vectors_path = base / \"embedding_vectors_first_5000.npy\"\n",
+        "index_path = base / \"embedding_index_first_5000.json\"\n",
+        "\n",
+        "metadata_rows = sum(\n",
+        "    1 for line in metadata_path.open(encoding=\"utf-8\")\n",
+        "    if line.strip()\n",
+        ")\n",
+        "\n",
+        "vectors = np.load(vectors_path)\n",
+        "\n",
+        "with index_path.open(encoding=\"utf-8\") as file:\n",
+        "    index = json.load(file)\n",
+        "\n",
+        "norms = np.linalg.norm(vectors, axis=1)\n",
+        "\n",
+        "print(\"Metadata rows:\", metadata_rows)\n",
+        "print(\"Vector shape:\", vectors.shape)\n",
+        "print(\"Finite:\", bool(np.isfinite(vectors).all()))\n",
+        "print(\"Norm min:\", float(norms.min()))\n",
+        "print(\"Norm max:\", float(norms.max()))\n",
+        "print(\"Model:\", index.get(\"model\"))\n",
+        "print(\"Dimension:\", index.get(\"dimension\"))"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "jKjVbDC6SbdK",
+        "outputId": "4fe899c7-b2a7-441a-adad-b5460d81310a"
+      },
+      "execution_count": 11,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Metadata rows: 5000\n",
+            "Vector shape: (5000, 1024)\n",
+            "Finite: True\n",
+            "Norm min: 0.9999998807907104\n",
+            "Norm max: 1.0000001192092896\n",
+            "Model: {'model': 'BAAI/bge-m3', 'revision': '5617a9f61b028005a4858fdac845db406aefb181', 'dimension': 1024, 'device': 'cuda', 'pooling_method': 'sentence-transformers pooling', 'normalized': True}\n",
+            "Dimension: None\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "index[\"model\"][\"dimension\"]"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "gmjLqx_TSlo7",
+        "outputId": "9081f926-6d73-4d80-9fc3-e1414ec0cac3"
+      },
+      "execution_count": 12,
+      "outputs": [
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/plain": [
+              "1024"
+            ]
+          },
+          "metadata": {},
+          "execution_count": 12
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "print(\"Dimension:\", index[\"model\"][\"dimension\"])"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "AIwWOdTHSnpa",
+        "outputId": "5bd86d30-86f7-469f-83d7-7d0587801db1"
+      },
+      "execution_count": 13,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Dimension: 1024\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "!pip install -q qdrant-client"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "a2NwWq4LSta7",
+        "outputId": "ad53bb19-d8d2-40c0-b128-2b416d5ca27f"
+      },
+      "execution_count": 14,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "\u001b[?25l   \u001b[90m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\u001b[0m \u001b[32m0.0/398.1 kB\u001b[0m \u001b[31m?\u001b[0m eta \u001b[36m-:--:--\u001b[0m\r\u001b[2K   \u001b[90m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\u001b[0m \u001b[32m398.1/398.1 kB\u001b[0m \u001b[31m12.4 MB/s\u001b[0m eta \u001b[36m0:00:00\u001b[0m\n",
+            "\u001b[?25h"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "!python scripts/create_vector_collection.py \\\n",
+        "  --collection wakulaw_real_5000 \\\n",
+        "  --dimension 1024 \\\n",
+        "  --distance cosine \\\n",
+        "  --local-path \"/content/drive/MyDrive/WakuLAW_AI/qdrant_real_5000\""
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "1GFJff8oSvZH",
+        "outputId": "e50bf52e-8747-4f14-b333-9556fe46b920"
+      },
+      "execution_count": 15,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "/content/WukaLAW/ai/vectorstore/collection_manager.py:25: UserWarning: Payload indexes have no effect in the local Qdrant. Please use server Qdrant if you need payload indexes.\n",
+            "  self.client.client.create_payload_index(name,field_name=field,field_schema=qm.PayloadSchemaType.KEYWORD,wait=True);indexes.append(field)\n",
+            "{\n",
+            "  \"collection\": \"wakulaw_real_5000\",\n",
+            "  \"dimension\": 1024,\n",
+            "  \"distance\": \"cosine\",\n",
+            "  \"payload_indexes\": [\n",
+            "    \"source_dataset\",\n",
+            "    \"document_type\",\n",
+            "    \"court\",\n",
+            "    \"jurisdiction\",\n",
+            "    \"case_category\",\n",
+            "    \"language\",\n",
+            "    \"chunk_type\",\n",
+            "    \"explicit_outcome_phrase\",\n",
+            "    \"document_id\",\n",
+            "    \"canonical_chunk_id\"\n",
+            "  ],\n",
+            "  \"mode\": \"embedded\"\n",
+            "}\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "!python scripts/index_embeddings.py \\\n",
+        "  --metadata \"/content/drive/MyDrive/WakuLAW_AI/embeddings/embeddings_first_5000.jsonl\" \\\n",
+        "  --vectors \"/content/drive/MyDrive/WakuLAW_AI/embeddings/embedding_vectors_first_5000.npy\" \\\n",
+        "  --index \"/content/drive/MyDrive/WakuLAW_AI/embeddings/embedding_index_first_5000.json\" \\\n",
+        "  --collection wakulaw_real_5000 \\\n",
+        "  --local-path \"/content/drive/MyDrive/WakuLAW_AI/qdrant_real_5000\" \\\n",
+        "  --batch-size 100"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "XbT_wNRQSzzn",
+        "outputId": "46cccdea-b178-4a8b-c7f8-85f601ed67c7"
+      },
+      "execution_count": 16,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "{\n",
+            "  \"metadata_rows\": 5000,\n",
+            "  \"vector_rows\": 5000,\n",
+            "  \"accepted\": 5000,\n",
+            "  \"rejected\": 0,\n",
+            "  \"upserted\": 5000,\n",
+            "  \"point_count\": 5000,\n",
+            "  \"batches\": 50,\n",
+            "  \"elapsed_seconds\": 138.03486594499998,\n",
+            "  \"rejected_records\": []\n",
+            "}\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "%cd /content/WukaLAW\n",
+        "\n",
+        "!python scripts/search_legal_index.py \\\n",
+        "  --query \"constitutional protection of fundamental rights in Pakistan\" \\\n",
+        "  --top-k 5 \\\n",
+        "  --collection wakulaw_real_5000 \\\n",
+        "  --local-path \"/content/drive/MyDrive/WakuLAW_AI/qdrant_real_5000\" \\\n",
+        "  --provider sentence-transformer \\\n",
+        "  --model BAAI/bge-m3 \\\n",
+        "  --dimension 1024"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "TFUCKGRKXEnA",
+        "outputId": "0b19a035-ed0f-435a-eed3-b59dce0ccade"
+      },
+      "execution_count": 17,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "/content/WukaLAW\n",
+            "usage: search_legal_index.py [-h] --query QUERY [--top-k TOP_K]\n",
+            "                             [--score-threshold SCORE_THRESHOLD]\n",
+            "                             [--collection COLLECTION]\n",
+            "                             [--local-path LOCAL_PATH] [--url URL]\n",
+            "                             [--api-key API_KEY] [--provider {fake,bge-m3}]\n",
+            "                             [--dimension DIMENSION] [--court COURT]\n",
+            "                             [--case-category CASE_CATEGORY]\n",
+            "                             [--document-type DOCUMENT_TYPE]\n",
+            "                             [--source-dataset SOURCE_DATASET]\n",
+            "                             [--language LANGUAGE] [--chunk-type CHUNK_TYPE]\n",
+            "                             [--require-outcome]\n",
+            "search_legal_index.py: error: argument --provider: invalid choice: 'sentence-transformer' (choose from fake, bge-m3)\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "!python scripts/search_legal_index.py --help"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "4bP6HnapXHTF",
+        "outputId": "08af3c26-044d-4312-d655-19e4343e9474"
+      },
+      "execution_count": 18,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "usage: search_legal_index.py [-h] --query QUERY [--top-k TOP_K]\n",
+            "                             [--score-threshold SCORE_THRESHOLD]\n",
+            "                             [--collection COLLECTION]\n",
+            "                             [--local-path LOCAL_PATH] [--url URL]\n",
+            "                             [--api-key API_KEY] [--provider {fake,bge-m3}]\n",
+            "                             [--dimension DIMENSION] [--court COURT]\n",
+            "                             [--case-category CASE_CATEGORY]\n",
+            "                             [--document-type DOCUMENT_TYPE]\n",
+            "                             [--source-dataset SOURCE_DATASET]\n",
+            "                             [--language LANGUAGE] [--chunk-type CHUNK_TYPE]\n",
+            "                             [--require-outcome]\n",
+            "\n",
+            "options:\n",
+            "  -h, --help            show this help message and exit\n",
+            "  --query QUERY\n",
+            "  --top-k TOP_K\n",
+            "  --score-threshold SCORE_THRESHOLD\n",
+            "  --collection COLLECTION\n",
+            "  --local-path LOCAL_PATH\n",
+            "  --url URL\n",
+            "  --api-key API_KEY\n",
+            "  --provider {fake,bge-m3}\n",
+            "  --dimension DIMENSION\n",
+            "  --court COURT\n",
+            "  --case-category CASE_CATEGORY\n",
+            "  --document-type DOCUMENT_TYPE\n",
+            "  --source-dataset SOURCE_DATASET\n",
+            "  --language LANGUAGE\n",
+            "  --chunk-type CHUNK_TYPE\n",
+            "  --require-outcome\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "%cd /content/WukaLAW\n",
+        "\n",
+        "!python scripts/search_legal_index.py \\\n",
+        "  --query \"constitutional protection of fundamental rights in Pakistan\" \\\n",
+        "  --top-k 5 \\\n",
+        "  --collection wakulaw_real_5000 \\\n",
+        "  --local-path \"/content/drive/MyDrive/WakuLAW_AI/qdrant_real_5000\" \\\n",
+        "  --provider bge-m3 \\\n",
+        "  --dimension 1024"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "9d2_iZuQXPSm",
+        "outputId": "0d585f5f-6de6-4b78-898f-5ce2dd903f67"
+      },
+      "execution_count": 19,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "/content/WukaLAW\n",
+            "Loading exact embedding model BAAI/bge-m3 revision=resolved-main device=cuda cache=default offline=False (attempt 1/3)\n",
+            "modules.json: 100% 349/349 [00:00<00:00, 2.18MB/s]\n",
+            "Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.\n",
+            "config_sentence_transformers.json: 100% 123/123 [00:00<00:00, 241kB/s]\n",
+            "README.md: 100% 15.8k/15.8k [00:00<00:00, 41.1MB/s]\n",
+            "sentence_bert_config.json: 100% 54.0/54.0 [00:00<00:00, 269kB/s]\n",
+            "config.json: 100% 687/687 [00:00<00:00, 3.46MB/s]\n",
+            "\n",
+            "pytorch_model.bin: downloading bytes:   9% 213M/2.27G [00:01<00:08, 235MB/s, 18.6MB/s  ]\n",
+            "pytorch_model.bin: downloading bytes:  22% 500M/2.27G [00:02<00:06, 283MB/s, 41.4MB/s  ]\n",
+            "pytorch_model.bin: downloading bytes:  25% 579M/2.27G [00:03<00:09, 181MB/s, 48.4MB/s  ]\n",
+            "pytorch_model.bin: downloading bytes:  28% 626M/2.27G [00:03<00:10, 163MB/s, 50.4MB/s  ]\n",
+            "pytorch_model.bin: downloading bytes:  29% 653M/2.27G [00:03<00:10, 152MB/s, 52.4MB/s  ]\n",
+            "pytorch_model.bin: downloading bytes:  41% 941M/2.27G [00:04<00:06, 221MB/s, 72.4MB/s  ]\n",
+            "pytorch_model.bin: downloading bytes:  43% 974M/2.27G [00:05<00:07, 166MB/s, 73.5MB/s  ]\n",
+            "pytorch_model.bin: downloading bytes:  45% 1.01G/2.27G [00:05<00:07, 173MB/s, 74.4MB/s  ]\n",
+            "pytorch_model.bin: downloading bytes:  56% 1.26G/2.27G [00:06<00:05, 189MB/s, 89.3MB/s  ]\n",
+            "pytorch_model.bin: downloading bytes:  64% 1.45G/2.27G [00:07<00:03, 237MB/s, 99.1MB/s  ]\n",
+            "pytorch_model.bin: downloading bytes:  67% 1.51G/2.27G [00:07<00:04, 163MB/s,  101MB/s  ]\n",
+            "pytorch_model.bin: reconstructing file:  77% 1.74G/2.27G [00:07<00:02, 255MB/s,  102MB/s  ]\u001b[A\n",
+            "pytorch_model.bin: downloading bytes: 100% 1.52G/1.52G [00:11<00:00, 131MB/s,  101MB/s  ]\n",
+            "pytorch_model.bin: reconstructing file: 100% 2.27G/2.27G [00:11<00:00, 196MB/s,  131MB/s  ]\n",
+            "Loading weights: 100% 391/391 [00:00<00:00, 25429.88it/s]\n",
+            "\n",
+            "model.safetensors: downloading bytes:   0% 0.00/2.27G [00:00<?, ?B/s]\n",
+            "\n",
+            "tokenizer_config.json: 100% 444/444 [00:00<00:00, 2.04MB/s]\n",
+            "\n",
+            "sentencepiece.bpe.model: downloading bytes:  23% 1.18M/5.07M [00:00<00:01, 2.06MB/s, 12.9kB/s  ]\n",
+            "model.safetensors: downloading bytes:   9% 213M/2.27G [00:01<00:11, 178MB/s, 19.2MB/s  ]\n",
+            "sentencepiece.bpe.model: downloading bytes: 100% 3.62M/3.62M [00:00<00:00, 3.75MB/s,  352kB/s  ]\n",
+            "sentencepiece.bpe.model: reconstructing file: 100% 5.07M/5.07M [00:00<00:00, 5.24MB/s,  496kB/s  ]\n",
+            "\n",
+            "tokenizer.json: downloading bytes:   0% 0.00/17.1M [00:00<?, ?B/s]\n",
+            "model.safetensors: downloading bytes:  11% 251M/2.27G [00:01<00:12, 156MB/s, 21.6MB/s  ]\n",
+            "tokenizer.json: downloading bytes:  34% 5.88M/17.1M [00:01<00:01, 11.1MB/s,  101kB/s  ]\n",
+            "tokenizer.json: downloading bytes: 100% 5.88M/5.88M [00:01<00:00, 5.24MB/s,  574kB/s  ]\n",
+            "tokenizer.json: reconstructing file: 100% 17.1M/17.1M [00:01<00:00, 15.2MB/s, 1.67MB/s  ]\n",
+            "model.safetensors: downloading bytes:  22% 506M/2.27G [00:02<00:08, 204MB/s, 42.2MB/s  ]\n",
+            "\n",
+            "special_tokens_map.json: 100% 964/964 [00:00<00:00, 2.65MB/s]\n",
+            "model.safetensors: downloading bytes:  23% 529M/2.27G [00:03<00:10, 172MB/s, 43.9MB/s  ]\n",
+            "model.safetensors: downloading bytes:  40% 909M/2.27G [00:06<00:13, 104MB/s, 66.8MB/s  ]\n",
+            "model.safetensors: downloading bytes:  47% 1.07G/2.27G [00:10<00:20, 57.9MB/s, 69.2MB/s  ]\n",
+            "model.safetensors: downloading bytes:  67% 1.52G/2.27G [00:10<00:05, 148MB/s, 75.6MB/s  ] \n",
+            "model.safetensors: reconstructing file:  89% 2.01G/2.27G [00:11<00:01, 235MB/s,  109MB/s  ]\u001b[A\n",
+            "\n",
+            "config.json: 100% 191/191 [00:00<00:00, 848kB/s]\n",
+            "\n",
+            "model.safetensors: downloading bytes: 100% 1.52G/1.52G [00:13<00:00, 111MB/s, 88.0MB/s  ]\n",
+            "model.safetensors: reconstructing file: 100% 2.27G/2.27G [00:13<00:00, 166MB/s,  125MB/s  ]\n",
+            "Embedding model loaded in 34.79 seconds\n",
+            "/content/WukaLAW/ai/embeddings/model_provider.py:47: FutureWarning: The `get_sentence_embedding_dimension` method has been renamed to `get_embedding_dimension`.\n",
+            "  self.dimension=int(self.model.get_sentence_embedding_dimension());model_limit=int(getattr(self.model,\"max_seq_length\",8192));self.max_input_tokens=min(model_limit,int(max_input_tokens)) if max_input_tokens else model_limit;self.model.max_seq_length=self.max_input_tokens;self.pooling_method=\"sentence-transformers pooling\"\n",
+            "{\n",
+            "  \"engineering_validation_only\": false,\n",
+            "  \"latency_ms\": 867.71,\n",
+            "  \"results\": [\n",
+            "    {\n",
+            "      \"rank\": 1,\n",
+            "      \"score\": 0.6398081120790753,\n",
+            "      \"canonical_chunk_id\": \"wc_02b3d3ead6407677cdd55911ec7205f8\",\n",
+            "      \"source_chunk_ids\": [\n",
+            "        \"wc_02b3d3ead6407677cdd55911ec7205f8\"\n",
+            "      ],\n",
+            "      \"document_id\": \"wl_b773d721f19c17d6bd1dcb3162a16adf\",\n",
+            "      \"title\": \"THE\",\n",
+            "      \"source_path\": \"laws/pdf_data(1).json#entry=613\",\n",
+            "      \"source_dataset\": \"laws\",\n",
+            "      \"document_type\": \"law\",\n",
+            "      \"court\": \"Supreme Court of Pakistan\",\n",
+            "      \"jurisdiction\": \"Pakistan\",\n",
+            "      \"case_category\": \"Constitutional Cases\",\n",
+            "      \"case_number\": null,\n",
+            "      \"chunk_type\": \"section\",\n",
+            "      \"heading\": \"1. The Republic and its territories\",\n",
+            "      \"section_number\": null,\n",
+            "      \"article_number\": null,\n",
+            "      \"language\": \"English\",\n",
+            "      \"text_preview\": \"1. The Republic and its territories\\n\\n11. (1) Pakistan shall be Federal Republic to be known as the\\nIslamic Republic of Pakistan, hereinafter referred to as Pakistan.\\n\\n2[(2) The territories of Pakistan shall comprise —\\n\\n(a) the Provinces of 3[Balochistan ], the 4[Khyber\\nPakhtunkhwa], the Punjab and 5\",\n",
+            "      \"explicit_outcome_phrase\": null,\n",
+            "      \"legal_citations\": [],\n",
+            "      \"laws_cited\": [\n",
+            "        \"The provisions of the Constitution\",\n",
+            "        \"By the Constitution\",\n",
+            "        \"Amended by the Constitution\",\n",
+            "        \"Revival of the Constitution\",\n",
+            "        \"The Constitution\"\n",
+            "      ],\n",
+            "      \"sections_cited\": [\n",
+            "        \"2\",\n",
+            "        \"3\",\n",
+            "        \"5\",\n",
+            "        \"6\",\n",
+            "        \"4\",\n",
+            "        \"7\",\n",
+            "        \"8\",\n",
+            "        \"9\",\n",
+            "        \"10\",\n",
+            "        \"11\",\n",
+            "        \"12\",\n",
+            "        \"13\",\n",
+            "        \"14\",\n",
+            "        \"16\",\n",
+            "        \"18\",\n",
+            "        \"19\",\n",
+            "        \"20\",\n",
+            "        \"21\",\n",
+            "        \"27\",\n",
+            "        \"29\",\n",
+            "        \"30\",\n",
+            "        \"31\",\n",
+            "        \"33\",\n",
+            "        \"1\",\n",
+            "        \"37\",\n",
+            "        \"70\",\n",
+            "        \"73\",\n",
+            "        \"74\",\n",
+            "        \"85\",\n",
+            "        \"97\",\n",
+            "        \"98\",\n",
+            "        \"99\",\n",
+            "        \"101\"\n",
+            "      ],\n",
+            "      \"articles_cited\": [\n",
+            "        \"6, 8 to 28\",\n",
+            "        \"101\",\n",
+            "        \"199, 213 to 216 (both inclusive) and 270\",\n",
+            "        \"2\",\n",
+            "        \"2A\",\n",
+            "        \"10\",\n",
+            "        \"270\",\n",
+            "        \"70\",\n",
+            "        \"73\",\n",
+            "        \"3\",\n",
+            "        \"99\",\n",
+            "        \"1\",\n",
+            "        \"199\",\n",
+            "        \"4\",\n",
+            "        \"5\",\n",
+            "        \"6\",\n",
+            "        \"7\",\n",
+            "        \"8\",\n",
+            "        \"9\",\n",
+            "        \"213\",\n",
+            "        \"273\",\n",
+            "        \"127\"\n",
+            "      ],\n",
+            "      \"duplicate_sources\": [],\n",
+            "      \"payload\": {\n",
+            "        \"embedding_id\": \"we_94479e8b9c1921fb1012835a5412f92f\",\n",
+            "        \"canonical_chunk_id\": \"wc_02b3d3ead6407677cdd55911ec7205f8\",\n",
+            "        \"source_chunk_ids\": [\n",
+            "          \"wc_02b3d3ead6407677cdd55911ec7205f8\"\n",
+            "        ],\n",
+            "        \"document_id\": \"wl_b773d721f19c17d6bd1dcb3162a16adf\",\n",
+            "        \"source_dataset\": \"laws\",\n",
+            "        \"source_path\": \"laws/pdf_data(1).json#entry=613\",\n",
+            "        \"document_type\": \"law\",\n",
+            "        \"court\": \"Supreme Court of Pakistan\",\n",
+            "        \"jurisdiction\": \"Pakistan\",\n",
+            "        \"case_category\": \"Constitutional Cases\",\n",
+            "        \"case_number\": null,\n",
+            "        \"title\": \"THE\",\n",
+            "        \"chunk_type\": \"section\",\n",
+            "        \"heading\": \"1. The Republic and its territories\",\n",
+            "        \"section_number\": null,\n",
+            "        \"article_number\": null,\n",
+            "        \"language\": \"English\",\n",
+            "        \"explicit_outcome_phrase\": null,\n",
+            "        \"legal_citations\": [],\n",
+            "        \"laws_cited\": [\n",
+            "          \"The provisions of the Constitution\",\n",
+            "          \"By the Constitution\",\n",
+            "          \"Amended by the Constitution\",\n",
+            "          \"Revival of the Constitution\",\n",
+            "          \"The Constitution\"\n",
+            "        ],\n",
+            "        \"sections_cited\": [\n",
+            "          \"2\",\n",
+            "          \"3\",\n",
+            "          \"5\",\n",
+            "          \"6\",\n",
+            "          \"4\",\n",
+            "          \"7\",\n",
+            "          \"8\",\n",
+            "          \"9\",\n",
+            "          \"10\",\n",
+            "          \"11\",\n",
+            "          \"12\",\n",
+            "          \"13\",\n",
+            "          \"14\",\n",
+            "          \"16\",\n",
+            "          \"18\",\n",
+            "          \"19\",\n",
+            "          \"20\",\n",
+            "          \"21\",\n",
+            "          \"27\",\n",
+            "          \"29\",\n",
+            "          \"30\",\n",
+            "          \"31\",\n",
+            "          \"33\",\n",
+            "          \"1\",\n",
+            "          \"37\",\n",
+            "          \"70\",\n",
+            "          \"73\",\n",
+            "          \"74\",\n",
+            "          \"85\",\n",
+            "          \"97\",\n",
+            "          \"98\",\n",
+            "          \"99\",\n",
+            "          \"101\"\n",
+            "        ],\n",
+            "        \"articles_cited\": [\n",
+            "          \"6, 8 to 28\",\n",
+            "          \"101\",\n",
+            "          \"199, 213 to 216 (both inclusive) and 270\",\n",
+            "          \"2\",\n",
+            "          \"2A\",\n",
+            "          \"10\",\n",
+            "          \"270\",\n",
+            "          \"70\",\n",
+            "          \"73\",\n",
+            "          \"3\",\n",
+            "          \"99\",\n",
+            "          \"1\",\n",
+            "          \"199\",\n",
+            "          \"4\",\n",
+            "          \"5\",\n",
+            "          \"6\",\n",
+            "          \"7\",\n",
+            "          \"8\",\n",
+            "          \"9\",\n",
+            "          \"213\",\n",
+            "          \"273\",\n",
+            "          \"127\"\n",
+            "        ],\n",
+            "        \"duplicate_hash\": \"800c3d555479ced7b63afec1e980015740a4f8ce2f683dd9bd0b9d0abad40567\",\n",
+            "        \"text_hash\": \"800c3d555479ced7b63afec1e980015740a4f8ce2f683dd9bd0b9d0abad40567\",\n",
+            "        \"text_preview\": \"1. The Republic and its territories\\n\\n11. (1) Pakistan shall be Federal Republic to be known as the\\nIslamic Republic of Pakistan, hereinafter referred to as Pakistan.\\n\\n2[(2) The territories of Pakistan shall comprise —\\n\\n(a) the Provinces of 3[Balochistan ], the 4[Khyber\\nPakhtunkhwa], the Punjab and 5\",\n",
+            "        \"pipeline_version\": \"task-005-v1\",\n",
+            "        \"duplicate_sources\": []\n",
+            "      },\n",
+            "      \"warnings\": []\n",
+            "    },\n",
+            "    {\n",
+            "      \"rank\": 2,\n",
+            "      \"score\": 0.6342183675082392,\n",
+            "      \"canonical_chunk_id\": \"wc_196d9dd779d5425ba5233061b3f978e3\",\n",
+            "      \"source_chunk_ids\": [\n",
+            "        \"wc_196d9dd779d5425ba5233061b3f978e3\",\n",
+            "        \"wc_1eeb426868a2f6df99bc4565e646da26\"\n",
+            "      ],\n",
+            "      \"document_id\": \"wl_abe1e125b816fe11204b18338c009884\",\n",
+            "      \"title\": \"719 C.A Supreme (1645)\",\n",
+            "      \"source_path\": \"labeled_cases/Labeled Data/Suo Moto Cases/719_C.A_supreme (1645).txt\",\n",
+            "      \"source_dataset\": \"labeled_cases\",\n",
+            "      \"document_type\": \"judgment\",\n",
+            "      \"court\": \"Supreme Court of Pakistan\",\n",
+            "      \"jurisdiction\": \"Pakistan\",\n",
+            "      \"case_category\": \"Suo Moto Cases\",\n",
+            "      \"case_number\": \"Constitution of 1962\",\n",
+            "      \"chunk_type\": \"judgment_body\",\n",
+            "      \"heading\": \"19. Fundamental Right s as guaranteed under the Constitution\",\n",
+            "      \"section_number\": null,\n",
+            "      \"article_number\": null,\n",
+            "      \"language\": \"English\",\n",
+            "      \"text_preview\": \"19. Fundamental Right s as guaranteed under the Constitution\\nsafeguard citizens or persons, as the case may be , from government\\naction such that no law, custom or usage can be made in derogation of\\nor in violation of any fundamental right . In the event that a law, custom\\nor usage is violative of a\",\n",
+            "      \"explicit_outcome_phrase\": null,\n",
+            "      \"legal_citations\": [],\n",
+            "      \"laws_cited\": [\n",
+            "        \"The Constitution\",\n",
+            "        \"Fundamental Right s as guaranteed under the Constitution\"\n",
+            "      ],\n",
+            "      \"sections_cited\": [],\n",
+            "      \"articles_cited\": [\n",
+            "        \"9\",\n",
+            "        \"8(5)\",\n",
+            "        \"1\",\n",
+            "        \"8\"\n",
+            "      ],\n",
+            "      \"duplicate_sources\": [\n",
+            "        \"wc_1eeb426868a2f6df99bc4565e646da26\"\n",
+            "      ],\n",
+            "      \"payload\": {\n",
+            "        \"embedding_id\": \"we_5fc9dcb5ba360387539c1a79fe49fa1e\",\n",
+            "        \"canonical_chunk_id\": \"wc_196d9dd779d5425ba5233061b3f978e3\",\n",
+            "        \"source_chunk_ids\": [\n",
+            "          \"wc_196d9dd779d5425ba5233061b3f978e3\",\n",
+            "          \"wc_1eeb426868a2f6df99bc4565e646da26\"\n",
+            "        ],\n",
+            "        \"document_id\": \"wl_abe1e125b816fe11204b18338c009884\",\n",
+            "        \"source_dataset\": \"labeled_cases\",\n",
+            "        \"source_path\": \"labeled_cases/Labeled Data/Suo Moto Cases/719_C.A_supreme (1645).txt\",\n",
+            "        \"document_type\": \"judgment\",\n",
+            "        \"court\": \"Supreme Court of Pakistan\",\n",
+            "        \"jurisdiction\": \"Pakistan\",\n",
+            "        \"case_category\": \"Suo Moto Cases\",\n",
+            "        \"case_number\": \"Constitution of 1962\",\n",
+            "        \"title\": \"719 C.A Supreme (1645)\",\n",
+            "        \"chunk_type\": \"judgment_body\",\n",
+            "        \"heading\": \"19. Fundamental Right s as guaranteed under the Constitution\",\n",
+            "        \"section_number\": null,\n",
+            "        \"article_number\": null,\n",
+            "        \"language\": \"English\",\n",
+            "        \"explicit_outcome_phrase\": null,\n",
+            "        \"legal_citations\": [],\n",
+            "        \"laws_cited\": [\n",
+            "          \"The Constitution\",\n",
+            "          \"Fundamental Right s as guaranteed under the Constitution\"\n",
+            "        ],\n",
+            "        \"sections_cited\": [],\n",
+            "        \"articles_cited\": [\n",
+            "          \"9\",\n",
+            "          \"8(5)\",\n",
+            "          \"1\",\n",
+            "          \"8\"\n",
+            "        ],\n",
+            "        \"duplicate_hash\": \"a7ec2dd0bb9abb5ff316c50199f3cc223367904646520bdc89dae1046166b52c\",\n",
+            "        \"text_hash\": \"a7ec2dd0bb9abb5ff316c50199f3cc223367904646520bdc89dae1046166b52c\",\n",
+            "        \"text_preview\": \"19. Fundamental Right s as guaranteed under the Constitution\\nsafeguard citizens or persons, as the case may be , from government\\naction such that no law, custom or usage can be made in derogation of\\nor in violation of any fundamental right . In the event that a law, custom\\nor usage is violative of a\",\n",
+            "        \"pipeline_version\": \"task-005-v1\",\n",
+            "        \"duplicate_sources\": [\n",
+            "          \"wc_1eeb426868a2f6df99bc4565e646da26\"\n",
+            "        ]\n",
+            "      },\n",
+            "      \"warnings\": []\n",
+            "    },\n",
+            "    {\n",
+            "      \"rank\": 3,\n",
+            "      \"score\": 0.6329930452665495,\n",
+            "      \"canonical_chunk_id\": \"wc_0775b1f6e8b4e688f84235a37108f6e8\",\n",
+            "      \"source_chunk_ids\": [\n",
+            "        \"wc_0775b1f6e8b4e688f84235a37108f6e8\",\n",
+            "        \"wc_d599d4cdb447177d6c7b06d2ecd04bff\"\n",
+            "      ],\n",
+            "      \"document_id\": \"wl_994fe58f6a0ab4b93644dbedac780cc8\",\n",
+            "      \"title\": \"701 C.A Supreme (1629)\",\n",
+            "      \"source_path\": \"labeled_cases/Labeled Data/Suo Moto Cases/701_C.A_supreme (1629).txt\",\n",
+            "      \"source_dataset\": \"labeled_cases\",\n",
+            "      \"document_type\": \"judgment\",\n",
+            "      \"court\": \"Supreme Court of Pakistan\",\n",
+            "      \"jurisdiction\": \"Pakistan\",\n",
+            "      \"case_category\": \"Suo Moto Cases\",\n",
+            "      \"case_number\": \"Constitutional Petition No.21/2023\",\n",
+            "      \"chunk_type\": \"judgment_body\",\n",
+            "      \"heading\": \"16. As will be evident in the later parts of this judgement,\",\n",
+            "      \"section_number\": null,\n",
+            "      \"article_number\": null,\n",
+            "      \"language\": \"English\",\n",
+            "      \"text_preview\": \"16. As will be evident in the later parts of this judgement,\\nthe 2023 Act is an intrusion in the basic and fundamental feature\\nof the Constitution namely the independence of the judiciary\\ndirectly and undisputedly affects fundamental rights of citizens .\\nThe protection , preservation and enforcement\",\n",
+            "      \"explicit_outcome_phrase\": null,\n",
+            "      \"legal_citations\": [\n",
+            "        \"PLD 2012 SC 923\",\n",
+            "        \"PLD 2013 SC 501\",\n",
+            "        \"2012 SC 923\",\n",
+            "        \"2013 SC 501\"\n",
+            "      ],\n",
+            "      \"laws_cited\": [\n",
+            "        \"The Constitution\"\n",
+            "      ],\n",
+            "      \"sections_cited\": [\n",
+            "        \"2\",\n",
+            "        \"4\",\n",
+            "        \"3\",\n",
+            "        \"5\",\n",
+            "        \"6\",\n",
+            "        \"13\"\n",
+            "      ],\n",
+            "      \"articles_cited\": [\n",
+            "        \"184(3)\",\n",
+            "        \"1\",\n",
+            "        \"184\",\n",
+            "        \"9\",\n",
+            "        \"9 and 25\",\n",
+            "        \"6\"\n",
+            "      ],\n",
+            "      \"duplicate_sources\": [\n",
+            "        \"wc_d599d4cdb447177d6c7b06d2ecd04bff\"\n",
+            "      ],\n",
+            "      \"payload\": {\n",
+            "        \"embedding_id\": \"we_37858f335a29b94a57de084fd75089a5\",\n",
+            "        \"canonical_chunk_id\": \"wc_0775b1f6e8b4e688f84235a37108f6e8\",\n",
+            "        \"source_chunk_ids\": [\n",
+            "          \"wc_0775b1f6e8b4e688f84235a37108f6e8\",\n",
+            "          \"wc_d599d4cdb447177d6c7b06d2ecd04bff\"\n",
+            "        ],\n",
+            "        \"document_id\": \"wl_994fe58f6a0ab4b93644dbedac780cc8\",\n",
+            "        \"source_dataset\": \"labeled_cases\",\n",
+            "        \"source_path\": \"labeled_cases/Labeled Data/Suo Moto Cases/701_C.A_supreme (1629).txt\",\n",
+            "        \"document_type\": \"judgment\",\n",
+            "        \"court\": \"Supreme Court of Pakistan\",\n",
+            "        \"jurisdiction\": \"Pakistan\",\n",
+            "        \"case_category\": \"Suo Moto Cases\",\n",
+            "        \"case_number\": \"Constitutional Petition No.21/2023\",\n",
+            "        \"title\": \"701 C.A Supreme (1629)\",\n",
+            "        \"chunk_type\": \"judgment_body\",\n",
+            "        \"heading\": \"16. As will be evident in the later parts of this judgement,\",\n",
+            "        \"section_number\": null,\n",
+            "        \"article_number\": null,\n",
+            "        \"language\": \"English\",\n",
+            "        \"explicit_outcome_phrase\": null,\n",
+            "        \"legal_citations\": [\n",
+            "          \"PLD 2012 SC 923\",\n",
+            "          \"PLD 2013 SC 501\",\n",
+            "          \"2012 SC 923\",\n",
+            "          \"2013 SC 501\"\n",
+            "        ],\n",
+            "        \"laws_cited\": [\n",
+            "          \"The Constitution\"\n",
+            "        ],\n",
+            "        \"sections_cited\": [\n",
+            "          \"2\",\n",
+            "          \"4\",\n",
+            "          \"3\",\n",
+            "          \"5\",\n",
+            "          \"6\",\n",
+            "          \"13\"\n",
+            "        ],\n",
+            "        \"articles_cited\": [\n",
+            "          \"184(3)\",\n",
+            "          \"1\",\n",
+            "          \"184\",\n",
+            "          \"9\",\n",
+            "          \"9 and 25\",\n",
+            "          \"6\"\n",
+            "        ],\n",
+            "        \"duplicate_hash\": \"190d9f9802b360799854c07a9842449dbebbed9a305cc7d24ab571348bf56893\",\n",
+            "        \"text_hash\": \"190d9f9802b360799854c07a9842449dbebbed9a305cc7d24ab571348bf56893\",\n",
+            "        \"text_preview\": \"16. As will be evident in the later parts of this judgement,\\nthe 2023 Act is an intrusion in the basic and fundamental feature\\nof the Constitution namely the independence of the judiciary\\ndirectly and undisputedly affects fundamental rights of citizens .\\nThe protection , preservation and enforcement\",\n",
+            "        \"pipeline_version\": \"task-005-v1\",\n",
+            "        \"duplicate_sources\": [\n",
+            "          \"wc_d599d4cdb447177d6c7b06d2ecd04bff\"\n",
+            "        ]\n",
+            "      },\n",
+            "      \"warnings\": []\n",
+            "    },\n",
+            "    {\n",
+            "      \"rank\": 4,\n",
+            "      \"score\": 0.6299919107896426,\n",
+            "      \"canonical_chunk_id\": \"wc_0979efce106ea8f7a19fe872c02d798a\",\n",
+            "      \"source_chunk_ids\": [\n",
+            "        \"wc_0979efce106ea8f7a19fe872c02d798a\",\n",
+            "        \"wc_49f26dc0ab9a200b49616f5d5b42889e\"\n",
+            "      ],\n",
+            "      \"document_id\": \"wl_8624871a2eae5afdaf3b46a1a3257b4c\",\n",
+            "      \"title\": \"776 C.A Supreme (1697)\",\n",
+            "      \"source_path\": \"labeled_cases/Labeled Data/Suo Moto Cases/776_C.A_supreme (1697).txt\",\n",
+            "      \"source_dataset\": \"labeled_cases\",\n",
+            "      \"document_type\": \"judgment\",\n",
+            "      \"court\": \"Supreme Court of Pakistan\",\n",
+            "      \"jurisdiction\": \"Pakistan\",\n",
+            "      \"case_category\": \"Suo Moto Cases\",\n",
+            "      \"case_number\": \"CIVIL PETITION NO.1901 OF 2010\",\n",
+            "      \"chunk_type\": \"judgment_body\",\n",
+            "      \"heading\": \"2014) Const. P. No. 12 of 2010 etc\",\n",
+            "      \"section_number\": null,\n",
+            "      \"article_number\": null,\n",
+            "      \"language\": \"English\",\n",
+            "      \"text_preview\": \"2014) Const. P. No. 12 of 2010 etc\\n(ii) A similar preamble is available in Article 2 of the Act 2015 by\\nvirtue of which the Pakistan Army Act 1952 has been amended to\\ngive the jurisdiction to the Army Courts for the trial of such persons\\nwho claim or are known to belong to any terrorist group or\\norg\",\n",
+            "      \"explicit_outcome_phrase\": null,\n",
+            "      \"legal_citations\": [\n",
+            "        \"PLD 1993 SC 341\",\n",
+            "        \"1993 SC 341\"\n",
+            "      ],\n",
+            "      \"laws_cited\": [\n",
+            "        \"Of The Constitution\",\n",
+            "        \"The Pakistan Army Act\",\n",
+            "        \"The Pakistan Air Force Act, 1953\",\n",
+            "        \"The Protection of Pakistan Act, 2014\",\n",
+            "        \"Army Act\",\n",
+            "        \"The Constitution\",\n",
+            "        \"Pakistan Army Act\",\n",
+            "        \"Pakistan Act, 2014\"\n",
+            "      ],\n",
+            "      \"sections_cited\": [\n",
+            "        \"6\",\n",
+            "        \"5\",\n",
+            "        \"2\"\n",
+            "      ],\n",
+            "      \"articles_cited\": [\n",
+            "        \"8\",\n",
+            "        \"5\",\n",
+            "        \"199\",\n",
+            "        \"6\",\n",
+            "        \"20\",\n",
+            "        \"19\",\n",
+            "        \"41\",\n",
+            "        \"4\",\n",
+            "        \"2\",\n",
+            "        \"3\"\n",
+            "      ],\n",
+            "      \"duplicate_sources\": [\n",
+            "        \"wc_49f26dc0ab9a200b49616f5d5b42889e\"\n",
+            "      ],\n",
+            "      \"payload\": {\n",
+            "        \"embedding_id\": \"we_fa0eda009d386d184d41a3201ff4c12f\",\n",
+            "        \"canonical_chunk_id\": \"wc_0979efce106ea8f7a19fe872c02d798a\",\n",
+            "        \"source_chunk_ids\": [\n",
+            "          \"wc_0979efce106ea8f7a19fe872c02d798a\",\n",
+            "          \"wc_49f26dc0ab9a200b49616f5d5b42889e\"\n",
+            "        ],\n",
+            "        \"document_id\": \"wl_8624871a2eae5afdaf3b46a1a3257b4c\",\n",
+            "        \"source_dataset\": \"labeled_cases\",\n",
+            "        \"source_path\": \"labeled_cases/Labeled Data/Suo Moto Cases/776_C.A_supreme (1697).txt\",\n",
+            "        \"document_type\": \"judgment\",\n",
+            "        \"court\": \"Supreme Court of Pakistan\",\n",
+            "        \"jurisdiction\": \"Pakistan\",\n",
+            "        \"case_category\": \"Suo Moto Cases\",\n",
+            "        \"case_number\": \"CIVIL PETITION NO.1901 OF 2010\",\n",
+            "        \"title\": \"776 C.A Supreme (1697)\",\n",
+            "        \"chunk_type\": \"judgment_body\",\n",
+            "        \"heading\": \"2014) Const. P. No. 12 of 2010 etc\",\n",
+            "        \"section_number\": null,\n",
+            "        \"article_number\": null,\n",
+            "        \"language\": \"English\",\n",
+            "        \"explicit_outcome_phrase\": null,\n",
+            "        \"legal_citations\": [\n",
+            "          \"PLD 1993 SC 341\",\n",
+            "          \"1993 SC 341\"\n",
+            "        ],\n",
+            "        \"laws_cited\": [\n",
+            "          \"Of The Constitution\",\n",
+            "          \"The Pakistan Army Act\",\n",
+            "          \"The Pakistan Air Force Act, 1953\",\n",
+            "          \"The Protection of Pakistan Act, 2014\",\n",
+            "          \"Army Act\",\n",
+            "          \"The Constitution\",\n",
+            "          \"Pakistan Army Act\",\n",
+            "          \"Pakistan Act, 2014\"\n",
+            "        ],\n",
+            "        \"sections_cited\": [\n",
+            "          \"6\",\n",
+            "          \"5\",\n",
+            "          \"2\"\n",
+            "        ],\n",
+            "        \"articles_cited\": [\n",
+            "          \"8\",\n",
+            "          \"5\",\n",
+            "          \"199\",\n",
+            "          \"6\",\n",
+            "          \"20\",\n",
+            "          \"19\",\n",
+            "          \"41\",\n",
+            "          \"4\",\n",
+            "          \"2\",\n",
+            "          \"3\"\n",
+            "        ],\n",
+            "        \"duplicate_hash\": \"2d0f2bbd92db04ee639427bb67746ffea37de8f5019cc1f88ef52016ccf87316\",\n",
+            "        \"text_hash\": \"2d0f2bbd92db04ee639427bb67746ffea37de8f5019cc1f88ef52016ccf87316\",\n",
+            "        \"text_preview\": \"2014) Const. P. No. 12 of 2010 etc\\n(ii) A similar preamble is available in Article 2 of the Act 2015 by\\nvirtue of which the Pakistan Army Act 1952 has been amended to\\ngive the jurisdiction to the Army Courts for the trial of such persons\\nwho claim or are known to belong to any terrorist group or\\norg\",\n",
+            "        \"pipeline_version\": \"task-005-v1\",\n",
+            "        \"duplicate_sources\": [\n",
+            "          \"wc_49f26dc0ab9a200b49616f5d5b42889e\"\n",
+            "        ]\n",
+            "      },\n",
+            "      \"warnings\": []\n",
+            "    },\n",
+            "    {\n",
+            "      \"rank\": 5,\n",
+            "      \"score\": 0.6278658560576537,\n",
+            "      \"canonical_chunk_id\": \"wc_199dfb08ecc18ad422b6d12895ffea19\",\n",
+            "      \"source_chunk_ids\": [\n",
+            "        \"wc_199dfb08ecc18ad422b6d12895ffea19\"\n",
+            "      ],\n",
+            "      \"document_id\": \"wl_e45fe820fe9412e795c4f58118c9a829\",\n",
+            "      \"title\": \"THE SUPREME COURT (PRACTICE AND PROCEDURE)\",\n",
+            "      \"source_path\": \"laws/pdf_data(1).json#entry=16\",\n",
+            "      \"source_dataset\": \"laws\",\n",
+            "      \"document_type\": \"law\",\n",
+            "      \"court\": \"Supreme Court of Pakistan\",\n",
+            "      \"jurisdiction\": \"Pakistan\",\n",
+            "      \"case_category\": \"Constitutional Cases\",\n",
+            "      \"case_number\": null,\n",
+            "      \"chunk_type\": \"section\",\n",
+            "      \"heading\": \"3. Exercise of original jurisdiction by the Supreme Court .__ Any matter invoking exercise\",\n",
+            "      \"section_number\": null,\n",
+            "      \"article_number\": null,\n",
+            "      \"language\": \"English\",\n",
+            "      \"text_preview\": \"3. Exercise of original jurisdiction by the Supreme Court .__ Any matter invoking exercise\\nof original jurisdiction under clause (3) of Article 184 of the Constitution shall be first placed before\\nthe Committee constituted under section 2 for examination and if the Committee is of the view that a\\nqu\",\n",
+            "      \"explicit_outcome_phrase\": null,\n",
+            "      \"legal_citations\": [],\n",
+            "      \"laws_cited\": [\n",
+            "        \"This Act\",\n",
+            "        \"Chapter I of Part II of the Constitution\",\n",
+            "        \"Interpr etation of the Constitution\",\n",
+            "        \"The provisions of this Act\"\n",
+            "      ],\n",
+            "      \"sections_cited\": [\n",
+            "        \"2\"\n",
+            "      ],\n",
+            "      \"articles_cited\": [\n",
+            "        \"4\",\n",
+            "        \"184\",\n",
+            "        \"188\"\n",
+            "      ],\n",
+            "      \"duplicate_sources\": [],\n",
+            "      \"payload\": {\n",
+            "        \"embedding_id\": \"we_6598bd13cbac9b6aa4269af8d874c1a0\",\n",
+            "        \"canonical_chunk_id\": \"wc_199dfb08ecc18ad422b6d12895ffea19\",\n",
+            "        \"source_chunk_ids\": [\n",
+            "          \"wc_199dfb08ecc18ad422b6d12895ffea19\"\n",
+            "        ],\n",
+            "        \"document_id\": \"wl_e45fe820fe9412e795c4f58118c9a829\",\n",
+            "        \"source_dataset\": \"laws\",\n",
+            "        \"source_path\": \"laws/pdf_data(1).json#entry=16\",\n",
+            "        \"document_type\": \"law\",\n",
+            "        \"court\": \"Supreme Court of Pakistan\",\n",
+            "        \"jurisdiction\": \"Pakistan\",\n",
+            "        \"case_category\": \"Constitutional Cases\",\n",
+            "        \"case_number\": null,\n",
+            "        \"title\": \"THE SUPREME COURT (PRACTICE AND PROCEDURE)\",\n",
+            "        \"chunk_type\": \"section\",\n",
+            "        \"heading\": \"3. Exercise of original jurisdiction by the Supreme Court .__ Any matter invoking exercise\",\n",
+            "        \"section_number\": null,\n",
+            "        \"article_number\": null,\n",
+            "        \"language\": \"English\",\n",
+            "        \"explicit_outcome_phrase\": null,\n",
+            "        \"legal_citations\": [],\n",
+            "        \"laws_cited\": [\n",
+            "          \"This Act\",\n",
+            "          \"Chapter I of Part II of the Constitution\",\n",
+            "          \"Interpr etation of the Constitution\",\n",
+            "          \"The provisions of this Act\"\n",
+            "        ],\n",
+            "        \"sections_cited\": [\n",
+            "          \"2\"\n",
+            "        ],\n",
+            "        \"articles_cited\": [\n",
+            "          \"4\",\n",
+            "          \"184\",\n",
+            "          \"188\"\n",
+            "        ],\n",
+            "        \"duplicate_hash\": \"e12703e3866c5208d142aa9e91d09a4b4bc282088ced53460ff5104ebe2e98c6\",\n",
+            "        \"text_hash\": \"e12703e3866c5208d142aa9e91d09a4b4bc282088ced53460ff5104ebe2e98c6\",\n",
+            "        \"text_preview\": \"3. Exercise of original jurisdiction by the Supreme Court .__ Any matter invoking exercise\\nof original jurisdiction under clause (3) of Article 184 of the Constitution shall be first placed before\\nthe Committee constituted under section 2 for examination and if the Committee is of the view that a\\nqu\",\n",
+            "        \"pipeline_version\": \"task-005-v1\",\n",
+            "        \"duplicate_sources\": []\n",
+            "      },\n",
+            "      \"warnings\": []\n",
+            "    }\n",
+            "  ]\n",
+            "}\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [],
+      "metadata": {
+        "id": "bzt2KqSwX7Be"
+      },
+      "execution_count": null,
+      "outputs": []
+    }
+  ],
+  "metadata": {
+    "accelerator": "GPU",
+    "colab": {
+      "gpuType": "T4",
+      "provenance": [],
+      "authorship_tag": "ABX9TyNc9kPP2ghkFd6e5YCdx60X",
+      "include_colab_link": true
+    },
+    "kernelspec": {
+      "display_name": "Python 3",
+      "name": "python3"
+    },
+    "language_info": {
+      "name": "python"
+    }
+  },
+  "nbformat": 4,
+  "nbformat_minor": 0
+}
