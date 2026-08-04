@@ -3,4 +3,4 @@ from .llm_provider import FakeLLMProvider, LLMProvider, LocalLlamaProvider, Olla
 from .models import Intent, RagResult, ValidationStatus
 from .rag_pipeline import RagPipeline
 
-__all__ = ["FakeLLMProvider", "Intent", "LLMProvider", "LocalLlamaProvider", "OllamaProvider", "OpenAIProvider", "RagPipeline", "RagResult", "ValidationStatus"]
+__all__ = ["FakeLLMProvider", "Intent", "LLMProvider"," GeminiProvider", "LocalLlamaProvider", "OllamaProvider", "OpenAIProvider", "RagPipeline", "RagResult", "ValidationStatus"]

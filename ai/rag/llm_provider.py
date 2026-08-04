@@ -35,7 +35,38 @@ class OpenAIProvider(LLMProvider):
         if data.get("output_text"):
             return str(data["output_text"])
         return "".join(part.get("text", "") for item in data.get("output", []) for part in item.get("content", []) if part.get("type") == "output_text")
+class GeminiProvider(LLMProvider):
+    def __init__(
+        self,
+        model: str | None = None,
+        api_key: str | None = None,
+    ):
+        self.model = model or os.getenv("GEMINI_MODEL", "gemini-3.6-flash")
+        self.api_key = api_key or os.getenv("GEMINI_API_KEY")
 
+    def generate(self, prompt: str) -> str:
+        if not self.api_key:
+            raise RuntimeError("GEMINI_API_KEY is not configured")
+
+        try:
+            from google import genai
+        except ImportError as exc:
+            raise RuntimeError(
+                "google-genai is not installed. Run: "
+                "python -m pip install google-genai"
+            ) from exc
+
+        client = genai.Client(api_key=self.api_key)
+        response = client.models.generate_content(
+            model=self.model,
+            contents=prompt,
+        )
+
+        text = getattr(response, "text", None)
+        if not text:
+            raise RuntimeError("Gemini returned an empty response")
+
+        return str(text).strip()
 
 class OllamaProvider(LLMProvider):
     def __init__(self, model: str = "llama3.1", base_url: str = "http://localhost:11434"):
