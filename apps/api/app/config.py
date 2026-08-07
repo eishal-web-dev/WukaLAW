@@ -19,6 +19,13 @@ class Settings(BaseSettings):
     fake_embeddings: bool = False  # deterministic in-memory embeddings for tests/CI
     fake_nli: bool = False  # deterministic contradiction heuristic for fast tests/CI
 
+    # AWS/S3. boto3 uses its standard credential chain: IAM task/instance role
+    # in AWS, and AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY for local development.
+    aws_region: str = "ap-south-1"
+    aws_s3_bucket: str = ""
+    aws_s3_endpoint_url: str | None = None
+    aws_presign_expiry_seconds: int = 900
+
     ollama_base_url: str = "http://localhost:11434"
     ollama_model: str = "qwen2.5:3b"
 
