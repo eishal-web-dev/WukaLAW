@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     upload_dir: Path = Path("./uploads")
     storage_dir: Path = Path("./storage")
     max_upload_mb: int = 20
+    max_s3_upload_mb: int = 512
 
     # One embedding stack for both the legal corpus and frontend uploads.
     embedding_model: str = "BAAI/bge-m3"
