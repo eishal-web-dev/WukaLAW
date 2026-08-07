@@ -11,8 +11,12 @@ class Settings(BaseSettings):
     storage_dir: Path = Path("./storage")
     max_upload_mb: int = 20
 
-    embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2"
-    fake_embeddings: bool = False  # deterministic hash embeddings for fast tests/CI
+    # One embedding stack for both the legal corpus and frontend uploads.
+    embedding_model: str = "BAAI/bge-m3"
+    embedding_device: str = "auto"
+    embedding_batch_size: int = 8
+    upload_qdrant_collection: str = "wakulaw_user_documents"
+    fake_embeddings: bool = False  # deterministic in-memory embeddings for tests/CI
     fake_nli: bool = False  # deterministic contradiction heuristic for fast tests/CI
 
     ollama_base_url: str = "http://localhost:11434"
@@ -22,6 +26,8 @@ class Settings(BaseSettings):
     secret_key: str = "dev-only-change-me"
     token_expire_hours: int = 24 * 7
 
+    # Explicit values are retained for backwards-compatible experiments; normal
+    # uploads use the adaptive chunker without forcing these values.
     chunk_words: int = 300
     chunk_overlap_words: int = 50
     top_k: int = 5
