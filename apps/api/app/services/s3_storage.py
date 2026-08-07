@@ -102,7 +102,19 @@ def head_object(owner_id: int, object_key: str) -> dict:
         raise S3StorageError(f"Could not read S3 object metadata: {exc}") from exc
 
 
+def download_object(owner_id: int, object_key: str, destination: Path) -> None:
+    """Stream an S3 object to a local working file instead of buffering it all in RAM."""
+    assert_owned_key(owner_id, object_key)
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        _client().download_file(settings.aws_s3_bucket, object_key, str(destination))
+    except (BotoCoreError, ClientError) as exc:
+        destination.unlink(missing_ok=True)
+        raise S3StorageError(f"Could not download S3 object: {exc}") from exc
+
+
 def read_object(owner_id: int, object_key: str) -> tuple[bytes, str | None]:
+    """Small-object convenience helper; large ingestion should use download_object."""
     assert_owned_key(owner_id, object_key)
     try:
         response = _client().get_object(Bucket=settings.aws_s3_bucket, Key=object_key)
