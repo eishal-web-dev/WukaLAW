@@ -10,8 +10,9 @@ from app.schemas import SimilarRequest, SimilarResponse, Source
 
 router = APIRouter(tags=["search"])
 
-# the FAISS index is shared, so over-fetch then keep only the caller's documents
-OVERFETCH_FACTOR = 4
+# Qdrant now filters by owner_id before returning hits. A small over-fetch keeps
+# compatibility with deleted/stale DB rows without exposing another user's data.
+OVERFETCH_FACTOR = 2
 
 
 def chunks_to_sources(
@@ -24,7 +25,7 @@ def chunks_to_sources(
     sources: list[Source] = []
     for chunk_id, score in hits:
         if score < min_score:
-            continue  # hits are sorted desc, but keep the guard simple and total
+            continue
         chunk = db.get(Chunk, chunk_id)
         if chunk is None or chunk.document.owner_id != user.id:
             continue
@@ -48,7 +49,11 @@ def similar_cases(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    hits = vector_index.search(request.query, request.top_k * OVERFETCH_FACTOR)
+    hits = vector_index.search(
+        request.query,
+        request.top_k * OVERFETCH_FACTOR,
+        owner_id=user.id,
+    )
     return {
         "results": chunks_to_sources(
             db, hits, user, request.top_k, min_score=settings.min_answerable
