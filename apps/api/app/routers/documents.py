@@ -1,12 +1,16 @@
+from pathlib import Path
+
 from fastapi import APIRouter, Depends, Form, HTTPException, UploadFile
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from ai.citations.extract import extract_citations
+from ai.preprocessing.extract import SUPPORTED_EXTENSIONS
 from ai.summarization.extractive import summarize
 from ai.timeline.extract import extract_events
 from app.auth import get_current_user
+from app.config import settings
 from app.db import get_db
 from app.models import Chunk, Document, User
 from app.schemas import (
@@ -17,7 +21,8 @@ from app.schemas import (
     SummarizeResponse,
     TimelineResponse,
 )
-from app.services.document_service import ingest_upload
+from app.services import s3_storage
+from app.services.document_service import ingest_s3_object, ingest_upload
 
 router = APIRouter(prefix="/documents", tags=["documents"])
 
@@ -41,19 +46,6 @@ def _get_owned_document(db: Session, document_id: int, user: User) -> Document:
     return document
 
 
-@router.post("/upload", response_model=DocumentMeta, status_code=201)
-def upload_document(
-    file: UploadFile,
-    case_id: int | None = Form(default=None),
-    db: Session = Depends(get_db),
-    user: User = Depends(get_current_user),
-):
-    document = ingest_upload(db, file, owner_id=user.id)
-    if case_id is not None:
-        _attach_to_case(db, document, case_id, user)
-    return _meta(document, len(document.chunks))
-
-
 def _attach_to_case(db: Session, document: Document, case_id: int, user: User) -> None:
     from app.models import Case
 
@@ -62,6 +54,96 @@ def _attach_to_case(db: Session, document: Document, case_id: int, user: User) -
         raise HTTPException(status_code=404, detail="Case not found.")
     document.case_id = case_id
     db.commit()
+
+
+@router.post("/upload", response_model=DocumentMeta, status_code=201)
+def upload_document(
+    file: UploadFile,
+    case_id: int | None = Form(default=None),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Legacy/local multipart upload. Production browsers can use S3 presign flow."""
+    document = ingest_upload(db, file, owner_id=user.id)
+    if case_id is not None:
+        _attach_to_case(db, document, case_id, user)
+    return _meta(document, len(document.chunks))
+
+
+class PresignUploadRequest(BaseModel):
+    filename: str = Field(min_length=1, max_length=255)
+    content_type: str = Field(default="application/octet-stream", min_length=1, max_length=200)
+    size_bytes: int = Field(gt=0)
+
+
+class PresignUploadResponse(BaseModel):
+    upload_url: str
+    object_key: str
+    expires_in: int
+    headers: dict[str, str]
+
+
+@router.post("/presign-upload", response_model=PresignUploadResponse)
+def presign_document_upload(
+    request: PresignUploadRequest,
+    user: User = Depends(get_current_user),
+):
+    """Create a short-lived PUT URL so the browser uploads straight to private S3."""
+    if not s3_storage.enabled():
+        raise HTTPException(status_code=503, detail="AWS S3 document storage is not configured.")
+
+    ext = Path(request.filename).suffix.lower()
+    if ext not in SUPPORTED_EXTENSIONS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported file type '{ext}'. Allowed: .txt, .pdf",
+        )
+    max_bytes = settings.max_upload_mb * 1024 * 1024
+    if request.size_bytes > max_bytes:
+        raise HTTPException(status_code=400, detail=f"File exceeds {settings.max_upload_mb} MB limit.")
+
+    try:
+        upload = s3_storage.create_presigned_upload(
+            user.id,
+            request.filename,
+            request.content_type,
+        )
+    except s3_storage.S3StorageError as error:
+        raise HTTPException(status_code=503, detail=str(error)) from error
+
+    return PresignUploadResponse(
+        upload_url=upload.upload_url,
+        object_key=upload.object_key,
+        expires_in=upload.expires_in,
+        headers=upload.headers,
+    )
+
+
+class CompleteS3UploadRequest(BaseModel):
+    object_key: str = Field(min_length=1, max_length=1024)
+    filename: str = Field(min_length=1, max_length=255)
+    case_id: int | None = None
+
+
+@router.post("/complete-s3-upload", response_model=DocumentMeta, status_code=201)
+def complete_s3_document_upload(
+    request: CompleteS3UploadRequest,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Verify the user's S3 object and run the normal adaptive AI ingestion pipeline."""
+    if not s3_storage.enabled():
+        raise HTTPException(status_code=503, detail="AWS S3 document storage is not configured.")
+
+    document = ingest_s3_object(
+        db,
+        object_key=request.object_key,
+        filename=request.filename,
+        owner_id=user.id,
+    )
+    if request.case_id is not None:
+        _attach_to_case(db, document, request.case_id, user)
+    return _meta(document, len(document.chunks))
 
 
 class DocumentUpdate(BaseModel):
