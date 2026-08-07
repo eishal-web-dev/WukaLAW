@@ -98,9 +98,9 @@ def presign_document_upload(
             status_code=400,
             detail=f"Unsupported file type '{ext}'. Allowed: .txt, .pdf",
         )
-    max_bytes = settings.max_upload_mb * 1024 * 1024
+    max_bytes = settings.max_s3_upload_mb * 1024 * 1024
     if request.size_bytes > max_bytes:
-        raise HTTPException(status_code=400, detail=f"File exceeds {settings.max_upload_mb} MB limit.")
+        raise HTTPException(status_code=400, detail=f"File exceeds {settings.max_s3_upload_mb} MB S3 limit.")
 
     try:
         upload = s3_storage.create_presigned_upload(
