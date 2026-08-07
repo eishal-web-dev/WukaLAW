@@ -1,0 +1,14 @@
+[
+  {"query_id":"q01","query":"constitutional protection of fundamental rights","expected_document_type_or_category":"law","expected_keywords":["constitution","rights"]},
+  {"query_id":"q02","query":"punishment for murder under criminal law","expected_document_type_or_category":"law","expected_keywords":["murder","penal"]},
+  {"query_id":"q03","query":"grounds for deciding a civil appeal","expected_document_type_or_category":"judgment","expected_keywords":["civil appeal","appeal"]},
+  {"query_id":"q04","query":"family dispute maintenance and custody","expected_keywords":["family","maintenance","custody"]},
+  {"query_id":"q05","query":"service matter promotion seniority","expected_keywords":["service","promotion","seniority"]},
+  {"query_id":"q06","query":"income tax assessment appeal","expected_keywords":["tax","assessment"]},
+  {"query_id":"q07","query":"grant of post arrest bail","expected_keywords":["bail"]},
+  {"query_id":"q08","query":"admissibility and burden of evidence","expected_keywords":["evidence","burden"]},
+  {"query_id":"q09","query":"appointment of judges judicial commission","expected_keywords":["appointment","judge"]},
+  {"query_id":"q10","query":"legal notice template demand","expected_document_type_or_category":"template","expected_keywords":["notice","demand"]},
+  {"query_id":"q11","query":"appeal is dismissed final order","expected_document_type_or_category":"judgment","expected_keywords":["dismissed","final order"]},
+  {"query_id":"q12","query":"quantum computing satellite propulsion","expected_keywords":["no-match"]}
+]

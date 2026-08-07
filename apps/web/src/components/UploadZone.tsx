@@ -1,7 +1,8 @@
 import { useRef, useState } from 'react'
 import { Upload } from 'lucide-react'
-import { uploadDocument, errorMessage } from '../lib/api'
+import { errorMessage } from '../lib/api'
 import type { Document } from '../lib/api'
+import { uploadDocument } from '../lib/upload'
 import { Btn, G } from './design'
 import ErrorAlert from './ErrorAlert'
 
@@ -67,13 +68,14 @@ export default function UploadZone({
         </div>
         <div className="text-foreground font-medium mb-1">Drop files here to upload</div>
         <div className="text-sm text-muted-foreground">
-          PDF, DOCX, TXT supported{caseId !== undefined ? ' · Files attach to this case' : ''}
+          PDF and TXT supported{caseId !== undefined ? ' · Files attach to this case' : ''}
         </div>
         <Btn variant="secondary" className="mt-4 mx-auto">Browse Files</Btn>
         <input
           ref={fileInput}
           type="file"
           multiple
+          accept=".pdf,.txt,application/pdf,text/plain"
           className="hidden"
           onChange={(e) => {
             if (e.target.files?.length) void uploadFiles(e.target.files)

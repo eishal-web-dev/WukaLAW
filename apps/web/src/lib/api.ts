@@ -372,8 +372,51 @@ export function summarizeDocument(
 }
 
 /** POST /ask */
-export function askQuestion(question: string): Promise<AskResponse> {
-  return postJson<AskResponse>('/ask', { question })
+export async function askQuestion(question: string): Promise<AskResponse> {
+  const res = await fetch('http://127.0.0.1:8000/api/rag/query', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      question,
+      top_k: 10,
+      score_threshold: null,
+      filters: {},
+      use_legal_intelligence: false,
+    }),
+  })
+
+  if (!res.ok) {
+    const errorBody = await res.text()
+    throw new Error(errorBody || `RAG request failed with status ${res.status}`)
+  }
+
+  const data = await res.json()
+
+  return {
+    answer: data.answer,
+    confidence: {
+      level:
+        data.confidence === 'high'
+          ? 'high'
+          : data.confidence === 'medium'
+            ? 'medium'
+            : 'low',
+      reason:
+        data.pipeline_warnings?.length > 0
+          ? data.pipeline_warnings.join(' ')
+          : `Validation: ${data.validation_status}`,
+    },
+    sources: (data.retrieved_chunks ?? []).map((chunk: any) => ({
+      chunk_id: chunk.canonical_chunk_id,
+      document_id: chunk.document_id,
+      document_title: chunk.title || 'Untitled legal source',
+      text: chunk.text_preview || '',
+      score: chunk.score,
+    })),
+    model: 'gemini-rag',
+  }
 }
 
 /** POST /similar-cases */
