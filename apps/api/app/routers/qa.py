@@ -50,7 +50,11 @@ def ask(
             "model": "none",
         }
 
-    hits = vector_index.search(request.question, settings.top_k * OVERFETCH_FACTOR)
+    hits = vector_index.search(
+        request.question,
+        settings.top_k * OVERFETCH_FACTOR,
+        owner_id=user.id,
+    )
     sources = chunks_to_sources(db, hits, user, settings.top_k)
 
     if kind == "lookup":
@@ -82,7 +86,6 @@ def ask(
         request.question, [(source.text, source.score) for source in sources]
     )
     if answer_text == rag.NOT_ENOUGH:
-        # a refusal must not present weakly-related passages as "sources"
         sources = []
     return {
         "answer": answer_text,
