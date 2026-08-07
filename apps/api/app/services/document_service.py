@@ -53,9 +53,9 @@ def ingest_upload(db: Session, file: UploadFile, owner_id: int) -> Document:
     db.add(document)
     db.flush()  # assign document.id
 
-    # Adaptive chunking: the upload's own extracted length decides the chunk
-    # window/overlap. A short pleading and a 1,000-page book must never be
-    # forced through the same arbitrary chunk-count policy.
+    # Adaptive chunking: document length controls the retrieval window. There is
+    # no arbitrary fixed chunk count, so a short pleading and a large book scale
+    # differently while preserving useful overlap.
     pieces = chunk_text(text)
     chunks = [
         Chunk(document_id=document.id, position=piece.position, text=piece.text)
@@ -64,7 +64,27 @@ def ingest_upload(db: Session, file: UploadFile, owner_id: int) -> Document:
     db.add_all(chunks)
     db.flush()  # assign chunk ids
 
-    vector_index.add_chunks([chunk.id for chunk in chunks], [chunk.text for chunk in chunks])
-    db.commit()
+    chunk_ids = [chunk.id for chunk in chunks]
+    try:
+        vector_index.add_chunks(
+            chunk_ids,
+            [chunk.text for chunk in chunks],
+            owner_id=owner_id,
+            document_id=document.id,
+            document_title=document.title,
+        )
+        db.commit()
+    except Exception as error:
+        # Keep SQL and vector state consistent if either side fails.
+        try:
+            vector_index.delete_chunks(chunk_ids)
+        except Exception:
+            pass
+        db.rollback()
+        raise HTTPException(
+            status_code=503,
+            detail=f"Document was extracted but could not be indexed for AI search: {error}",
+        ) from error
+
     db.refresh(document)
     return document
