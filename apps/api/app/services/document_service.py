@@ -53,7 +53,10 @@ def ingest_upload(db: Session, file: UploadFile, owner_id: int) -> Document:
     db.add(document)
     db.flush()  # assign document.id
 
-    pieces = chunk_text(text, settings.chunk_words, settings.chunk_overlap_words)
+    # Adaptive chunking: the upload's own extracted length decides the chunk
+    # window/overlap. A short pleading and a 1,000-page book must never be
+    # forced through the same arbitrary chunk-count policy.
+    pieces = chunk_text(text)
     chunks = [
         Chunk(document_id=document.id, position=piece.position, text=piece.text)
         for piece in pieces
