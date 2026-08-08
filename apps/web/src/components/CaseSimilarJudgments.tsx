@@ -37,6 +37,45 @@ function domainLabel(item: SimilarJudgment): string | null {
   return factor?.value || null
 }
 
+type FactCheck = { label: string; present: boolean }
+
+function factChecks(text: string): FactCheck[] {
+  const value = text.toLowerCase()
+  const has = (pattern: RegExp) => pattern.test(value)
+  return [
+    {
+      label: 'What happened / claim',
+      present: has(/\b(accused|alleged|killed|murdered|married|divorce|khula|dowry|dower|mehr|maintenance|custody|property|fraud|agreement|terminated|dismissed|assaulted|refused|withheld|took|left|paid|unpaid)\b/),
+    },
+    {
+      label: 'Evidence or witnesses',
+      present: has(/\b(evidence|witness|eyewitness|cctv|video|audio|document|receipt|record|recovery|weapon|medical|forensic|message|chat|statement|proof)\b/),
+    },
+    {
+      label: 'Law / section / article',
+      present: has(/\b(section|article|ppc|crpc|cpc|family courts act|dissolution of muslim marriages act|constitution|act\s+\d{4})\b/),
+    },
+    {
+      label: 'Procedural stage',
+      present: has(/\b(fir|investigation|trial|appeal|petition|bail|hearing|family court|high court|supreme court|decree|order|notice)\b/),
+    },
+    {
+      label: 'Disputed issue / defence',
+      present: has(/\b(deny|denied|dispute|disputed|defence|defense|alibi|false implication|cruelty|not present|not paid|withheld|refused|contested|claim[s]? that)\b/),
+    },
+    {
+      label: 'Relief sought',
+      present: has(/\b(seek|seeking|want|request|relief|dissolution|khula|custody|maintenance|return of dowry|recovery of dower|acquittal|bail|injunction|damages|declaration)\b/),
+    },
+  ]
+}
+
+function enoughFacts(text: string): boolean {
+  const clean = text.trim()
+  if (clean.length < 25) return false
+  return factChecks(clean).filter((item) => item.present).length >= 2
+}
+
 export default function CaseSimilarJudgments({ caseId }: { caseId: number | string }) {
   const [data, setData] = useState<CaseSimilarResponse | null>(null)
   const [loading, setLoading] = useState(true)
@@ -67,10 +106,13 @@ export default function CaseSimilarJudgments({ caseId }: { caseId: number | stri
     void load()
   }, [caseId])
 
+  const checks = factChecks(facts)
+  const factsComplete = enoughFacts(facts)
+
   const saveFactsAndSearch = async () => {
     const clean = facts.trim()
-    if (clean.length < 40) {
-      setError('Add a little more factual detail before searching. Include what happened, evidence, legal sections, disputed issue, defence or procedural stage.')
+    if (clean.length < 15) {
+      setError('Add a little more about what actually happened in the case before saving.')
       return
     }
 
@@ -89,8 +131,7 @@ export default function CaseSimilarJudgments({ caseId }: { caseId: number | stri
     }
   }
 
-  const weakFacts = !facts.trim() || facts.trim().length < 80
-  const relatedOnly = data ? data.source_case.documents_used === 0 && weakFacts : false
+  const relatedOnly = data ? data.source_case.documents_used === 0 && !factsComplete : false
 
   return (
     <div>
@@ -102,7 +143,7 @@ export default function CaseSimilarJudgments({ caseId }: { caseId: number | stri
           </h3>
           <p className="text-xs text-muted-foreground mt-1">
             {relatedOnly
-              ? 'WakuLaw knows the legal topic, but needs more facts before claiming factual similarity.'
+              ? 'WakuLaw knows the legal topic, but needs more factual detail before claiming case similarity.'
               : 'Historical Pakistani judgments ranked by legal issue, factual overlap, cited law and semantic relevance.'}
           </p>
         </div>
@@ -132,14 +173,14 @@ export default function CaseSimilarJudgments({ caseId }: { caseId: number | stri
             {' · '}{Math.round(data.processing_time_ms)} ms
           </div>
 
-          {data.source_case.documents_used === 0 && weakFacts && (
+          {data.source_case.documents_used === 0 && !factsComplete && (
             <Card className="p-4 border-amber-500/20 bg-amber-500/[0.04] space-y-3">
               <div className="flex items-start gap-2 text-xs text-muted-foreground">
                 <AlertTriangle size={14} className="mt-0.5 text-amber-400 flex-shrink-0" />
                 <div>
                   <div className="font-semibold text-foreground mb-1">Add case facts for true similarity matching</div>
                   <p>
-                    Describe what happened, the alleged offence or claim, evidence, relevant sections, procedural stage, disputed issue, defence and relief sought. WakuLaw will save these facts to the case and immediately rerun the precedent search.
+                    A few topic words are enough for related precedents, but true similarity needs at least two factual signals such as what happened, evidence, law, procedural stage, disputed issue/defence, or relief sought.
                   </p>
                 </div>
               </div>
@@ -151,16 +192,26 @@ export default function CaseSimilarJudgments({ caseId }: { caseId: number | stri
                   setFactsSaved(false)
                 }}
                 rows={6}
-                placeholder="Example: The accused is charged under Section 302 PPC for allegedly shooting the deceased with a firearm. The prosecution relies on two eyewitnesses and recovery of the weapon. The defence claims false implication and disputes the recovery. The matter is at trial stage."
+                placeholder="Example: I seek dissolution of marriage and return of dowry articles. My husband retained the dowry after separation and has not paid the agreed dower. Receipts and family witnesses support my claim. The matter is before the Family Court."
                 className="w-full rounded-xl border border-white/10 bg-black/20 px-3 py-3 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:border-[#D4AF37]/50 resize-y"
               />
 
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-[10px] text-muted-foreground">
+                {checks.map((item) => (
+                  <div key={item.label} className={item.present ? 'text-emerald-400' : ''}>
+                    {item.present ? '✓' : '○'} {item.label}
+                  </div>
+                ))}
+              </div>
+
               <div className="flex items-center justify-between gap-3 flex-wrap">
-                <span className="text-[10px] text-muted-foreground">{facts.trim().length} characters · aim for 80+ factual characters</span>
+                <span className="text-[10px] text-muted-foreground">
+                  {checks.filter((item) => item.present).length}/6 factual signals detected · 2+ required for fact-pattern mode
+                </span>
                 <Btn
                   icon={<Save size={13} />}
                   onClick={() => void saveFactsAndSearch()}
-                  disabled={savingFacts || facts.trim().length < 40}
+                  disabled={savingFacts || facts.trim().length < 15}
                 >
                   {savingFacts ? 'Saving & searching…' : 'Save facts & find similar cases'}
                 </Btn>
@@ -257,7 +308,7 @@ export default function CaseSimilarJudgments({ caseId }: { caseId: number | stri
 
           <p className="text-[10px] text-muted-foreground leading-relaxed">
             {relatedOnly
-              ? 'Topic Relevance ranks precedents on the same legal issue. WakuLaw switches to fact-pattern similarity once the case contains enough factual detail.'
+              ? 'Topic Relevance ranks precedents on the same legal issue. WakuLaw switches to fact-pattern similarity once enough factual signals or case documents are available.'
               : "Match Score is an explainable retrieval ranking from WakuLAW's indexed corpus. It is not a probability of winning, a legal conclusion, or a claim that two cases are identical."}
           </p>
         </div>
