@@ -47,22 +47,35 @@ export interface CaseSimilarResponse {
   }
 }
 
+export type ClientEffect = 'supports' | 'cautions' | 'mixed' | 'insufficient_client_facts'
+export type ResearchStrength = 'strong' | 'moderate' | 'limited'
+
 export interface PrecedentBrief {
   document_id: string
   title: string | null
   court: string | null
   case_number: string | null
   passages_reviewed: number
+  record_source?: 'full_source_file' | 'indexed_passages'
+  full_source_key?: string | null
+  authority_note: string
   case_overview: string
   background_facts: string[]
   procedural_history: string[]
   legal_issues: string[]
   court_reasoning: string[]
+  ratio_or_principle: string[]
   final_decision: string
   relief_or_order: string
   similarities_to_client: string[]
   important_differences: string[]
   how_it_may_help: string[]
+  client_effect: ClientEffect
+  research_strength: ResearchStrength
+  research_strength_reason: string
+  argument_to_consider: string[]
+  opponent_distinction: string[]
+  next_verification_steps: string[]
   key_laws: string[]
   evidence_limitations: string
   disclaimer: string
