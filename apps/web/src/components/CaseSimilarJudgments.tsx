@@ -44,10 +44,10 @@ function factChecks(text: string): FactCheck[] {
   const value = text.toLowerCase()
   const has = (pattern: RegExp) => pattern.test(value)
   return [
-    { label: 'What happened / claim', present: has(/\b(accused|alleged|killed|murdered|married|divorce|khula|dowry|dower|mehr|maintenance|custody|property|fraud|agreement|terminated|dismissed|assaulted|refused|withheld|took|left|paid|unpaid)\b/) },
-    { label: 'Evidence or witnesses', present: has(/\b(evidence|witness|eyewitness|cctv|video|audio|document|receipt|record|recovery|weapon|medical|forensic|message|chat|statement|proof)\b/) },
+    { label: 'What happened / claim', present: has(/\b(accused|alleged|killed|murdered|married|divorce|khula|dowry|dower|mehr|maintenance|custody|property|fraud|agreement|terminated|dismissed|assaulted|refused|withheld|took|left|paid|unpaid|claim|suit for|seeks?|recovery|dissolution)\b/) },
+    { label: 'Evidence or witnesses', present: has(/\b(evidence|witness|eyewitness|cctv|video|audio|document|receipt|recorded|record|recovery|weapon|medical|forensic|message|chat|statement|proof|cross[- ]examination|cross examination)\b/) },
     { label: 'Law / section / article', present: has(/\b(section|article|ppc|crpc|cpc|family courts act|dissolution of muslim marriages act|constitution|act\s+\d{4})\b/) },
-    { label: 'Procedural stage', present: has(/\b(fir|investigation|trial|appeal|petition|bail|hearing|family court|high court|supreme court|decree|order|notice)\b/) },
+    { label: 'Procedural stage', present: has(/\b(fir|investigation|trial|appeal|petition|bail|hearing|family court|high court|supreme court|decree|order|notice|served|service|written statement|issues? framed|evidence stage|evidence recorded|cross[- ]examination|final arguments?|arguments?|fixed for|judgment reserved|judgment|decision|execution|enforcement)\b/) },
     { label: 'Disputed issue / defence', present: has(/\b(deny|denied|dispute|disputed|defence|defense|alibi|false implication|cruelty|not present|not paid|withheld|refused|contested|claim[s]? that)\b/) },
     { label: 'Relief sought', present: has(/\b(seek|seeking|want|request|relief|dissolution|khula|custody|maintenance|return of dowry|recovery of dower|acquittal|bail|injunction|damages|declaration)\b/) },
   ]
@@ -56,7 +56,11 @@ function factChecks(text: string): FactCheck[] {
 function enoughFacts(text: string): boolean {
   const clean = text.trim()
   if (clean.length < 25) return false
-  return factChecks(clean).filter((item) => item.present).length >= 2
+  const checks = factChecks(clean)
+  const count = checks.filter((item) => item.present).length
+  // Do not switch to true fact-pattern similarity from procedure alone.
+  // A specific claim/event must be present plus at least one additional signal.
+  return Boolean(checks[0]?.present) && count >= 2
 }
 
 export default function CaseSimilarJudgments({ caseId }: { caseId: number | string }) {
@@ -139,14 +143,14 @@ export default function CaseSimilarJudgments({ caseId }: { caseId: number | stri
             <Card className="p-4 border-amber-500/20 bg-amber-500/[0.04] space-y-3">
               <div className="flex items-start gap-2 text-xs text-muted-foreground">
                 <AlertTriangle size={14} className="mt-0.5 text-amber-400 flex-shrink-0" />
-                <div><div className="font-semibold text-foreground mb-1">Add case facts for true similarity matching</div><p>A few topic words are enough for related precedents, but true similarity needs at least two factual signals such as what happened, evidence, law, procedural stage, disputed issue/defence, or relief sought.</p></div>
+                <div><div className="font-semibold text-foreground mb-1">Add case facts for true similarity matching</div><p>Procedure alone can identify the current stage, but true case similarity also needs the underlying claim/event plus at least one additional factual signal such as evidence, law, disputed issue/defence, relief sought, or procedural stage.</p></div>
               </div>
               <textarea value={facts} onChange={(event) => { setFacts(event.target.value); setFactsSaved(false) }} rows={6} placeholder="Example: I seek dissolution of marriage and return of dowry articles. My husband retained the dowry after separation and has not paid the agreed dower. Receipts and family witnesses support my claim. The matter is before the Family Court." className="w-full rounded-xl border border-white/10 bg-black/20 px-3 py-3 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:border-[#D4AF37]/50 resize-y" />
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-[10px] text-muted-foreground">
                 {checks.map((item) => <div key={item.label} className={item.present ? 'text-emerald-400' : ''}>{item.present ? '✓' : '○'} {item.label}</div>)}
               </div>
               <div className="flex items-center justify-between gap-3 flex-wrap">
-                <span className="text-[10px] text-muted-foreground">{checks.filter((item) => item.present).length}/6 factual signals detected · 2+ required for fact-pattern mode</span>
+                <span className="text-[10px] text-muted-foreground">{checks.filter((item) => item.present).length}/6 factual signals detected · claim/event + 1 additional signal required</span>
                 <Btn icon={<Save size={13} />} onClick={() => void saveFactsAndSearch()} disabled={savingFacts || facts.trim().length < 15}>{savingFacts ? 'Saving & searching…' : 'Save facts & find similar cases'}</Btn>
               </div>
             </Card>
@@ -183,7 +187,7 @@ export default function CaseSimilarJudgments({ caseId }: { caseId: number | stri
             })
           )}
 
-          <p className="text-[10px] text-muted-foreground leading-relaxed">{relatedOnly ? 'Topic Relevance ranks precedents on the same legal issue. WakuLaw switches to fact-pattern similarity once enough factual signals or case documents are available.' : "Match Score is an explainable retrieval ranking from WakuLAW's indexed corpus. Open Full Case Brief to review the historical facts, procedural history, reasoning, result and client relevance. Verify against the official judgment before relying on it."}</p>
+          <p className="text-[10px] text-muted-foreground leading-relaxed">{relatedOnly ? 'Topic Relevance ranks precedents on the same legal issue. WakuLaw switches to fact-pattern similarity once the underlying claim/event and enough supporting facts or case documents are available.' : "Match Score is an explainable retrieval ranking from WakuLAW's indexed corpus. Open Full Case Brief to review the historical facts, procedural history, reasoning, result and client relevance. Verify against the official judgment before relying on it."}</p>
         </div>
       )}
     </div>
