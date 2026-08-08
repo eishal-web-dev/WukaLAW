@@ -1,8 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from ai.analysis.contradictions import find_contradictions
+from ai.similar_cases import SimilarCaseRequest
 from ai.timeline.extract import extract_events
 from app.auth import get_current_user
 from app.db import get_db
@@ -51,6 +52,31 @@ def _validate(status: str | None, priority: str | None) -> None:
         raise HTTPException(status_code=422, detail=f"status must be one of {sorted(ALLOWED_STATUS)}")
     if priority is not None and priority not in ALLOWED_PRIORITY:
         raise HTTPException(status_code=422, detail=f"priority must be one of {sorted(ALLOWED_PRIORITY)}")
+
+
+def _similar_case_seed(case: Case, documents: list[Document]) -> str:
+    """Build a compact factual profile of a user's case for precedent retrieval.
+
+    The user's own case never becomes a historical result. We only use its title,
+    type, description and bounded excerpts from attached documents as the search
+    profile against the indexed Pakistani judgment corpus.
+    """
+    parts = [
+        f"Case title: {case.title}",
+        f"Case type: {case.case_type}",
+    ]
+    if case.description and case.description.strip():
+        parts.append(f"Case description: {case.description.strip()}")
+
+    # Include a small amount of case-document evidence so similarity still works
+    # when the case description is brief. Bound this aggressively to keep the
+    # embedding query focused and predictable for very large uploaded documents.
+    for document in documents[:4]:
+        text = " ".join((document.text or "").split())
+        if text:
+            parts.append(f"Document {document.title}: {text[:2200]}")
+
+    return "\n".join(parts)
 
 
 @router.post("", response_model=CaseOut, status_code=201)
@@ -127,6 +153,48 @@ def case_timeline(case_id: int, db: Session = Depends(get_db), user: User = Depe
             )
     events.sort(key=lambda event: event["date"])
     return {"events": events}
+
+
+@router.get("/{case_id}/similar")
+def case_similar_judgments(
+    case_id: int,
+    top_k: int = Query(default=8, ge=1, le=20),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Return historical Pakistani judgments similar to one of the user's cases."""
+    case = _get_owned_case(db, case_id, user)
+    documents = db.scalars(
+        select(Document).where(Document.case_id == case.id).order_by(Document.created_at.desc())
+    ).all()
+    situation = _similar_case_seed(case, list(documents))
+
+    try:
+        # Imported lazily to avoid coupling the regular case CRUD router to the
+        # heavier embedding/Qdrant initialization until this feature is requested.
+        from app.routers.similar_cases import get_similar_case_pipeline
+
+        result = get_similar_case_pipeline().run(
+            SimilarCaseRequest(
+                situation=situation,
+                top_k=top_k,
+                jurisdiction="Pakistan",
+                include_outcomes=True,
+            )
+        ).to_dict()
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=f"Similar-case service unavailable: {exc}") from exc
+
+    result["source_case"] = {
+        "id": case.id,
+        "case_number": case.case_number,
+        "title": case.title,
+        "case_type": case.case_type,
+        "documents_used": min(len(documents), 4),
+    }
+    return result
 
 
 @router.post("/{case_id}/contradictions", response_model=ContradictionsResponse)
