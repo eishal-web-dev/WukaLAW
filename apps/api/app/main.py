@@ -17,7 +17,7 @@ from app.db import Base, engine
 from app.routers import auth_routes, case_pathway, cases, documents, legal_intelligence, precedent_briefs, qa, rag, search, similar_cases
 
 app = FastAPI(
-    title="WakuLaw API",
+    title="WukaLAW API",
     description=(
         "Explainable AI Legal Intelligence Platform — MVP. "
         "Decision-support only; not legal advice."
