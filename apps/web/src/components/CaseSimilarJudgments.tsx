@@ -59,10 +59,10 @@ function shortReason(item: SimilarJudgment): string {
   const issue = issueLabel(item)
   const domain = item.matching_factors.find((entry) => entry.factor === 'same_legal_domain')?.value
   const section = item.matching_factors.find((entry) => entry.factor === 'shared_section')?.value
-  if (issue && section) return `Same ${issue.toLowerCase()} issue with Section ${section} overlap.`
-  if (issue) return `Same ${issue.toLowerCase()} issue in a Pakistani judgment.`
-  if (domain) return `Strong ${domain} legal-domain overlap with the selected case.`
-  return 'Strong semantic and legal-issue overlap with the selected case.'
+  if (issue && section) return `This case deals with the same ${issue.toLowerCase()} issue and also mentions Section ${section}.`
+  if (issue) return `This case deals with the same ${issue.toLowerCase()} issue.`
+  if (domain) return `This case is from the same area of law: ${domain}.`
+  return 'This case has a similar legal issue and fact pattern.'
 }
 
 function enoughFacts(text: string): boolean {
@@ -74,7 +74,7 @@ function enoughFacts(text: string): boolean {
 
 const FAMILY_FILTERS: FilterGroup[] = [
   {
-    label: 'Issue',
+    label: 'What is your case about?',
     options: [
       { label: 'Divorce / Khula', query: 'dissolution of marriage khula divorce' },
       { label: 'Dowry recovery', query: 'dowry articles bridal gifts jahez recovery' },
@@ -84,31 +84,31 @@ const FAMILY_FILTERS: FilterGroup[] = [
     ],
   },
   {
-    label: 'Deep filter · facts',
+    label: 'What happened?',
     options: [
       { label: 'Cruelty', query: 'cruelty mental cruelty physical cruelty matrimonial' },
-      { label: 'Non-maintenance', query: 'failure to maintain non payment maintenance' },
-      { label: 'Dowry retained', query: 'husband retained dowry articles return recovery' },
-      { label: 'Receipts', query: 'receipts documentary proof dowry purchase evidence' },
-      { label: 'Witnesses', query: 'family witnesses witness testimony evidence' },
-      { label: 'Nikahnama', query: 'nikahnama marriage contract dower terms' },
+      { label: 'Maintenance not paid', query: 'failure to maintain non payment maintenance' },
+      { label: 'Dowry kept by other side', query: 'husband retained dowry articles return recovery' },
+      { label: 'I have receipts', query: 'receipts documentary proof dowry purchase evidence' },
+      { label: 'I have witnesses', query: 'family witnesses witness testimony evidence' },
+      { label: 'Nikahnama matters', query: 'nikahnama marriage contract dower terms' },
     ],
   },
   {
-    label: 'Deep filter · stage',
+    label: 'Where is the case now?',
     options: [
       { label: 'Family Court', query: 'Family Court trial proceedings' },
-      { label: 'Evidence stage', query: 'evidence recorded cross examination witnesses' },
+      { label: 'Evidence', query: 'evidence recorded cross examination witnesses' },
       { label: 'Final arguments', query: 'final arguments arguments concluded judgment reserved' },
       { label: 'Appeal', query: 'family appeal appellate court High Court' },
-      { label: 'Execution', query: 'execution enforcement decree recovery proceedings' },
+      { label: 'Enforcement', query: 'execution enforcement decree recovery proceedings' },
     ],
   },
 ]
 
 const CRIMINAL_FILTERS: FilterGroup[] = [
   {
-    label: 'Issue',
+    label: 'What is your case about?',
     options: [
       { label: 'Murder / Homicide', query: 'murder homicide qatl qatal section 302 PPC' },
       { label: 'Bail', query: 'pre arrest bail post arrest bail criminal bail' },
@@ -116,48 +116,48 @@ const CRIMINAL_FILTERS: FilterGroup[] = [
     ],
   },
   {
-    label: 'Deep filter · intent / method',
+    label: 'How did it happen?',
     options: [
       { label: 'Intentional', query: 'intentional murder premeditated deliberate intention motive' },
       { label: 'Accidental', query: 'accidental killing accidental death no intention' },
-      { label: 'Firearm', query: 'firearm gun pistol shooting weapon recovery' },
+      { label: 'Gun / Firearm', query: 'firearm gun pistol shooting weapon recovery' },
       { label: 'Knife / sharp weapon', query: 'knife dagger sharp edged weapon stabbing' },
       { label: 'Blunt weapon', query: 'blunt weapon blunt force injury' },
     ],
   },
   {
-    label: 'Deep filter · evidence / defence',
+    label: 'What evidence or defence matters?',
     options: [
       { label: 'Eyewitness', query: 'eyewitness ocular account eye witness testimony' },
-      { label: 'Circumstantial', query: 'circumstantial evidence chain of circumstances' },
-      { label: 'CCTV', query: 'CCTV video footage electronic evidence' },
-      { label: 'Forensic', query: 'forensic ballistic DNA medical evidence' },
+      { label: 'Circumstantial evidence', query: 'circumstantial evidence chain of circumstances' },
+      { label: 'CCTV / Video', query: 'CCTV video footage electronic evidence' },
+      { label: 'Forensic evidence', query: 'forensic ballistic DNA medical evidence' },
       { label: 'Confession', query: 'confession admission judicial confession extra judicial confession' },
-      { label: 'Alibi', query: 'plea of alibi not present crime scene' },
+      { label: 'I was somewhere else (Alibi)', query: 'plea of alibi not present crime scene' },
       { label: 'Self-defence', query: 'self defence private defence right of private defence' },
-      { label: 'False implication', query: 'false implication falsely implicated enmity' },
+      { label: 'False accusation', query: 'false implication falsely implicated enmity' },
     ],
   },
 ]
 
 const CIVIL_FILTERS: FilterGroup[] = [
   {
-    label: 'Issue',
+    label: 'What is your case about?',
     options: [
       { label: 'Property ownership', query: 'property ownership title possession land' },
       { label: 'Inheritance', query: 'inheritance succession legal heirs partition' },
-      { label: 'Specific performance', query: 'specific performance agreement to sell contract' },
-      { label: 'Injunction', query: 'injunction temporary injunction permanent injunction' },
+      { label: 'Contract / sale agreement', query: 'specific performance agreement to sell contract' },
+      { label: 'Court order to stop something', query: 'injunction temporary injunction permanent injunction' },
     ],
   },
   {
-    label: 'Deep filter',
+    label: 'What matters most?',
     options: [
-      { label: 'Documentary evidence', query: 'documentary evidence title documents agreement record' },
+      { label: 'Documents', query: 'documentary evidence title documents agreement record' },
       { label: 'Witnesses', query: 'witness testimony oral evidence' },
-      { label: 'Interim order', query: 'interim order stay temporary injunction' },
+      { label: 'Temporary court order', query: 'interim order stay temporary injunction' },
       { label: 'Appeal', query: 'civil appeal appellate court High Court' },
-      { label: 'Execution', query: 'execution decree enforcement possession recovery' },
+      { label: 'Enforcement', query: 'execution decree enforcement possession recovery' },
     ],
   },
 ]
@@ -194,7 +194,7 @@ export default function CaseSimilarJudgments({ caseId }: { caseId: number | stri
       setData(similar)
       setCurrentCase(caseRecord)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not search similar judgments.')
+      setError(err instanceof Error ? err.message : 'We could not find similar cases right now.')
     } finally {
       setLoading(false)
     }
@@ -209,7 +209,7 @@ export default function CaseSimilarJudgments({ caseId }: { caseId: number | stri
 
   const runCustom = async () => {
     if (!selectedFilters.length) {
-      setError('Choose at least one custom filter first.')
+      setError('Choose at least one detail first.')
       return
     }
     setLoading(true)
@@ -218,7 +218,7 @@ export default function CaseSimilarJudgments({ caseId }: { caseId: number | stri
     try {
       setData(await getCaseSimilarJudgmentsCustom(caseId, selectedFilters, 8))
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not run the custom precedent search.')
+      setError(err instanceof Error ? err.message : 'We could not search those details right now.')
     } finally {
       setLoading(false)
     }
@@ -261,21 +261,21 @@ export default function CaseSimilarJudgments({ caseId }: { caseId: number | stri
       <Card className="p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <div className="text-sm font-semibold text-foreground">Precedent Search</div>
-            <div className="text-xs text-muted-foreground mt-1">Dataset-powered retrieval. No LLM is used for normal matching.</div>
+            <div className="text-sm font-semibold text-foreground">Find cases like mine</div>
+            <div className="text-xs text-muted-foreground mt-1">WukaLAW searches its Pakistani court-case library. The full AI summary only opens if you ask for it.</div>
           </div>
           <div className="flex gap-2">
             <button
               onClick={() => switchMode('auto')}
               className={`px-3 py-2 rounded-lg text-xs font-medium border transition-colors ${mode === 'auto' ? 'border-[#D4AF37]/50 bg-[#D4AF37]/10 text-foreground' : 'border-white/10 text-muted-foreground hover:text-foreground'}`}
             >
-              <span className="inline-flex items-center gap-1.5"><Sparkles size={13} /> Auto Search</span>
+              <span className="inline-flex items-center gap-1.5"><Sparkles size={13} /> Find for me</span>
             </button>
             <button
               onClick={() => switchMode('custom')}
               className={`px-3 py-2 rounded-lg text-xs font-medium border transition-colors ${mode === 'custom' ? 'border-[#D4AF37]/50 bg-[#D4AF37]/10 text-foreground' : 'border-white/10 text-muted-foreground hover:text-foreground'}`}
             >
-              <span className="inline-flex items-center gap-1.5"><SlidersHorizontal size={13} /> Custom Search</span>
+              <span className="inline-flex items-center gap-1.5"><SlidersHorizontal size={13} /> Search my way</span>
             </button>
           </div>
         </div>
@@ -284,8 +284,8 @@ export default function CaseSimilarJudgments({ caseId }: { caseId: number | stri
       {mode === 'custom' && (
         <Card className="p-5 space-y-5 border-[#D4AF37]/15">
           <div>
-            <div className="text-sm font-semibold text-foreground">Super filters</div>
-            <p className="text-xs text-muted-foreground mt-1">Pick the exact issue, then add deep fact/evidence filters. WukaLAW searches the judgment corpus around only that focus.</p>
+            <div className="text-sm font-semibold text-foreground">Make the search more specific</div>
+            <p className="text-xs text-muted-foreground mt-1">Tell us what matters in your case. Pick only the details that fit.</p>
           </div>
           {groups.map((group) => (
             <div key={group.label}>
@@ -307,22 +307,22 @@ export default function CaseSimilarJudgments({ caseId }: { caseId: number | stri
             </div>
           ))}
           <div className="flex items-center justify-between gap-3 flex-wrap border-t border-white/[0.06] pt-4">
-            <span className="text-xs text-muted-foreground">{selectedFilters.length} filter{selectedFilters.length === 1 ? '' : 's'} selected</span>
+            <span className="text-xs text-muted-foreground">{selectedFilters.length} detail{selectedFilters.length === 1 ? '' : 's'} selected</span>
             <Btn icon={<Search size={13} />} onClick={() => void runCustom()} disabled={!selectedFilters.length || loading}>
-              Search selected facts
+              Find cases like mine
             </Btn>
           </div>
         </Card>
       )}
 
-      {loading && <Card className="p-7"><Spinner label={mode === 'auto' ? 'Auto-searching Pakistani judgments…' : 'Searching your selected fact pattern…'} /></Card>}
+      {loading && <Card className="p-7"><Spinner label={mode === 'auto' ? 'Looking through Pakistani cases…' : 'Looking for cases with those details…'} /></Card>}
       {error && <ErrorAlert message={error} />}
 
       {!loading && !error && !data && mode === 'custom' && (
         <Card className="p-8 text-center">
           <SlidersHorizontal size={24} className="mx-auto mb-3" style={{ color: G }} />
-          <div className="text-sm font-semibold text-foreground">Choose your filters</div>
-          <p className="text-xs text-muted-foreground mt-1">Example: Murder / Homicide + Firearm + Alibi + CCTV.</p>
+          <div className="text-sm font-semibold text-foreground">Tell us what matters</div>
+          <p className="text-xs text-muted-foreground mt-1">Example: Murder / Homicide + Gun / Firearm + Alibi + CCTV / Video.</p>
         </Card>
       )}
 
@@ -331,29 +331,29 @@ export default function CaseSimilarJudgments({ caseId }: { caseId: number | stri
           <div className="grid grid-cols-2 gap-3 max-w-md">
             <Card className="p-4">
               <div className="text-2xl font-bold text-foreground">{data.total_candidates}</div>
-              <div className="text-[10px] uppercase tracking-wide text-muted-foreground mt-1">judgments checked</div>
+              <div className="text-[10px] uppercase tracking-wide text-muted-foreground mt-1">cases we checked</div>
             </Card>
             <Card className="p-4">
               <div className="text-2xl font-bold" style={{ color: G }}>{bestScore}%</div>
-              <div className="text-[10px] uppercase tracking-wide text-muted-foreground mt-1">best {relatedOnly ? 'topic match' : 'similarity'}</div>
+              <div className="text-[10px] uppercase tracking-wide text-muted-foreground mt-1">{relatedOnly ? 'closest related case' : 'closest match'}</div>
             </Card>
           </div>
 
           <div className="flex items-center justify-between gap-3">
             <div>
-              <h3 className="text-base font-semibold text-foreground">{relatedOnly ? 'Related Pakistani Precedents' : mode === 'custom' ? 'Custom Similar Cases' : 'Similar Pakistani Cases'}</h3>
-              <p className="text-xs text-muted-foreground mt-1">Compact results first. Open a card only when you want more.</p>
+              <h3 className="text-base font-semibold text-foreground">{relatedOnly ? 'Cases on the same issue' : mode === 'custom' ? 'Cases matching your choices' : 'Cases most like yours'}</h3>
+              <p className="text-xs text-muted-foreground mt-1">Start with the closest matches. Open one only if you want the full story.</p>
             </div>
             {mode === 'auto' && (
-              <Btn variant="secondary" icon={<RefreshCw size={13} />} onClick={() => void loadAuto()} disabled={loading}>Refresh</Btn>
+              <Btn variant="secondary" icon={<RefreshCw size={13} />} onClick={() => void loadAuto()} disabled={loading}>Search again</Btn>
             )}
           </div>
 
           {data.results.length === 0 ? (
             <Card className="p-7 text-center">
               <BookOpenCheck size={24} className="mx-auto mb-3 text-muted-foreground" />
-              <div className="text-sm font-semibold text-foreground">No strong match found</div>
-              <p className="text-xs text-muted-foreground mt-1">Try another deep filter combination or add more case documents.</p>
+              <div className="text-sm font-semibold text-foreground">We couldn't find a close case yet</div>
+              <p className="text-xs text-muted-foreground mt-1">Try different details or add more information to your case.</p>
             </Card>
           ) : (
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
@@ -375,7 +375,7 @@ export default function CaseSimilarJudgments({ caseId }: { caseId: number | stri
                       </div>
                       <div className="text-right flex-shrink-0">
                         <div className="text-2xl font-bold" style={{ color: G }}>{score100(item.similarity_score)}%</div>
-                        <div className="text-[10px] text-muted-foreground">{relatedOnly ? 'topic match' : 'similarity'}</div>
+                        <div className="text-[10px] text-muted-foreground">{relatedOnly ? 'related' : 'similar'}</div>
                       </div>
                     </div>
 
@@ -384,26 +384,26 @@ export default function CaseSimilarJudgments({ caseId }: { caseId: number | stri
                       className="mt-4 w-full flex items-center justify-center gap-1.5 rounded-lg border border-white/[0.08] py-2 text-xs text-muted-foreground hover:text-foreground hover:bg-white/[0.03] transition-colors"
                     >
                       {open ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
-                      {open ? 'Hide details' : 'View details'}
+                      {open ? 'Close details' : 'See what happened'}
                     </button>
 
                     {open && (
                       <div className="mt-3 space-y-3 border-t border-white/[0.06] pt-3">
                         <div className="rounded-lg bg-white/[0.025] border border-white/[0.06] p-3">
-                          <div className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">Why this matched</div>
+                          <div className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">Why we picked this case</div>
                           <p className="text-xs text-foreground leading-relaxed">{item.explanation || shortReason(item)}</p>
                         </div>
 
                         {item.explicit_outcome_phrase && (
                           <div className="rounded-lg bg-white/[0.025] border border-white/[0.06] p-3">
-                            <div className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">Recorded outcome</div>
+                            <div className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">What the court decided</div>
                             <p className="text-xs text-foreground">{item.explicit_outcome_phrase}</p>
                           </div>
                         )}
 
                         {(item.laws_cited.length > 0 || item.sections_cited.length > 0 || item.articles_cited.length > 0) && (
                           <div>
-                            <div className="text-[10px] uppercase tracking-wide text-muted-foreground mb-2">Key legal references</div>
+                            <div className="text-[10px] uppercase tracking-wide text-muted-foreground mb-2">Laws that mattered</div>
                             <div className="flex flex-wrap gap-1.5">
                               {item.laws_cited.slice(0, 2).map((law) => <Badge key={`law-${law}`} label={law} />)}
                               {item.sections_cited.slice(0, 3).map((section) => <Badge key={`sec-${section}`} label={`Section ${section}`} />)}
@@ -413,13 +413,13 @@ export default function CaseSimilarJudgments({ caseId }: { caseId: number | stri
                         )}
 
                         {item.differences.length > 0 && (
-                          <div className="text-xs text-muted-foreground"><span className="font-semibold text-foreground">Main difference: </span>{item.differences[0]}</div>
+                          <div className="text-xs text-muted-foreground"><span className="font-semibold text-foreground">What's different: </span>{item.differences[0]}</div>
                         )}
 
                         <div className="rounded-lg border border-sky-500/15 bg-sky-500/[0.025] p-3 flex items-start gap-2">
                           <Database size={13} className="text-sky-400 mt-0.5 flex-shrink-0" />
                           <div className="text-[10px] text-muted-foreground leading-relaxed">
-                            Matching above comes from WukaLAW's indexed dataset. The optional Full Case Brief below uses Groq only when you open it.
+                            This match comes from WukaLAW's case library. The optional full story below uses AI only when you open it.
                           </div>
                         </div>
 
