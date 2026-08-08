@@ -44,6 +44,8 @@ export interface CaseSimilarResponse {
     title: string
     case_type: string
     documents_used: number
+    search_mode?: 'auto' | 'custom'
+    focus?: string
   }
 }
 
@@ -108,6 +110,26 @@ export async function getCaseSimilarJudgments(
 
   if (!response.ok) {
     throw await apiError(response, `Similar-case request failed with status ${response.status}`)
+  }
+
+  return response.json() as Promise<CaseSimilarResponse>
+}
+
+export async function getCaseSimilarJudgmentsCustom(
+  caseId: number | string,
+  focus: string[],
+  topK = 8,
+): Promise<CaseSimilarResponse> {
+  const params = new URLSearchParams({
+    focus: focus.join('; '),
+    top_k: String(topK),
+  })
+  const response = await fetch(`${API_BASE_URL}/cases/${caseId}/similar-custom?${params.toString()}`, {
+    headers: authHeaders(),
+  })
+
+  if (!response.ok) {
+    throw await apiError(response, `Custom precedent search failed with status ${response.status}`)
   }
 
   return response.json() as Promise<CaseSimilarResponse>
