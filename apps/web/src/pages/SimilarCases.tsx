@@ -38,7 +38,7 @@ export default function SimilarCases() {
       <div>
         <h1 className="text-2xl font-bold text-foreground">Similar Cases</h1>
         <p className="text-muted-foreground text-sm mt-1">
-          Select one of your cases and WukaLAW AI will analyze its current pathway and search Pakistani judgment history for the closest legal matches.
+          Pick your case. WukaLAW will show where it is now and find Pakistani cases most like it.
         </p>
       </div>
 
@@ -51,9 +51,9 @@ export default function SimilarCases() {
             <BriefcaseBusiness size={18} />
           </div>
           <div>
-            <div className="text-sm font-semibold text-foreground">Choose your case</div>
+            <div className="text-sm font-semibold text-foreground">Which case do you want to check?</div>
             <div className="text-xs text-muted-foreground mt-0.5">
-              The AI uses the case facts, type, description and attached documents automatically.
+              We use the facts and documents already saved in this case.
             </div>
           </div>
         </div>
@@ -66,7 +66,7 @@ export default function SimilarCases() {
           <ErrorAlert message={error} />
         ) : cases.length === 0 ? (
           <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5 text-sm text-muted-foreground">
-            You do not have any saved cases yet. Create a case in Case Management first, then return here to find historical Pakistani matches.
+            You do not have a saved case yet. Create one in Case Management first.
           </div>
         ) : (
           <div className="relative">
@@ -78,7 +78,7 @@ export default function SimilarCases() {
               }}
               className="w-full appearance-none rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3.5 pr-11 text-sm text-foreground focus:outline-none focus:border-[#D4AF37]/50 cursor-pointer"
             >
-              <option value="" className="bg-[#11161f]">Select a case to analyze…</option>
+              <option value="" className="bg-[#11161f]">Choose a case…</option>
               {cases.map((item) => (
                 <option key={item.id} value={item.id} className="bg-[#11161f]">
                   {item.case_number} — {item.title} ({item.case_type})
@@ -96,9 +96,9 @@ export default function SimilarCases() {
       {!loadingCases && !error && cases.length > 0 && !selectedCase && (
         <Card className="p-10 text-center">
           <Scale size={28} className="mx-auto mb-3" style={{ color: G }} />
-          <div className="text-sm font-semibold text-foreground">Select a case above</div>
+          <div className="text-sm font-semibold text-foreground">Choose a case above</div>
           <p className="text-xs text-muted-foreground mt-1 max-w-lg mx-auto">
-            Choosing a case starts pathway analysis and historical precedent matching automatically.
+            Once you choose one, WukaLAW starts the search automatically.
           </p>
         </Card>
       )}
