@@ -5,7 +5,8 @@ def build_explanation(candidate, factors):
     phrases = []
     for f in factors:
         mapping = {
-            "same_issue_family": f"the same core legal/factual issue ({f.value})",
+            "same_specific_issue": f"the same specific legal/factual issue ({f.value})",
+            "same_broad_issue": f"the same broad legal domain ({f.value})",
             "same_legal_domain": f"the same detected legal domain ({f.value})",
             "same_case_category": f"the same case category ({f.value})",
             "same_court": f"the same court ({f.value})",
@@ -40,7 +41,7 @@ def build_differences(candidate, request, intelligence):
     if request.jurisdiction and candidate.jurisdiction and request.jurisdiction != candidate.jurisdiction:
         out.append(f"Different jurisdiction: {candidate.jurisdiction}")
     if request.case_category and candidate.case_category and request.case_category != candidate.case_category:
-        out.append(f"Different case category: {candidate.case_category}")
+        out.append(f"Different source case category: {candidate.case_category}")
     if intelligence.entities.get("sections") and not candidate.sections_cited:
         out.append("No shared legal section is available in candidate metadata.")
     if request.include_outcomes and not candidate.explicit_outcome_phrase:
