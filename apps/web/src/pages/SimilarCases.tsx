@@ -1,151 +1,122 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { Search, Brain, FileText, ExternalLink } from 'lucide-react'
-import { findSimilarCases, errorMessage } from '../lib/api'
-import type { Source } from '../lib/api'
-import { groupSources, passageSummary } from '../lib/sources'
-import { formatScore, excerpt } from '../lib/format'
-import { Btn, Card, G, B } from '../components/design'
-import Disclaimer from '../components/Disclaimer'
+import { useEffect, useState } from 'react'
+import { BriefcaseBusiness, ChevronDown, Scale } from 'lucide-react'
+import { listCases, errorMessage } from '../lib/api'
+import type { Case } from '../lib/api'
+import { Card, G } from '../components/design'
 import ErrorAlert from '../components/ErrorAlert'
 import Spinner from '../components/Spinner'
+import CaseSimilarJudgments from '../components/CaseSimilarJudgments'
 
 export default function SimilarCases() {
-  const navigate = useNavigate()
-  const [query, setQuery] = useState('')
-  const [results, setResults] = useState<Source[] | null>(null)
-  const [busy, setBusy] = useState(false)
+  const [cases, setCases] = useState<Case[]>([])
+  const [selectedCaseId, setSelectedCaseId] = useState<number | null>(null)
+  const [loadingCases, setLoadingCases] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const search = async () => {
-    const q = query.trim()
-    if (!q || busy) return
-    setBusy(true)
-    setError(null)
-    try {
-      const res = await findSimilarCases(q)
-      setResults(res.results)
-    } catch (err) {
-      setError(errorMessage(err))
-    } finally {
-      setBusy(false)
+  useEffect(() => {
+    const loadCases = async () => {
+      setLoadingCases(true)
+      setError(null)
+      try {
+        const response = await listCases()
+        setCases(response.items)
+      } catch (err) {
+        setError(errorMessage(err))
+      } finally {
+        setLoadingCases(false)
+      }
     }
-  }
 
-  const groups = results ? groupSources(results) : []
+    void loadCases()
+  }, [])
+
+  const selectedCase = cases.find((item) => item.id === selectedCaseId) ?? null
 
   return (
     <div className="p-8 space-y-7 overflow-y-auto h-full">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Similar Case Search</h1>
+        <h1 className="text-2xl font-bold text-foreground">Similar Cases</h1>
         <p className="text-muted-foreground text-sm mt-1">
-          Semantic search across your uploaded case documents
+          Select one of your cases and WakuLaw AI will search Pakistani judgment history for the closest legal matches.
         </p>
       </div>
 
-      <Card className="p-4">
-        <div className="flex gap-3">
-          <div className="flex-1 relative">
-            <Search size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') void search()
+      <Card className="p-5">
+        <div className="flex items-center gap-3 mb-4">
+          <div
+            className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+            style={{ backgroundColor: `${G}15`, color: G }}
+          >
+            <BriefcaseBusiness size={18} />
+          </div>
+          <div>
+            <div className="text-sm font-semibold text-foreground">Choose your case</div>
+            <div className="text-xs text-muted-foreground mt-0.5">
+              The AI uses the case facts, type, description and attached documents automatically.
+            </div>
+          </div>
+        </div>
+
+        {loadingCases ? (
+          <div className="py-5">
+            <Spinner label="Loading your cases…" />
+          </div>
+        ) : error ? (
+          <ErrorAlert message={error} />
+        ) : cases.length === 0 ? (
+          <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5 text-sm text-muted-foreground">
+            You do not have any saved cases yet. Create a case in Case Management first, then return here to find historical Pakistani matches.
+          </div>
+        ) : (
+          <div className="relative">
+            <select
+              value={selectedCaseId ?? ''}
+              onChange={(event) => {
+                const value = event.target.value
+                setSelectedCaseId(value ? Number(value) : null)
               }}
-              className="w-full pl-10 pr-4 py-3 rounded-xl border border-white/10 bg-white/[0.04] text-sm text-foreground placeholder-muted-foreground focus:outline-none focus:border-[#D4AF37]/50"
-              placeholder="Describe case facts, legal issues, or paste a case summary..."
+              className="w-full appearance-none rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3.5 pr-11 text-sm text-foreground focus:outline-none focus:border-[#D4AF37]/50 cursor-pointer"
+            >
+              <option value="" className="bg-[#11161f]">Select a case to analyze…</option>
+              {cases.map((item) => (
+                <option key={item.id} value={item.id} className="bg-[#11161f]">
+                  {item.case_number} — {item.title} ({item.case_type})
+                </option>
+              ))}
+            </select>
+            <ChevronDown
+              size={16}
+              className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground"
             />
           </div>
-          <Btn size="lg" icon={<Brain size={14} />} onClick={() => void search()} disabled={busy}>
-            {busy ? 'Searching…' : 'Search AI'}
-          </Btn>
-        </div>
-        <div className="flex gap-2 mt-3">
-          {['Contract breach', 'Property dispute', 'Employment termination', 'Patent validity', 'Fundamental rights'].map((tag) => (
-            <button
-              key={tag}
-              onClick={() => setQuery(tag)}
-              className="px-2.5 py-1 text-[10px] rounded-lg border border-white/10 text-muted-foreground hover:text-foreground hover:bg-white/[0.05] transition-colors"
-            >
-              {tag}
-            </button>
-          ))}
-        </div>
+        )}
       </Card>
 
-      {error && <ErrorAlert message={error} />}
-      {busy && (
-        <div className="py-6 flex justify-center"><Spinner label="Searching your library…" /></div>
+      {!loadingCases && !error && cases.length > 0 && !selectedCase && (
+        <Card className="p-10 text-center">
+          <Scale size={28} className="mx-auto mb-3" style={{ color: G }} />
+          <div className="text-sm font-semibold text-foreground">Select a case above</div>
+          <p className="text-xs text-muted-foreground mt-1 max-w-lg mx-auto">
+            There is no manual AI search here anymore. Choosing a case automatically starts the historical similarity analysis.
+          </p>
+        </Card>
       )}
 
-      {results !== null && !busy && (
-        <>
-          <div className="text-xs text-muted-foreground">
-            {results.length === 0 ? (
-              <>No matching passages found — try broader wording or upload more documents.</>
-            ) : (
-              <>
-                Found <span className="font-semibold text-foreground">{passageSummary(results)}</span> · sorted by semantic similarity
-              </>
-            )}
-          </div>
+      {selectedCase && (
+        <div className="space-y-4">
+          <Card className="p-4 border-[#D4AF37]/15">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+              <span className="text-xs font-mono" style={{ color: G }}>{selectedCase.case_number}</span>
+              <span className="text-sm font-semibold text-foreground">{selectedCase.title}</span>
+              <span className="text-xs text-muted-foreground">{selectedCase.case_type}</span>
+              <span className="text-xs text-muted-foreground">
+                {selectedCase.num_documents} document{selectedCase.num_documents === 1 ? '' : 's'}
+              </span>
+            </div>
+          </Card>
 
-          <div className="space-y-3">
-            {groups.map((g, i) => {
-              const best = Math.max(...g.passages.map((p) => p.score))
-              const strong = best >= 0.8
-              return (
-                <Card key={g.documentId} className="p-5 hover:border-white/10 transition-all group">
-                  <div className="flex items-start gap-4">
-                    <div
-                      className="w-12 h-12 rounded-xl flex items-center justify-center text-lg font-bold flex-shrink-0"
-                      style={{ backgroundColor: `${strong ? G : B}15`, color: strong ? G : B }}
-                    >
-                      {i + 1}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-4">
-                        <div>
-                          <div className="text-sm font-semibold text-foreground flex items-center gap-2">
-                            <FileText size={13} style={{ color: G }} />
-                            {g.documentTitle}
-                          </div>
-                          <div className="text-xs text-muted-foreground mt-0.5">
-                            {g.passages.length} matching passage{g.passages.length === 1 ? '' : 's'}
-                          </div>
-                        </div>
-                        <div className="text-right flex-shrink-0">
-                          <div className="text-xl font-bold" style={{ color: strong ? G : B }}>{formatScore(best)}</div>
-                          <div className="text-[10px] text-muted-foreground">similarity</div>
-                        </div>
-                      </div>
-                      <div className="mt-3 space-y-2">
-                        {g.passages.map((p) => (
-                          <div key={p.chunk_id} className="text-xs text-muted-foreground leading-relaxed rounded-xl border border-white/[0.05] p-3" style={{ backgroundColor: 'rgba(255,255,255,0.02)' }}>
-                            <span className="font-semibold mr-1.5" style={{ color: '#34D399' }}>{formatScore(p.score)}</span>
-                            {excerpt(p.text)}
-                          </div>
-                        ))}
-                      </div>
-                      <div className="mt-3 flex items-center gap-3">
-                        <button
-                          onClick={() => navigate(`/documents/${g.documentId}`)}
-                          className="flex items-center gap-1 text-xs"
-                          style={{ color: G }}
-                        >
-                          <ExternalLink size={11} /> View Full Document
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </Card>
-              )
-            })}
-          </div>
-
-          <Disclaimer />
-        </>
+          <CaseSimilarJudgments key={selectedCase.id} caseId={selectedCase.id} />
+        </div>
       )}
     </div>
   )
