@@ -41,8 +41,6 @@ def build_differences(candidate, request, intelligence):
         out.append(f"Different jurisdiction: {candidate.jurisdiction}")
     if request.case_category and candidate.case_category and request.case_category != candidate.case_category:
         out.append(f"Different case category: {candidate.case_category}")
-    if any(f.factor == "issue_mismatch" for f in []):
-        pass
     if intelligence.entities.get("sections") and not candidate.sections_cited:
         out.append("No shared legal section is available in candidate metadata.")
     if request.include_outcomes and not candidate.explicit_outcome_phrase:
