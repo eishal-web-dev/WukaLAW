@@ -9,6 +9,7 @@ import UploadZone from '../components/UploadZone'
 import ErrorAlert from '../components/ErrorAlert'
 import Spinner from '../components/Spinner'
 import Disclaimer from '../components/Disclaimer'
+import CaseSimilarJudgments from '../components/CaseSimilarJudgments'
 
 export default function CaseDetail() {
   const { id } = useParams<{ id: string }>()
@@ -220,6 +221,9 @@ export default function CaseDetail() {
           )}
         </Card>
       </div>
+
+      {/* Historical precedent similarity */}
+      <CaseSimilarJudgments caseId={caseData.id} />
 
       {/* Upload into case */}
       <div>
