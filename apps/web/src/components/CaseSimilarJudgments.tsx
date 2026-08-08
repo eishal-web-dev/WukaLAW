@@ -58,8 +58,6 @@ function enoughFacts(text: string): boolean {
   if (clean.length < 25) return false
   const checks = factChecks(clean)
   const count = checks.filter((item) => item.present).length
-  // Do not switch to true fact-pattern similarity from procedure alone.
-  // A specific claim/event must be present plus at least one additional signal.
   return Boolean(checks[0]?.present) && count >= 2
 }
 
@@ -124,7 +122,7 @@ export default function CaseSimilarJudgments({ caseId }: { caseId: number | stri
             {relatedOnly ? 'Related Pakistani Precedents' : 'Similar Pakistani Cases'}
           </h3>
           <p className="text-xs text-muted-foreground mt-1">
-            {relatedOnly ? 'WakuLaw knows the legal topic, but needs more factual detail before claiming case similarity.' : 'Historical Pakistani judgments ranked by legal issue, factual overlap, cited law and semantic relevance.'}
+            {relatedOnly ? 'WukaLAW knows the legal topic, but needs more factual detail before claiming case similarity.' : 'Historical Pakistani judgments ranked by legal issue, factual overlap, cited law and semantic relevance.'}
           </p>
         </div>
         <Btn variant="secondary" icon={<RefreshCw size={13} className={loading ? 'animate-spin' : ''} />} onClick={() => void load()} disabled={loading || savingFacts}>Refresh</Btn>
@@ -187,7 +185,7 @@ export default function CaseSimilarJudgments({ caseId }: { caseId: number | stri
             })
           )}
 
-          <p className="text-[10px] text-muted-foreground leading-relaxed">{relatedOnly ? 'Topic Relevance ranks precedents on the same legal issue. WakuLaw switches to fact-pattern similarity once the underlying claim/event and enough supporting facts or case documents are available.' : "Match Score is an explainable retrieval ranking from WakuLAW's indexed corpus. Open Full Case Brief to review the historical facts, procedural history, reasoning, result and client relevance. Verify against the official judgment before relying on it."}</p>
+          <p className="text-[10px] text-muted-foreground leading-relaxed">{relatedOnly ? 'Topic Relevance ranks precedents on the same legal issue. WukaLAW switches to fact-pattern similarity once the underlying claim/event and enough supporting facts or case documents are available.' : "Match Score is an explainable retrieval ranking from WukaLAW's indexed corpus. Open Full Case Brief to review the historical facts, procedural history, reasoning, result and client relevance. Verify against the official judgment before relying on it."}</p>
         </div>
       )}
     </div>
