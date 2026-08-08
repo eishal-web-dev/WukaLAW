@@ -1,9 +1,8 @@
 ﻿"""Explainable deterministic similarity features for precedent ranking.
 
-The score is a ranking score, not a calibrated probability that two cases are
-"X% legally identical". Semantic vector relevance is deliberately capped at
-half of the score so specific legal/factual issue overlap can dominate generic
-language similarity.
+The score is a ranking score, not a calibrated probability. Broad legal-domain
+similarity is useful for retrieval, but a specific pleaded issue/offence must
+matter more than generic terms such as "criminal", "court" or "case".
 """
 from __future__ import annotations
 from dataclasses import dataclass
@@ -13,12 +12,14 @@ from .models import MatchingFactor
 
 @dataclass(frozen=True)
 class FeatureWeights:
-    vector_relevance: float = .50
-    same_issue_family: float = .20
-    issue_mismatch_penalty: float = -.22
-    same_legal_domain: float = .10
-    same_case_category: float = .06
-    shared_law: float = .04
+    vector_relevance: float = .42
+    same_specific_issue: float = .28
+    missing_specific_issue_penalty: float = -.26
+    same_broad_issue: float = .08
+    issue_mismatch_penalty: float = -.18
+    same_legal_domain: float = .08
+    same_case_category: float = .04
+    shared_law: float = .035
     shared_section: float = .03
     shared_article: float = .02
     shared_citation: float = .015
@@ -29,47 +30,46 @@ class FeatureWeights:
     matching_outcome: float = .005
 
 
-# Broad legal/factual issue families. These are intentionally grounded in terms
-# that occur in Pakistani case text and in WakuLAW case-management labels.
-ISSUE_FAMILIES: dict[str, tuple[str, ...]] = {
-    "fraud": (
-        "fraud", "fraudulent", "forgery", "forged", "fake", "bogus", "cheating",
-        "deception", "deceit", "misrepresentation", "dishonest", "dishonestly",
-        "financial loss", "breach of trust", "nab", "accountability bureau",
-    ),
-    "family": (
-        "family court", "family law", "khula", "dissolution of marriage", "divorce",
-        "maintenance", "child custody", "custody", "guardianship", "visitation",
-        "dower", "haq mehr", "mehr", "dowry", "bridal gifts", "marriage",
-    ),
-    "property": (
-        "property", "ownership", "possession", "land", "mutation", "transfer of property",
-        "specific performance", "inheritance", "partition", "tenancy", "rent",
-    ),
+# Broad domains help retrieval; specific issue families decide whether a result is
+# genuinely useful as a precedent for the user's actual dispute.
+BROAD_ISSUES: dict[str, tuple[str, ...]] = {
     "criminal": (
         "criminal", "offence", "offense", "accused", "prosecution", "conviction",
-        "acquittal", "sentence", "bail", "arrest", "fir", "penal code", "cr.p.c",
+        "acquittal", "sentence", "penal code", "cr.p.c", "code of criminal procedure",
     ),
-    "constitutional": (
-        "constitutional", "fundamental rights", "article 199", "writ", "judicial review",
-        "constitution petition", "habeas corpus", "mandamus", "certiorari",
+    "family": ("family court", "family law", "marriage", "matrimonial"),
+    "property": ("property", "land", "ownership", "possession"),
+    "constitutional": ("constitutional", "constitution petition", "fundamental rights", "writ"),
+    "tax": ("tax", "taxation", "revenue", "fbr", "customs"),
+    "labour": ("labour", "labor", "employment", "employee", "worker", "service matter"),
+    "corporate": ("company", "corporate", "shareholder", "director", "companies act"),
+    "contract": ("contract", "agreement", "contractual"),
+}
+
+SPECIFIC_ISSUES: dict[str, tuple[str, ...]] = {
+    "murder_homicide": (
+        "murder", "homicide", "qatal", "qatl", "302 ppc", "section 302", "302, p.p.c",
+        "302 p.p.c", "death sentence", "murder reference",
     ),
-    "tax": (
-        "tax", "taxation", "revenue", "assessment", "income tax", "sales tax",
-        "federal board of revenue", "fbr", "customs",
+    "bail": ("bail", "pre-arrest bail", "post-arrest bail", "anticipatory bail"),
+    "fraud_forgery": (
+        "fraud", "fraudulent", "forgery", "forged", "fake", "bogus", "cheating",
+        "deception", "deceit", "misrepresentation", "dishonest", "financial loss",
+        "breach of trust", "nab", "accountability bureau",
     ),
-    "labour": (
-        "labour", "labor", "employment", "employee", "worker", "termination",
-        "industrial relations", "service matter", "dismissal from service",
+    "custody_guardianship": (
+        "child custody", "custody", "guardianship", "guardian", "visitation",
     ),
-    "corporate": (
-        "company", "corporate", "shareholder", "director", "securities", "companies act",
-        "commercial company", "board of directors",
-    ),
-    "contract": (
-        "contract", "agreement", "breach of contract", "specific performance",
-        "consideration", "contractual", "sale agreement",
-    ),
+    "maintenance": ("maintenance", "maintenance allowance", "nafaqa", "nafqa"),
+    "dissolution_khula": ("khula", "dissolution of marriage", "divorce", "talaq"),
+    "dower_mehr": ("dower", "haq mehr", "haq meher", "mehr", "meher"),
+    "dowry_gifts": ("dowry", "bridal gifts", "jahez", "dowry articles"),
+    "inheritance_partition": ("inheritance", "succession", "partition", "legal heirs"),
+    "specific_performance": ("specific performance", "sale agreement", "agreement to sell"),
+    "tenancy_rent": ("tenancy", "tenant", "landlord", "rent controller", "rent law"),
+    "judicial_review_199": ("article 199", "mandamus", "certiorari", "habeas corpus", "judicial review"),
+    "tax_assessment": ("assessment", "income tax", "sales tax", "tax liability", "taxpayer"),
+    "termination_service": ("termination", "dismissal from service", "removal from service", "reinstatement"),
 }
 
 
@@ -78,13 +78,9 @@ def overlap(a, b):
     return [str(x) for x in a if str(x).casefold() in right]
 
 
-def _issue_families(text: str) -> set[str]:
+def _families(text: str, mapping: dict[str, tuple[str, ...]]) -> set[str]:
     value = (text or "").casefold()
-    found: set[str] = set()
-    for family, terms in ISSUE_FAMILIES.items():
-        if any(term in value for term in terms):
-            found.add(family)
-    return found
+    return {family for family, terms in mapping.items() if any(term in value for term in terms)}
 
 
 def compute_features(intelligence, candidate, request, weights=None):
@@ -96,6 +92,7 @@ def compute_features(intelligence, candidate, request, weights=None):
         [
             candidate.title or "",
             candidate.case_category or "",
+            candidate.case_number or "",
             candidate.text_preview or "",
             " ".join(candidate.laws_cited or []),
             " ".join(candidate.sections_cited or []),
@@ -104,20 +101,30 @@ def compute_features(intelligence, candidate, request, weights=None):
     ).casefold()
     source_text = (request.situation or request.case_number or request.document_id or "").casefold()
 
-    source_issues = _issue_families(source_text)
-    candidate_issues = _issue_families(candidate_text)
-    shared_issues = sorted(source_issues & candidate_issues)
+    source_specific = _families(source_text, SPECIFIC_ISSUES)
+    candidate_specific = _families(candidate_text, SPECIFIC_ISSUES)
+    shared_specific = sorted(source_specific & candidate_specific)
 
-    # A concrete shared issue (fraud, custody, tax, property...) should matter far
-    # more than generic words such as "case", "legal" or even jurisdiction.
-    if shared_issues:
+    if shared_specific:
+        factors.append(MatchingFactor("same_specific_issue", ", ".join(shared_specific), w.same_specific_issue))
+    elif source_specific:
+        # A murder case should not receive a strong score merely because another
+        # judgment is generically criminal. The specific issue is mandatory evidence.
         factors.append(
-            MatchingFactor("same_issue_family", ", ".join(shared_issues), w.same_issue_family)
+            MatchingFactor(
+                "missing_specific_issue",
+                ", ".join(sorted(source_specific)),
+                w.missing_specific_issue_penalty,
+            )
         )
-    elif source_issues:
-        factors.append(
-            MatchingFactor("issue_mismatch", ", ".join(sorted(source_issues)), w.issue_mismatch_penalty)
-        )
+
+    source_broad = _families(source_text, BROAD_ISSUES)
+    candidate_broad = _families(candidate_text, BROAD_ISSUES)
+    shared_broad = sorted(source_broad & candidate_broad)
+    if shared_broad:
+        factors.append(MatchingFactor("same_broad_issue", ", ".join(shared_broad), w.same_broad_issue))
+    elif source_broad:
+        factors.append(MatchingFactor("issue_mismatch", ", ".join(sorted(source_broad)), w.issue_mismatch_penalty))
 
     text = " ".join([candidate.case_category or "", candidate.text_preview or ""]).casefold()
     domain = intelligence.primary_domain.value.casefold().replace(" law", "")
@@ -140,8 +147,6 @@ def compute_features(intelligence, candidate, request, weights=None):
         for value in overlap(items, citems):
             factors.append(MatchingFactor(label, value, weight))
 
-    # Generic entities receive only a tiny contribution and common filler terms are
-    # explicitly ignored so words such as "case" and "legal" cannot inflate ranking.
     ignored_entities = {"case", "legal", "law", "pakistan", "court", "judgment"}
     for key, values in entities.items():
         if key in {"acts", "sections", "articles", "legal_citations"}:
