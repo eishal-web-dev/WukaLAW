@@ -27,6 +27,17 @@ from app.models import Case, Document, User
 router = APIRouter(prefix="/cases", tags=["precedent-briefs"])
 
 
+SUBSTANTIVE_CLIENT_TERMS = (
+    "divorce", "khula", "dissolution", "dowry", "dower", "mehr", "meher",
+    "maintenance", "custody", "guardianship", "cruelty", "domestic violence",
+    "murder", "homicide", "302", "bail", "fraud", "forgery", "cheating",
+    "property", "ownership", "possession", "inheritance", "partition",
+    "contract", "agreement", "specific performance", "termination", "dismissal",
+    "tax", "revenue", "constitutional", "writ", "injunction", "damages",
+    "acquittal", "conviction", "alibi", "false implication",
+)
+
+
 def _owned_case(db: Session, case_id: int, user: User) -> Case:
     case = db.get(Case, case_id)
     if case is None or case.owner_id != user.id:
@@ -60,6 +71,11 @@ def _list(value: Any) -> list[str]:
 def _text(value: Any) -> str:
     text = str(value or "").strip()
     return text or "Not available in the supplied judgment record."
+
+
+def _has_substantive_client_issue(text: str) -> bool:
+    value = (text or "").casefold()
+    return any(term in value for term in SUBSTANTIVE_CLIENT_TERMS)
 
 
 def _s3_client():
@@ -155,6 +171,8 @@ def precedent_brief(
     for document in documents[:3]:
         if document.text:
             client_documents.append(" ".join(document.text.split())[:2200])
+    client_record = "\n".join([explicit_case_facts, *client_documents]).strip()
+    has_substantive_client_issue = _has_substantive_client_issue(client_record)
 
     try:
         from app.routers.rag import get_pipeline
@@ -219,15 +237,22 @@ def precedent_brief(
             passages_reviewed = len(blocks)
 
         limited_client_facts = len(explicit_case_facts) < 40 and not client_documents
-        comparison_rule = (
-            "The client has supplied very limited facts. Do NOT claim factual similarity. "
-            "For similarities_to_client, list only literal topic overlap explicitly present in CLIENT-SUPPLIED FACTS. "
-            "For strategy fields, say the record is too limited whenever a client-specific conclusion would require assumptions."
-            if limited_client_facts
-            else
-            "Compare only facts explicitly present in CLIENT-SUPPLIED FACTS/CLIENT DOCUMENT EXCERPTS. "
-            "Never infer a client fact merely because it appears in the historical judgment."
-        )
+        if not has_substantive_client_issue:
+            comparison_rule = (
+                "The client record contains procedural information but no clearly stated substantive claim or defence. "
+                "Do NOT infer divorce, cruelty, maintenance, custody, dowry, fraud, murder, property, or any other substantive issue from the historical judgment. "
+                "You may compare literal procedural facts only. Set client_effect to insufficient_client_facts and return an empty argument_to_consider list."
+            )
+        elif limited_client_facts:
+            comparison_rule = (
+                "The client has supplied very limited facts. Do NOT claim factual similarity beyond literal overlap. "
+                "For strategy fields, say the record is too limited whenever a client-specific conclusion would require assumptions."
+            )
+        else:
+            comparison_rule = (
+                "Compare only facts explicitly present in CLIENT-SUPPLIED FACTS/CLIENT DOCUMENT EXCERPTS. "
+                "Never infer a client fact merely because it appears in the historical judgment."
+            )
 
         prompt = f"""You are preparing a Pakistani case-law brief for a legal decision-support product.
 Use ONLY the historical judgment record supplied below for statements about the precedent.
@@ -287,6 +312,11 @@ Return ONLY valid JSON with this exact schema:
     if strength not in {"strong", "moderate", "limited"}:
         strength = "limited"
 
+    argument_to_consider = _list(brief.get("argument_to_consider"))
+    if not has_substantive_client_issue:
+        effect = "insufficient_client_facts"
+        argument_to_consider = []
+
     return {
         "document_id": document_id,
         "title": first.title,
@@ -310,7 +340,7 @@ Return ONLY valid JSON with this exact schema:
         "client_effect": effect,
         "research_strength": strength,
         "research_strength_reason": _text(brief.get("research_strength_reason")),
-        "argument_to_consider": _list(brief.get("argument_to_consider")),
+        "argument_to_consider": argument_to_consider,
         "opponent_distinction": _list(brief.get("opponent_distinction")),
         "next_verification_steps": _list(brief.get("next_verification_steps")),
         "key_laws": _list(brief.get("key_laws")),
