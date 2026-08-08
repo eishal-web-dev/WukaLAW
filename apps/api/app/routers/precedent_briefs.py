@@ -116,6 +116,27 @@ def _full_source_text(source_path: str) -> tuple[str | None, str | None]:
     return None, None
 
 
+def _authority_note(court: str | None) -> str:
+    value = (court or "").casefold()
+    if "supreme" in value:
+        return (
+            "Supreme Court of Pakistan source. This can carry substantial precedential weight, "
+            "but whether a proposition is binding depends on the actual ratio, issue, forum, "
+            "later treatment and factual/legal applicability."
+        )
+    if "high court" in value:
+        return (
+            "High Court source. Its precedential force depends on the relevant province/territory, "
+            "the deciding bench, the forum considering it, the ratio and later treatment."
+        )
+    if court:
+        return (
+            f"Source identified as {court}. Authority should be verified from the official judgment, "
+            "court hierarchy, ratio and later treatment before reliance."
+        )
+    return "Court authority could not be verified from the indexed metadata."
+
+
 @router.get("/{case_id}/precedent-brief")
 def precedent_brief(
     case_id: int,
@@ -129,17 +150,11 @@ def precedent_brief(
         select(Document).where(Document.case_id == case.id).order_by(Document.created_at.desc())
     ).all()
 
-    # Keep user-supplied facts separate from classification hints. The LLM may
-    # compare only against this section and must not promote inferred topics into
-    # facts about the user's case.
     explicit_case_facts = (case.description or "").strip()
     client_documents: list[str] = []
     for document in documents[:3]:
         if document.text:
             client_documents.append(" ".join(document.text.split())[:2200])
-    client_record = explicit_case_facts
-    if client_documents:
-        client_record += ("\n" if client_record else "") + "\n".join(client_documents)
 
     try:
         from app.routers.rag import get_pipeline
@@ -152,7 +167,7 @@ def precedent_brief(
             f"{search_seed} facts background dispute parties evidence",
             "procedural history trial court family court high court appeal petition previous decision",
             "legal issues questions before the court applicable law sections articles",
-            "court reasoning findings analysis evidence principles",
+            "court reasoning findings analysis evidence principles ratio principle",
             "final decision order appeal allowed dismissed decree relief outcome",
         ]
         chunks = []
@@ -179,9 +194,6 @@ def precedent_brief(
         full_text, source_key = _full_source_text(first.source_path)
 
         if full_text:
-            # A full judgment can be very long. Keep both the beginning and the
-            # ending because party facts often appear near the start and the final
-            # order is commonly near the end.
             if len(full_text) > 60000:
                 historical_record = full_text[:42000] + "\n\n[...middle omitted...]\n\n" + full_text[-18000:]
             else:
@@ -210,7 +222,7 @@ def precedent_brief(
         comparison_rule = (
             "The client has supplied very limited facts. Do NOT claim factual similarity. "
             "For similarities_to_client, list only literal topic overlap explicitly present in CLIENT-SUPPLIED FACTS. "
-            "For how_it_may_help, describe only what legal principle the precedent may illustrate, not a predicted benefit."
+            "For strategy fields, say the record is too limited whenever a client-specific conclusion would require assumptions."
             if limited_client_facts
             else
             "Compare only facts explicitly present in CLIENT-SUPPLIED FACTS/CLIENT DOCUMENT EXCERPTS. "
@@ -222,6 +234,7 @@ Use ONLY the historical judgment record supplied below for statements about the 
 Use ONLY CLIENT-SUPPLIED FACTS and CLIENT DOCUMENT EXCERPTS for statements about the user's case.
 Do not use outside knowledge. Do not guess party facts, procedural events, holdings, outcomes, dates, evidence, relief, or client circumstances.
 {comparison_rule}
+Do NOT state that a case is binding or controlling. Authority/binding force requires separate verification of ratio, forum, later treatment and applicability.
 If a requested historical-case item is unsupported, write exactly: "Not available in the supplied judgment record."
 
 CLIENT CASE LABEL (classification only; NOT a factual assertion):
@@ -244,11 +257,18 @@ Return ONLY valid JSON with this exact schema:
   "procedural_history": ["Step 1 ...", "Step 2 ...", "Step 3 ..."],
   "legal_issues": ["issue 1", "issue 2"],
   "court_reasoning": ["reason 1", "reason 2"],
+  "ratio_or_principle": ["legal principle actually supported by the judgment record"],
   "final_decision": "what the court finally decided",
   "relief_or_order": "specific order/relief if supported",
   "similarities_to_client": ["ONLY explicit overlap supported by both records"],
   "important_differences": ["difference or missing client fact that limits comparison"],
   "how_it_may_help": ["legal principle or procedural lesson this precedent may illustrate; no outcome prediction"],
+  "client_effect": "one of: supports, cautions, mixed, insufficient_client_facts",
+  "research_strength": "one of: strong, moderate, limited",
+  "research_strength_reason": "why, based on record completeness and factual/legal overlap only",
+  "argument_to_consider": ["carefully phrased argument counsel may consider, grounded in this precedent and explicit client facts"],
+  "opponent_distinction": ["strongest factual/legal distinction an opposing party could raise"],
+  "next_verification_steps": ["what counsel should verify in the official judgment or client record before relying on this precedent"],
   "key_laws": ["law/section/article supported by the historical record"],
   "evidence_limitations": "important information missing from either record that limits the comparison"
 }}
@@ -260,6 +280,13 @@ Return ONLY valid JSON with this exact schema:
     except (RuntimeError, ValueError) as exc:
         raise HTTPException(status_code=503, detail=f"Could not generate precedent brief: {exc}") from exc
 
+    effect = str(brief.get("client_effect") or "insufficient_client_facts").strip().casefold()
+    if effect not in {"supports", "cautions", "mixed", "insufficient_client_facts"}:
+        effect = "insufficient_client_facts"
+    strength = str(brief.get("research_strength") or "limited").strip().casefold()
+    if strength not in {"strong", "moderate", "limited"}:
+        strength = "limited"
+
     return {
         "document_id": document_id,
         "title": first.title,
@@ -268,17 +295,25 @@ Return ONLY valid JSON with this exact schema:
         "passages_reviewed": passages_reviewed,
         "record_source": record_source,
         "full_source_key": source_key,
+        "authority_note": _authority_note(first.court),
         "case_overview": _text(brief.get("case_overview")),
         "background_facts": _list(brief.get("background_facts")),
         "procedural_history": _list(brief.get("procedural_history")),
         "legal_issues": _list(brief.get("legal_issues")),
         "court_reasoning": _list(brief.get("court_reasoning")),
+        "ratio_or_principle": _list(brief.get("ratio_or_principle")),
         "final_decision": _text(brief.get("final_decision")),
         "relief_or_order": _text(brief.get("relief_or_order")),
         "similarities_to_client": _list(brief.get("similarities_to_client")),
         "important_differences": _list(brief.get("important_differences")),
         "how_it_may_help": _list(brief.get("how_it_may_help")),
+        "client_effect": effect,
+        "research_strength": strength,
+        "research_strength_reason": _text(brief.get("research_strength_reason")),
+        "argument_to_consider": _list(brief.get("argument_to_consider")),
+        "opponent_distinction": _list(brief.get("opponent_distinction")),
+        "next_verification_steps": _list(brief.get("next_verification_steps")),
         "key_laws": _list(brief.get("key_laws")),
         "evidence_limitations": _text(brief.get("evidence_limitations")),
-        "disclaimer": "AI-generated summary for research support. Historical facts and outcomes are grounded in the retrieved source record; verify against the official judgment before relying on it.",
+        "disclaimer": "AI-generated research analysis, not legal advice or a binding-authority determination. Verify the official judgment, ratio, later treatment and client facts before relying on it.",
     }
