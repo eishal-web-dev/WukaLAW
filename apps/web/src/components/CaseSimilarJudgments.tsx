@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from 'react'
-import { AlertTriangle, BookOpenCheck, RefreshCw, Scale } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { AlertTriangle, BookOpenCheck, RefreshCw, Save, Scale } from 'lucide-react'
 import { Card, Badge, Btn, G } from './design'
 import ErrorAlert from './ErrorAlert'
 import Spinner from './Spinner'
+import { getCase, updateCase } from '../lib/api'
 import { getCaseSimilarJudgments } from '../lib/caseSimilar'
 import type { CaseSimilarResponse, SimilarJudgment } from '../lib/caseSimilar'
 
@@ -36,39 +37,24 @@ function domainLabel(item: SimilarJudgment): string | null {
   return factor?.value || null
 }
 
-interface Props {
-  caseId: number | string
-  caseType?: string
-  caseDescription?: string
-  documentCount?: number
-}
-
-export default function CaseSimilarJudgments({
-  caseId,
-  caseType = '',
-  caseDescription = '',
-  documentCount = 0,
-}: Props) {
+export default function CaseSimilarJudgments({ caseId }: { caseId: number | string }) {
   const [data, setData] = useState<CaseSimilarResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-
-  const descriptionWords = useMemo(
-    () => caseDescription.trim().split(/\s+/).filter(Boolean).length,
-    [caseDescription],
-  )
-
-  // A case-type label alone can find the same legal topic, but it cannot support
-  // a genuine fact-pattern comparison. We only call results "similar cases" when
-  // there is a meaningful factual description or attached case material.
-  const hasFactPattern = documentCount > 0 || descriptionWords >= 25
-  const resultMode = hasFactPattern ? 'similar' : 'related'
+  const [facts, setFacts] = useState('')
+  const [savingFacts, setSavingFacts] = useState(false)
+  const [factsSaved, setFactsSaved] = useState(false)
 
   const load = async () => {
     setLoading(true)
     setError(null)
     try {
-      setData(await getCaseSimilarJudgments(caseId, 8))
+      const [similar, currentCase] = await Promise.all([
+        getCaseSimilarJudgments(caseId, 8),
+        getCase(caseId),
+      ])
+      setData(similar)
+      setFacts(currentCase.description || '')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not load similar judgments.')
     } finally {
@@ -77,8 +63,34 @@ export default function CaseSimilarJudgments({
   }
 
   useEffect(() => {
+    setFactsSaved(false)
     void load()
   }, [caseId])
+
+  const saveFactsAndSearch = async () => {
+    const clean = facts.trim()
+    if (clean.length < 40) {
+      setError('Add a little more factual detail before searching. Include what happened, evidence, legal sections, disputed issue, defence or procedural stage.')
+      return
+    }
+
+    setSavingFacts(true)
+    setError(null)
+    setFactsSaved(false)
+    try {
+      await updateCase(caseId, { description: clean })
+      const refreshed = await getCaseSimilarJudgments(caseId, 8)
+      setData(refreshed)
+      setFactsSaved(true)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not save case facts and rerun the search.')
+    } finally {
+      setSavingFacts(false)
+    }
+  }
+
+  const weakFacts = !facts.trim() || facts.trim().length < 80
+  const relatedOnly = data ? data.source_case.documents_used === 0 && weakFacts : false
 
   return (
     <div>
@@ -86,19 +98,19 @@ export default function CaseSimilarJudgments({
         <div>
           <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
             <Scale size={16} style={{ color: G }} />
-            {resultMode === 'similar' ? 'Similar Pakistani Cases' : 'Related Pakistani Precedents'}
+            {relatedOnly ? 'Related Pakistani Precedents' : 'Similar Pakistani Cases'}
           </h3>
           <p className="text-xs text-muted-foreground mt-1">
-            {resultMode === 'similar'
-              ? 'Historical Pakistani judgments ranked against the case fact pattern, legal issues, cited law and semantic relevance.'
-              : `WakuLaw currently knows the legal topic (${caseType || 'this case'}) but not enough facts to claim that another case is factually similar.`}
+            {relatedOnly
+              ? 'WakuLaw knows the legal topic, but needs more facts before claiming factual similarity.'
+              : 'Historical Pakistani judgments ranked by legal issue, factual overlap, cited law and semantic relevance.'}
           </p>
         </div>
         <Btn
           variant="secondary"
           icon={<RefreshCw size={13} className={loading ? 'animate-spin' : ''} />}
           onClick={() => void load()}
-          disabled={loading}
+          disabled={loading || savingFacts}
         >
           Refresh
         </Btn>
@@ -106,13 +118,7 @@ export default function CaseSimilarJudgments({
 
       {loading && (
         <Card className="p-7">
-          <Spinner
-            label={
-              resultMode === 'similar'
-                ? 'Comparing the case fact pattern with Pakistani judgment history…'
-                : 'Finding Pakistani precedents on the same legal issue…'
-            }
-          />
+          <Spinner label="Searching Pakistani judgment history for comparable cases…" />
         </Card>
       )}
 
@@ -126,17 +132,45 @@ export default function CaseSimilarJudgments({
             {' · '}{Math.round(data.processing_time_ms)} ms
           </div>
 
-          {!hasFactPattern && (
-            <Card className="p-4 border-amber-500/25 bg-amber-500/[0.05]">
+          {data.source_case.documents_used === 0 && weakFacts && (
+            <Card className="p-4 border-amber-500/20 bg-amber-500/[0.04] space-y-3">
               <div className="flex items-start gap-2 text-xs text-muted-foreground">
                 <AlertTriangle size={14} className="mt-0.5 text-amber-400 flex-shrink-0" />
                 <div>
-                  <div className="font-semibold text-foreground mb-1">Not enough case facts for true similarity matching</div>
+                  <div className="font-semibold text-foreground mb-1">Add case facts for true similarity matching</div>
                   <p>
-                    These are related precedents, not claims that the historical cases have the same facts as yours. Add a factual case description or attach case documents. Useful facts include what happened, alleged offence/claim, evidence, relevant sections, procedural stage, disputed issue, defence and relief sought.
+                    Describe what happened, the alleged offence or claim, evidence, relevant sections, procedural stage, disputed issue, defence and relief sought. WakuLaw will save these facts to the case and immediately rerun the precedent search.
                   </p>
                 </div>
               </div>
+
+              <textarea
+                value={facts}
+                onChange={(event) => {
+                  setFacts(event.target.value)
+                  setFactsSaved(false)
+                }}
+                rows={6}
+                placeholder="Example: The accused is charged under Section 302 PPC for allegedly shooting the deceased with a firearm. The prosecution relies on two eyewitnesses and recovery of the weapon. The defence claims false implication and disputes the recovery. The matter is at trial stage."
+                className="w-full rounded-xl border border-white/10 bg-black/20 px-3 py-3 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:border-[#D4AF37]/50 resize-y"
+              />
+
+              <div className="flex items-center justify-between gap-3 flex-wrap">
+                <span className="text-[10px] text-muted-foreground">{facts.trim().length} characters · aim for 80+ factual characters</span>
+                <Btn
+                  icon={<Save size={13} />}
+                  onClick={() => void saveFactsAndSearch()}
+                  disabled={savingFacts || facts.trim().length < 40}
+                >
+                  {savingFacts ? 'Saving & searching…' : 'Save facts & find similar cases'}
+                </Btn>
+              </div>
+            </Card>
+          )}
+
+          {factsSaved && (
+            <Card className="p-3 border-emerald-500/20 bg-emerald-500/[0.04] text-xs text-muted-foreground">
+              Case facts saved. The results below were rerun using the updated case description.
             </Card>
           )}
 
@@ -145,7 +179,7 @@ export default function CaseSimilarJudgments({
               <BookOpenCheck size={24} className="mx-auto mb-3 text-muted-foreground" />
               <div className="text-sm font-semibold text-foreground">No sufficiently relevant historical match found</div>
               <p className="text-xs text-muted-foreground mt-1">
-                Add a fuller case description or relevant documents and refresh the search.
+                Weak semantic neighbours are hidden. Add clearer facts or relevant documents and refresh the search.
               </p>
             </Card>
           ) : (
@@ -158,7 +192,7 @@ export default function CaseSimilarJudgments({
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2 mb-2">
                         <span className="text-[10px] font-mono text-muted-foreground">#{item.rank}</span>
-                        <Badge label={resultMode === 'similar' ? readableLabel(item.similarity_label) : 'related precedent'} />
+                        <Badge label={relatedOnly ? 'related precedent' : readableLabel(item.similarity_label)} />
                         {item.court && <Badge label={item.court} />}
                         {domain && <Badge label={domain} />}
                         {issue && <Badge label={issue} />}
@@ -174,17 +208,13 @@ export default function CaseSimilarJudgments({
                     </div>
                     <div className="text-right flex-shrink-0">
                       <div className="text-lg font-bold" style={{ color: G }}>{score100(item.similarity_score)}</div>
-                      <div className="text-[10px] text-muted-foreground">
-                        {resultMode === 'similar' ? 'match score / 100' : 'topic relevance / 100'}
-                      </div>
+                      <div className="text-[10px] text-muted-foreground">{relatedOnly ? 'topic relevance / 100' : 'match score / 100'}</div>
                     </div>
                   </div>
 
                   {item.explanation && (
                     <div className="mt-4 rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
-                      <div className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">
-                        {resultMode === 'similar' ? 'Why it matches' : 'Why it is related'}
-                      </div>
+                      <div className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">{relatedOnly ? 'Why it is related' : 'Why it matches'}</div>
                       <p className="text-xs text-foreground leading-relaxed">{item.explanation}</p>
                     </div>
                   )}
@@ -226,9 +256,9 @@ export default function CaseSimilarJudgments({
           )}
 
           <p className="text-[10px] text-muted-foreground leading-relaxed">
-            {resultMode === 'similar'
-              ? "Match Score ranks retrieved judgments against the available case facts. It is not a probability of winning or a legal conclusion."
-              : "Topic Relevance ranks precedents on the same legal issue. WakuLaw will switch to fact-pattern similarity once the case contains enough factual detail."}
+            {relatedOnly
+              ? 'Topic Relevance ranks precedents on the same legal issue. WakuLaw switches to fact-pattern similarity once the case contains enough factual detail.'
+              : "Match Score is an explainable retrieval ranking from WakuLAW's indexed corpus. It is not a probability of winning, a legal conclusion, or a claim that two cases are identical."}
           </p>
         </div>
       )}
