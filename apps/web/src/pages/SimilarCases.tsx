@@ -97,7 +97,7 @@ export default function SimilarCases() {
           <Scale size={28} className="mx-auto mb-3" style={{ color: G }} />
           <div className="text-sm font-semibold text-foreground">Select a case above</div>
           <p className="text-xs text-muted-foreground mt-1 max-w-lg mx-auto">
-            There is no manual AI search here anymore. Choosing a case automatically starts the historical similarity analysis.
+            Choosing a case automatically starts the historical precedent analysis.
           </p>
         </Card>
       )}
@@ -115,7 +115,13 @@ export default function SimilarCases() {
             </div>
           </Card>
 
-          <CaseSimilarJudgments key={selectedCase.id} caseId={selectedCase.id} />
+          <CaseSimilarJudgments
+            key={selectedCase.id}
+            caseId={selectedCase.id}
+            caseType={selectedCase.case_type}
+            caseDescription={selectedCase.description ?? ''}
+            documentCount={selectedCase.num_documents}
+          />
         </div>
       )}
     </div>
