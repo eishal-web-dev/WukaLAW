@@ -5,6 +5,7 @@ import type { Case } from '../lib/api'
 import { Card, G } from '../components/design'
 import ErrorAlert from '../components/ErrorAlert'
 import Spinner from '../components/Spinner'
+import CasePathwayIntelligence from '../components/CasePathwayIntelligence'
 import CaseSimilarJudgments from '../components/CaseSimilarJudgments'
 
 export default function SimilarCases() {
@@ -37,7 +38,7 @@ export default function SimilarCases() {
       <div>
         <h1 className="text-2xl font-bold text-foreground">Similar Cases</h1>
         <p className="text-muted-foreground text-sm mt-1">
-          Select one of your cases and WakuLaw AI will search Pakistani judgment history for the closest legal matches.
+          Select one of your cases and WukaLAW AI will analyze its current pathway and search Pakistani judgment history for the closest legal matches.
         </p>
       </div>
 
@@ -97,7 +98,7 @@ export default function SimilarCases() {
           <Scale size={28} className="mx-auto mb-3" style={{ color: G }} />
           <div className="text-sm font-semibold text-foreground">Select a case above</div>
           <p className="text-xs text-muted-foreground mt-1 max-w-lg mx-auto">
-            Choosing a case automatically starts the historical precedent analysis.
+            Choosing a case starts pathway analysis and historical precedent matching automatically.
           </p>
         </Card>
       )}
@@ -115,13 +116,8 @@ export default function SimilarCases() {
             </div>
           </Card>
 
-          <CaseSimilarJudgments
-            key={selectedCase.id}
-            caseId={selectedCase.id}
-            caseType={selectedCase.case_type}
-            caseDescription={selectedCase.description ?? ''}
-            documentCount={selectedCase.num_documents}
-          />
+          <CasePathwayIntelligence key={`pathway-${selectedCase.id}`} caseId={selectedCase.id} />
+          <CaseSimilarJudgments key={`similar-${selectedCase.id}`} caseId={selectedCase.id} />
         </div>
       )}
     </div>
