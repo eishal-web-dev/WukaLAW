@@ -20,7 +20,7 @@ export default function CasePathwayIntelligence({ caseId }: { caseId: number | s
       try {
         setData(await getCasePathwayIntelligence(caseId))
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Could not analyze case pathway.')
+        setError(err instanceof Error ? err.message : 'We could not work out where this case is right now.')
       } finally {
         setLoading(false)
       }
@@ -28,7 +28,7 @@ export default function CasePathwayIntelligence({ caseId }: { caseId: number | s
     void load()
   }, [caseId])
 
-  if (loading) return <Card className="p-5"><Spinner label="Analyzing current case stage…" /></Card>
+  if (loading) return <Card className="p-5"><Spinner label="Checking where your case is now…" /></Card>
   if (error) return <ErrorAlert message={error} />
   if (!data) return null
 
@@ -42,7 +42,7 @@ export default function CasePathwayIntelligence({ caseId }: { caseId: number | s
             <Route size={16} />
           </div>
           <div className="min-w-0">
-            <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Current case stage</div>
+            <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Where your case is now</div>
             <div className="text-sm font-semibold text-foreground truncate">{data.current_stage.label}</div>
           </div>
         </div>
@@ -50,14 +50,14 @@ export default function CasePathwayIntelligence({ caseId }: { caseId: number | s
         <div className="flex items-center gap-5">
           <div className="text-right">
             <div className="text-xl font-bold" style={{ color: G }}>{stageKnown ? `${data.overall_progress}%` : '—'}</div>
-            <div className="text-[10px] text-muted-foreground">pathway position</div>
+            <div className="text-[10px] text-muted-foreground">case journey</div>
           </div>
           <div className="hidden sm:block h-9 w-px bg-white/[0.08]" />
           <div className="hidden sm:block">
-            <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Likely next stage</div>
+            <div className="text-[10px] uppercase tracking-wide text-muted-foreground">What usually comes next</div>
             <div className="text-xs font-semibold text-foreground mt-0.5 flex items-center gap-1.5">
               <ArrowRight size={12} style={{ color: G }} />
-              {data.next_generic_stage?.label ?? 'Not determined'}
+              {data.next_generic_stage?.label ?? 'We need more information'}
             </div>
           </div>
         </div>
@@ -66,7 +66,7 @@ export default function CasePathwayIntelligence({ caseId }: { caseId: number | s
       {data.detected_issues.length > 0 && (
         <div className="flex flex-wrap gap-1.5 mt-3">
           {data.detected_issues.map((item) => <Badge key={item.issue} label={item.issue} />)}
-          <Badge label={`${data.stage_confidence} confidence`} />
+          <Badge label={data.stage_confidence === 'high' ? 'We’re fairly confident' : data.stage_confidence === 'moderate' ? 'Some confidence' : 'More information needed'} />
         </div>
       )}
 
@@ -81,19 +81,19 @@ export default function CasePathwayIntelligence({ caseId }: { caseId: number | s
         className="mt-3 text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 transition-colors"
       >
         {open ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
-        {open ? 'Hide pathway details' : 'View pathway details'}
+        {open ? 'Hide why we think this' : 'Why do we think this?'}
       </button>
 
       {open && (
         <div className="mt-4 pt-4 border-t border-white/[0.06] space-y-4">
           <div className="sm:hidden rounded-lg border border-white/[0.06] bg-white/[0.02] p-3">
-            <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Likely next stage</div>
-            <div className="text-xs font-semibold text-foreground mt-1">{data.next_generic_stage?.label ?? 'Not determined'}</div>
+            <div className="text-[10px] uppercase tracking-wide text-muted-foreground">What usually comes next</div>
+            <div className="text-xs font-semibold text-foreground mt-1">{data.next_generic_stage?.label ?? 'We need more information'}</div>
           </div>
 
           {data.detected_stage_evidence.length > 0 && (
             <div>
-              <div className="text-[10px] uppercase tracking-wide text-muted-foreground mb-2">Why WukaLAW detected this stage</div>
+              <div className="text-[10px] uppercase tracking-wide text-muted-foreground mb-2">What we found in your case</div>
               <div className="space-y-2">
                 {data.detected_stage_evidence.map((stage) => (
                   <div key={stage.key} className="flex items-start gap-2 text-xs text-muted-foreground">
@@ -116,7 +116,7 @@ export default function CasePathwayIntelligence({ caseId }: { caseId: number | s
             </div>
           )}
 
-          <p className="text-[10px] text-muted-foreground leading-relaxed">{data.progress_meaning} {data.disclaimer}</p>
+          <p className="text-[10px] text-muted-foreground leading-relaxed">This progress shows where the case appears to be in the court process. It is not a win chance or a promise about timing. Always check the latest court order.</p>
         </div>
       )}
     </Card>
