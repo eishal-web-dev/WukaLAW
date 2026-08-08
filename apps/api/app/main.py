@@ -14,7 +14,7 @@ from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.db import Base, engine
-from app.routers import auth_routes, cases, documents, legal_intelligence, precedent_briefs, qa, rag, search, similar_cases
+from app.routers import auth_routes, case_pathway, cases, documents, legal_intelligence, precedent_briefs, qa, rag, search, similar_cases
 
 app = FastAPI(
     title="WakuLaw API",
@@ -54,6 +54,7 @@ def health():
 api.include_router(auth_routes.router)
 api.include_router(cases.router)
 api.include_router(precedent_briefs.router)
+api.include_router(case_pathway.router)
 api.include_router(documents.router)
 api.include_router(search.router)
 api.include_router(qa.router)
