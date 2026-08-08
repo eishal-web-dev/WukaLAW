@@ -17,8 +17,15 @@ from pathlib import Path
 
 import boto3
 from botocore.exceptions import ClientError
+from dotenv import load_dotenv
 
 DEFAULT_INCLUDE = ("raw", "metadata")
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+
+
+def _load_project_env() -> None:
+    """Load the repository-root .env before argparse reads environment defaults."""
+    load_dotenv(PROJECT_ROOT / ".env")
 
 
 def parser() -> argparse.ArgumentParser:
@@ -26,7 +33,7 @@ def parser() -> argparse.ArgumentParser:
     p.add_argument("--bucket", default=os.getenv("AWS_S3_BUCKET"), help="Destination bucket")
     p.add_argument("--region", default=os.getenv("AWS_REGION", "ap-south-1"))
     p.add_argument("--endpoint-url", default=os.getenv("AWS_S3_ENDPOINT_URL"), help="Custom S3 endpoint (for Supabase/R2/etc.)")
-    p.add_argument("--source", default="datasets", help="Local dataset directory")
+    p.add_argument("--source", default=str(PROJECT_ROOT / "datasets"), help="Local dataset directory")
     p.add_argument("--prefix", default="datasets", help="Remote key prefix")
     p.add_argument(
         "--include",
@@ -66,9 +73,10 @@ def iter_files(source: Path, include: list[str]):
 
 
 def main() -> int:
+    _load_project_env()
     args = parser().parse_args()
     if not args.bucket:
-        raise SystemExit("Missing --bucket or AWS_S3_BUCKET")
+        raise SystemExit("Missing AWS_S3_BUCKET in the root .env or pass --bucket")
 
     source = Path(args.source).resolve()
     if not source.is_dir():
@@ -80,6 +88,8 @@ def main() -> int:
     client = boto3.client("s3", **kwargs)
 
     include = [item.strip("/\\") for item in args.include if item.strip("/\\")]
+    print("Bucket:", args.bucket)
+    print("Region:", args.region)
     print("Included dataset folders:", ", ".join(include) or "(none)")
     if args.endpoint_url:
         print("Using S3-compatible endpoint:", args.endpoint_url)
