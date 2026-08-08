@@ -1,13 +1,17 @@
 import { useEffect, useState } from 'react'
-import { BookOpenCheck, RefreshCw, Scale } from 'lucide-react'
+import { AlertTriangle, BookOpenCheck, RefreshCw, Scale } from 'lucide-react'
 import { Card, Badge, Btn, G } from './design'
 import ErrorAlert from './ErrorAlert'
 import Spinner from './Spinner'
 import { getCaseSimilarJudgments } from '../lib/caseSimilar'
 import type { CaseSimilarResponse } from '../lib/caseSimilar'
 
-function pct(score: number): number {
+function score100(score: number): number {
   return Math.max(0, Math.min(100, Math.round(score <= 1 ? score * 100 : score)))
+}
+
+function readableLabel(label: string): string {
+  return label.replaceAll('_', ' ')
 }
 
 export default function CaseSimilarJudgments({ caseId }: { caseId: number | string }) {
@@ -40,7 +44,7 @@ export default function CaseSimilarJudgments({ caseId }: { caseId: number | stri
             Similar Pakistani Cases
           </h3>
           <p className="text-xs text-muted-foreground mt-1">
-            Historical Pakistani judgments ranked against this case's facts, type and attached documents.
+            Historical Pakistani judgments ranked by legal issue, factual overlap, cited law and semantic relevance.
           </p>
         </div>
         <Btn
@@ -69,12 +73,23 @@ export default function CaseSimilarJudgments({ caseId }: { caseId: number | stri
             {' · '}{Math.round(data.processing_time_ms)} ms
           </div>
 
+          {data.source_case.documents_used === 0 && (
+            <Card className="p-3 border-amber-500/20 bg-amber-500/[0.04]">
+              <div className="flex items-start gap-2 text-xs text-muted-foreground">
+                <AlertTriangle size={14} className="mt-0.5 text-amber-400 flex-shrink-0" />
+                <span>
+                  Limited case information: no documents are attached. Results are based on the case type, title and description only. Add case facts or documents for more precise precedent matching.
+                </span>
+              </div>
+            </Card>
+          )}
+
           {data.results.length === 0 ? (
             <Card className="p-7 text-center">
               <BookOpenCheck size={24} className="mx-auto mb-3 text-muted-foreground" />
-              <div className="text-sm font-semibold text-foreground">No strong historical match found</div>
+              <div className="text-sm font-semibold text-foreground">No sufficiently relevant historical match found</div>
               <p className="text-xs text-muted-foreground mt-1">
-                Add a clearer case description or attach relevant case documents, then refresh the search.
+                Weak semantic neighbours are hidden. Add a clearer description or relevant documents and refresh the search.
               </p>
             </Card>
           ) : (
@@ -84,7 +99,7 @@ export default function CaseSimilarJudgments({ caseId }: { caseId: number | stri
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2 mb-2">
                       <span className="text-[10px] font-mono text-muted-foreground">#{item.rank}</span>
-                      <Badge label={item.similarity_label} />
+                      <Badge label={readableLabel(item.similarity_label)} />
                       {item.court && <Badge label={item.court} />}
                       {item.case_category && <Badge label={item.case_category} />}
                     </div>
@@ -98,8 +113,8 @@ export default function CaseSimilarJudgments({ caseId }: { caseId: number | stri
                     </div>
                   </div>
                   <div className="text-right flex-shrink-0">
-                    <div className="text-lg font-bold" style={{ color: G }}>{pct(item.similarity_score)}%</div>
-                    <div className="text-[10px] text-muted-foreground">similarity</div>
+                    <div className="text-lg font-bold" style={{ color: G }}>{score100(item.similarity_score)}</div>
+                    <div className="text-[10px] text-muted-foreground">match score / 100</div>
                   </div>
                 </div>
 
@@ -150,6 +165,10 @@ export default function CaseSimilarJudgments({ caseId }: { caseId: number | stri
               {data.warnings.join(' ')}
             </Card>
           )}
+
+          <p className="text-[10px] text-muted-foreground leading-relaxed">
+            Match Score is an explainable retrieval ranking from WakuLAW's indexed corpus. It is not a probability of winning, a legal conclusion, or a claim that two cases are identical.
+          </p>
         </div>
       )}
     </div>
