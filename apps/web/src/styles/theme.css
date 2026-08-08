@@ -155,11 +155,6 @@
     @apply bg-background text-foreground;
   }
 
-  /**
-  * Default typography styles for HTML elements (h1-h4, p, label, button, input).
-  * These are in @layer base, so Tailwind utility classes (like text-sm, text-lg) automatically override them.
-  */
-
   html {
     font-size: var(--font-size);
   }
@@ -204,5 +199,114 @@
     font-size: var(--text-base);
     font-weight: var(--font-weight-normal);
     line-height: 1.5;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   WukaLAW motion language
+   Small, calm transitions make research feel responsive without turning the
+   legal workspace into a flashy interface.
+   -------------------------------------------------------------------------- */
+
+@keyframes wk-rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.995);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes wk-soft-pulse {
+  0%, 100% { box-shadow: 0 0 0 rgba(212, 175, 55, 0); }
+  50% { box-shadow: 0 0 24px rgba(212, 175, 55, 0.12); }
+}
+
+@keyframes wk-progress-sheen {
+  from { transform: translateX(-130%); }
+  to { transform: translateX(260%); }
+}
+
+/* Every shared Card enters softly and reacts only a little on hover. */
+.rounded-2xl.border.border-border.bg-card {
+  animation: wk-rise-in 360ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  transition:
+    transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 220ms ease,
+    box-shadow 220ms ease,
+    background-color 220ms ease;
+}
+
+/* Buttons and filter chips should feel physical, never bouncy. */
+button,
+select,
+input,
+textarea {
+  transition:
+    transform 160ms ease,
+    border-color 180ms ease,
+    background-color 180ms ease,
+    color 180ms ease,
+    box-shadow 180ms ease,
+    opacity 180ms ease;
+}
+
+button:focus-visible,
+select:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.12);
+}
+
+/* Gold primary actions receive a very restrained glow while hovered. */
+button[style*="background-color: rgb(212, 175, 55)"],
+button[style*="background-color: #D4AF37"] {
+  position: relative;
+  overflow: hidden;
+}
+
+/* Progress fills ease rather than jumping when stage data arrives. */
+.h-1\.5 > div,
+.h-2 > div {
+  transition: width 700ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  button:not(:disabled):hover {
+    transform: translateY(-1px);
+  }
+
+  button:not(:disabled):active {
+    transform: translateY(0) scale(0.975);
+  }
+
+  .rounded-2xl.border.border-border.bg-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(212, 175, 55, 0.14);
+    box-shadow: 0 12px 34px rgba(0, 0, 0, 0.16);
+  }
+
+  /* Selected gold-toned controls get a soft premium glow. */
+  button[class*="border-[#D4AF37]"]:hover {
+    animation: wk-soft-pulse 1.8s ease-in-out infinite;
+  }
+}
+
+/* Keep accessibility first: users who request less motion get none. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  button:hover,
+  .rounded-2xl.border.border-border.bg-card:hover {
+    transform: none !important;
   }
 }
