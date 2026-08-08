@@ -23,6 +23,49 @@ router = APIRouter(prefix="/cases", tags=["cases"])
 ALLOWED_STATUS = {"Active", "Review", "On Hold", "Closed"}
 ALLOWED_PRIORITY = {"Low", "Medium", "High", "Critical"}
 
+# Case-management labels are intentionally enriched into legal vocabulary before
+# semantic precedent retrieval. A bare label such as "Family Case" is too vague
+# for legal-domain detection and can produce zero candidates even when the corpus
+# contains relevant judgments.
+CASE_TYPE_HINTS = {
+    "family": (
+        "Pakistani family law dispute involving Family Courts, marriage, dissolution of marriage, "
+        "khula, divorce, dower or haq mehr, maintenance, child custody, guardianship, visitation, "
+        "dowry or bridal gifts, and related family-law remedies"
+    ),
+    "criminal": (
+        "Pakistani criminal law matter involving offences, bail, arrest, trial, evidence, sentence, "
+        "Pakistan Penal Code and Code of Criminal Procedure"
+    ),
+    "civil": (
+        "Pakistani civil litigation involving civil rights, property, contracts, injunctions, declarations, "
+        "specific performance and the Code of Civil Procedure"
+    ),
+    "constitutional": (
+        "Pakistani constitutional law matter involving fundamental rights, judicial review, High Court writ "
+        "jurisdiction and the Constitution of the Islamic Republic of Pakistan"
+    ),
+    "property": (
+        "Pakistani property dispute involving ownership, possession, transfer, inheritance, mutation, land, "
+        "specific performance and related civil remedies"
+    ),
+    "tax": (
+        "Pakistani tax and revenue dispute involving taxation, assessment, revenue authorities and fiscal law"
+    ),
+    "corporate": (
+        "Pakistani company and corporate law dispute involving companies, directors, shareholders, commercial "
+        "obligations and regulatory law"
+    ),
+    "labour": (
+        "Pakistani labour and employment dispute involving employment, termination, service rights, workers, "
+        "industrial relations and labour law"
+    ),
+    "employment": (
+        "Pakistani labour and employment dispute involving employment, termination, service rights, workers, "
+        "industrial relations and labour law"
+    ),
+}
+
 
 def _get_owned_case(db: Session, case_id: int, user: User) -> Case:
     case = db.get(Case, case_id)
@@ -54,27 +97,31 @@ def _validate(status: str | None, priority: str | None) -> None:
         raise HTTPException(status_code=422, detail=f"priority must be one of {sorted(ALLOWED_PRIORITY)}")
 
 
-def _similar_case_seed(case: Case, documents: list[Document]) -> str:
-    """Build a compact factual profile of a user's case for precedent retrieval.
+def _case_type_hint(case_type: str) -> str:
+    normalized = (case_type or "").strip().casefold()
+    for key, hint in CASE_TYPE_HINTS.items():
+        if key in normalized:
+            return hint
+    return f"Pakistani legal dispute classified by the user as {case_type.strip()}"
 
-    The user's own case never becomes a historical result. We only use its title,
-    type, description and bounded excerpts from attached documents as the search
-    profile against the indexed Pakistani judgment corpus.
-    """
+
+def _similar_case_seed(case: Case, documents: list[Document]) -> str:
+    """Build a focused legal/factual profile of a user's case for precedent retrieval."""
     parts = [
+        f"Jurisdiction: Pakistan",
         f"Case title: {case.title}",
         f"Case type: {case.case_type}",
+        f"Legal domain hint: {_case_type_hint(case.case_type)}",
     ]
     if case.description and case.description.strip():
-        parts.append(f"Case description: {case.description.strip()}")
+        parts.append(f"Case facts and issues: {case.description.strip()}")
 
-    # Include a small amount of case-document evidence so similarity still works
-    # when the case description is brief. Bound this aggressively to keep the
-    # embedding query focused and predictable for very large uploaded documents.
+    # Use bounded excerpts from a few attached documents. This gives the semantic
+    # retriever real facts when available without letting a large book swamp the query.
     for document in documents[:4]:
         text = " ".join((document.text or "").split())
         if text:
-            parts.append(f"Document {document.title}: {text[:2200]}")
+            parts.append(f"Evidence/document {document.title}: {text[:2200]}")
 
     return "\n".join(parts)
 
@@ -134,7 +181,6 @@ def update_case(
 @router.delete("/{case_id}", status_code=204)
 def delete_case(case_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     case = _get_owned_case(db, case_id, user)
-    # detach documents rather than deleting them
     for document in db.scalars(select(Document).where(Document.case_id == case.id)):
         document.case_id = None
     db.delete(case)
@@ -170,8 +216,6 @@ def case_similar_judgments(
     situation = _similar_case_seed(case, list(documents))
 
     try:
-        # Imported lazily to avoid coupling the regular case CRUD router to the
-        # heavier embedding/Qdrant initialization until this feature is requested.
         from app.routers.similar_cases import get_similar_case_pipeline
 
         result = get_similar_case_pipeline().run(
