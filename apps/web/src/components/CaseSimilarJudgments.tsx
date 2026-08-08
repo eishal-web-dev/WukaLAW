@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { AlertTriangle, BookOpenCheck, RefreshCw, Scale } from 'lucide-react'
 import { Card, Badge, Btn, G } from './design'
 import ErrorAlert from './ErrorAlert'
@@ -36,10 +36,33 @@ function domainLabel(item: SimilarJudgment): string | null {
   return factor?.value || null
 }
 
-export default function CaseSimilarJudgments({ caseId }: { caseId: number | string }) {
+interface Props {
+  caseId: number | string
+  caseType?: string
+  caseDescription?: string
+  documentCount?: number
+}
+
+export default function CaseSimilarJudgments({
+  caseId,
+  caseType = '',
+  caseDescription = '',
+  documentCount = 0,
+}: Props) {
   const [data, setData] = useState<CaseSimilarResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  const descriptionWords = useMemo(
+    () => caseDescription.trim().split(/\s+/).filter(Boolean).length,
+    [caseDescription],
+  )
+
+  // A case-type label alone can find the same legal topic, but it cannot support
+  // a genuine fact-pattern comparison. We only call results "similar cases" when
+  // there is a meaningful factual description or attached case material.
+  const hasFactPattern = documentCount > 0 || descriptionWords >= 25
+  const resultMode = hasFactPattern ? 'similar' : 'related'
 
   const load = async () => {
     setLoading(true)
@@ -63,10 +86,12 @@ export default function CaseSimilarJudgments({ caseId }: { caseId: number | stri
         <div>
           <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
             <Scale size={16} style={{ color: G }} />
-            Similar Pakistani Cases
+            {resultMode === 'similar' ? 'Similar Pakistani Cases' : 'Related Pakistani Precedents'}
           </h3>
           <p className="text-xs text-muted-foreground mt-1">
-            Historical Pakistani judgments ranked by legal issue, factual overlap, cited law and semantic relevance.
+            {resultMode === 'similar'
+              ? 'Historical Pakistani judgments ranked against the case fact pattern, legal issues, cited law and semantic relevance.'
+              : `WakuLaw currently knows the legal topic (${caseType || 'this case'}) but not enough facts to claim that another case is factually similar.`}
           </p>
         </div>
         <Btn
@@ -81,7 +106,13 @@ export default function CaseSimilarJudgments({ caseId }: { caseId: number | stri
 
       {loading && (
         <Card className="p-7">
-          <Spinner label="Searching Pakistani judgment history for comparable cases…" />
+          <Spinner
+            label={
+              resultMode === 'similar'
+                ? 'Comparing the case fact pattern with Pakistani judgment history…'
+                : 'Finding Pakistani precedents on the same legal issue…'
+            }
+          />
         </Card>
       )}
 
@@ -95,13 +126,16 @@ export default function CaseSimilarJudgments({ caseId }: { caseId: number | stri
             {' · '}{Math.round(data.processing_time_ms)} ms
           </div>
 
-          {data.source_case.documents_used === 0 && (
-            <Card className="p-3 border-amber-500/20 bg-amber-500/[0.04]">
+          {!hasFactPattern && (
+            <Card className="p-4 border-amber-500/25 bg-amber-500/[0.05]">
               <div className="flex items-start gap-2 text-xs text-muted-foreground">
                 <AlertTriangle size={14} className="mt-0.5 text-amber-400 flex-shrink-0" />
-                <span>
-                  Limited case information: no documents are attached. Results are based on the case type, title and description only. Add case facts or documents for more precise precedent matching.
-                </span>
+                <div>
+                  <div className="font-semibold text-foreground mb-1">Not enough case facts for true similarity matching</div>
+                  <p>
+                    These are related precedents, not claims that the historical cases have the same facts as yours. Add a factual case description or attach case documents. Useful facts include what happened, alleged offence/claim, evidence, relevant sections, procedural stage, disputed issue, defence and relief sought.
+                  </p>
+                </div>
               </div>
             </Card>
           )}
@@ -111,7 +145,7 @@ export default function CaseSimilarJudgments({ caseId }: { caseId: number | stri
               <BookOpenCheck size={24} className="mx-auto mb-3 text-muted-foreground" />
               <div className="text-sm font-semibold text-foreground">No sufficiently relevant historical match found</div>
               <p className="text-xs text-muted-foreground mt-1">
-                Weak semantic neighbours are hidden. Add a clearer description or relevant documents and refresh the search.
+                Add a fuller case description or relevant documents and refresh the search.
               </p>
             </Card>
           ) : (
@@ -124,7 +158,7 @@ export default function CaseSimilarJudgments({ caseId }: { caseId: number | stri
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2 mb-2">
                         <span className="text-[10px] font-mono text-muted-foreground">#{item.rank}</span>
-                        <Badge label={readableLabel(item.similarity_label)} />
+                        <Badge label={resultMode === 'similar' ? readableLabel(item.similarity_label) : 'related precedent'} />
                         {item.court && <Badge label={item.court} />}
                         {domain && <Badge label={domain} />}
                         {issue && <Badge label={issue} />}
@@ -140,13 +174,17 @@ export default function CaseSimilarJudgments({ caseId }: { caseId: number | stri
                     </div>
                     <div className="text-right flex-shrink-0">
                       <div className="text-lg font-bold" style={{ color: G }}>{score100(item.similarity_score)}</div>
-                      <div className="text-[10px] text-muted-foreground">match score / 100</div>
+                      <div className="text-[10px] text-muted-foreground">
+                        {resultMode === 'similar' ? 'match score / 100' : 'topic relevance / 100'}
+                      </div>
                     </div>
                   </div>
 
                   {item.explanation && (
                     <div className="mt-4 rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
-                      <div className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">Why it matches</div>
+                      <div className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">
+                        {resultMode === 'similar' ? 'Why it matches' : 'Why it is related'}
+                      </div>
                       <p className="text-xs text-foreground leading-relaxed">{item.explanation}</p>
                     </div>
                   )}
@@ -179,8 +217,8 @@ export default function CaseSimilarJudgments({ caseId }: { caseId: number | stri
                     </div>
                   )}
 
-                  <div className="mt-3 text-[10px] text-muted-foreground break-all">
-                    Source: {item.source_dataset} · {item.source_path}
+                  <div className="mt-3 text-[10px] text-muted-foreground">
+                    Source corpus: Pakistani court judgments
                   </div>
                 </Card>
               )
@@ -188,7 +226,9 @@ export default function CaseSimilarJudgments({ caseId }: { caseId: number | stri
           )}
 
           <p className="text-[10px] text-muted-foreground leading-relaxed">
-            Match Score is an explainable retrieval ranking from WakuLAW's indexed corpus. It is not a probability of winning, a legal conclusion, or a claim that two cases are identical.
+            {resultMode === 'similar'
+              ? "Match Score ranks retrieved judgments against the available case facts. It is not a probability of winning or a legal conclusion."
+              : "Topic Relevance ranks precedents on the same legal issue. WakuLaw will switch to fact-pattern similarity once the case contains enough factual detail."}
           </p>
         </div>
       )}
