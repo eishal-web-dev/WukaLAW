@@ -23,47 +23,19 @@ router = APIRouter(prefix="/cases", tags=["cases"])
 ALLOWED_STATUS = {"Active", "Review", "On Hold", "Closed"}
 ALLOWED_PRIORITY = {"Low", "Medium", "High", "Critical"}
 
-# Case-management labels are intentionally enriched into legal vocabulary before
-# semantic precedent retrieval. A bare label such as "Family Case" is too vague
-# for legal-domain detection and can produce zero candidates even when the corpus
-# contains relevant judgments.
+# Case-management labels provide only a BROAD legal-domain hint. They must not
+# inject unpleaded sub-issues into precedent retrieval. Specific issues such as
+# custody, dowry, bail or fraud must come from the user's description/documents.
 CASE_TYPE_HINTS = {
-    "family": (
-        "Pakistani family law dispute involving Family Courts, marriage, dissolution of marriage, "
-        "khula, divorce, dower or haq mehr, maintenance, child custody, guardianship, visitation, "
-        "dowry or bridal gifts, and related family-law remedies"
-    ),
-    "criminal": (
-        "Pakistani criminal law matter involving offences, bail, arrest, trial, evidence, sentence, "
-        "Pakistan Penal Code and Code of Criminal Procedure"
-    ),
-    "civil": (
-        "Pakistani civil litigation involving civil rights, property, contracts, injunctions, declarations, "
-        "specific performance and the Code of Civil Procedure"
-    ),
-    "constitutional": (
-        "Pakistani constitutional law matter involving fundamental rights, judicial review, High Court writ "
-        "jurisdiction and the Constitution of the Islamic Republic of Pakistan"
-    ),
-    "property": (
-        "Pakistani property dispute involving ownership, possession, transfer, inheritance, mutation, land, "
-        "specific performance and related civil remedies"
-    ),
-    "tax": (
-        "Pakistani tax and revenue dispute involving taxation, assessment, revenue authorities and fiscal law"
-    ),
-    "corporate": (
-        "Pakistani company and corporate law dispute involving companies, directors, shareholders, commercial "
-        "obligations and regulatory law"
-    ),
-    "labour": (
-        "Pakistani labour and employment dispute involving employment, termination, service rights, workers, "
-        "industrial relations and labour law"
-    ),
-    "employment": (
-        "Pakistani labour and employment dispute involving employment, termination, service rights, workers, "
-        "industrial relations and labour law"
-    ),
+    "family": "Pakistani family-law dispute ordinarily heard under the family-court framework",
+    "criminal": "Pakistani criminal-law matter governed by criminal procedure and penal law",
+    "civil": "Pakistani civil litigation governed by civil procedure and substantive civil law",
+    "constitutional": "Pakistani constitutional-law matter involving constitutional jurisdiction",
+    "property": "Pakistani civil property-law dispute",
+    "tax": "Pakistani tax and revenue-law dispute",
+    "corporate": "Pakistani company and corporate-law dispute",
+    "labour": "Pakistani labour and employment-law dispute",
+    "employment": "Pakistani labour and employment-law dispute",
 }
 
 
@@ -108,7 +80,7 @@ def _case_type_hint(case_type: str) -> str:
 def _similar_case_seed(case: Case, documents: list[Document]) -> str:
     """Build a focused legal/factual profile of a user's case for precedent retrieval."""
     parts = [
-        f"Jurisdiction: Pakistan",
+        "Jurisdiction: Pakistan",
         f"Case title: {case.title}",
         f"Case type: {case.case_type}",
         f"Legal domain hint: {_case_type_hint(case.case_type)}",
@@ -116,8 +88,6 @@ def _similar_case_seed(case: Case, documents: list[Document]) -> str:
     if case.description and case.description.strip():
         parts.append(f"Case facts and issues: {case.description.strip()}")
 
-    # Use bounded excerpts from a few attached documents. This gives the semantic
-    # retriever real facts when available without letting a large book swamp the query.
     for document in documents[:4]:
         text = " ".join((document.text or "").split())
         if text:
