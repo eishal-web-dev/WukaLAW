@@ -28,6 +28,30 @@ def _visible_stage_keys(text: str) -> list[str]:
     return [stage["key"] for stage in STAGES if _hits(text, stage["terms"])]
 
 
+def _contains_decision_language(text: str) -> bool:
+    """Catch common judgment-result wording that may omit our exact stage phrases."""
+    decision_patterns = (
+        "judgment was announced",
+        "judgment announced",
+        "judgment was pronounced",
+        "judgment pronounced",
+        "trial court announced judgment",
+        "petition was allowed",
+        "petition allowed",
+        "petition was dismissed",
+        "petition dismissed",
+        "suit was decreed",
+        "suit decreed",
+        "suit was dismissed",
+        "suit dismissed",
+        "final order was passed",
+        "final order passed",
+        "case was decided",
+        "case decided",
+    )
+    return any(pattern in text for pattern in decision_patterns)
+
+
 def analyze_historical_pathways(current_stage_key: str, similar_results: Iterable[dict]) -> dict:
     """Count the earliest later stage visible in each retrieved historical case.
 
@@ -61,7 +85,15 @@ def analyze_historical_pathways(current_stage_key: str, similar_results: Iterabl
 
     for result in similar_results:
         reviewed += 1
-        visible = _visible_stage_keys(_result_text(result))
+        text = _result_text(result)
+        visible = _visible_stage_keys(text)
+
+        # Judgment excerpts often express the outcome with passive wording such
+        # as "petition was allowed" or "suit was decreed". Treat those as a
+        # visible decision stage even when no exact STAGES synonym matched.
+        if "decision" not in visible and _contains_decision_language(text):
+            visible.append("decision")
+
         later = sorted(
             (key for key in visible if stage_index[key] > current_index),
             key=lambda key: stage_index[key],
