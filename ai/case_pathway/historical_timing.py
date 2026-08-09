@@ -10,7 +10,7 @@ from statistics import median
 from typing import Iterable
 
 from ai.timeline.extract import extract_events
-from .stage_detector import STAGES, _hits, _normalize
+from .stage_detector import STAGES
 
 
 _STAGE_INDEX = {stage["key"]: index for index, stage in enumerate(STAGES)}
@@ -30,19 +30,53 @@ def _result_text(result: dict) -> str:
     return "\n".join(str(part) for part in parts if part)
 
 
-def _stage_for_event(text: str) -> str | None:
-    """Return the latest procedural stage explicitly mentioned in one dated event."""
-    normalized = _normalize(text)
-    matches = [key for key, terms in _STAGE_TERMS.items() if _hits(normalized, terms)]
-    if not matches:
+def _term_positions(text: str, term: str) -> list[tuple[int, int]]:
+    value = text.lower()
+    needle = term.lower()
+    positions: list[tuple[int, int]] = []
+    start = 0
+    while True:
+        index = value.find(needle, start)
+        if index < 0:
+            break
+        positions.append((index, index + len(needle)))
+        start = index + 1
+    return positions
+
+
+def _stage_for_event(text: str, date_text: str) -> str | None:
+    """Associate an explicit date with the closest procedural-stage phrase.
+
+    A dated sentence can mention more than one stage. We therefore choose the
+    stage phrase nearest the date and reject associations farther than 90
+    characters away. This is intentionally conservative.
+    """
+    value = text or ""
+    lower = value.lower()
+    date_index = lower.find((date_text or "").lower())
+    if date_index < 0:
         return None
-    return max(matches, key=lambda key: _STAGE_INDEX[key])
+    date_mid = date_index + len(date_text or "") / 2
+
+    candidates: list[tuple[float, int, str]] = []
+    for key, terms in _STAGE_TERMS.items():
+        for term in terms:
+            for start, end in _term_positions(value, term):
+                term_mid = (start + end) / 2
+                distance = abs(term_mid - date_mid)
+                if distance <= 90:
+                    candidates.append((distance, -_STAGE_INDEX[key], key))
+
+    if not candidates:
+        return None
+    candidates.sort()
+    return candidates[0][2]
 
 
 def _dated_stage_events(result: dict) -> list[tuple[str, date, str]]:
     rows: list[tuple[str, date, str]] = []
     for event in extract_events(_result_text(result)):
-        stage_key = _stage_for_event(event.text)
+        stage_key = _stage_for_event(event.text, event.date_text)
         if not stage_key:
             continue
         rows.append((stage_key, date.fromisoformat(event.date), event.text))
@@ -65,8 +99,6 @@ def _transition_days(current_stage_key: str, result: dict) -> tuple[str, int] | 
     if not current_dates:
         return None
 
-    # Use the latest occurrence of the current stage, then the earliest later
-    # stage after it. This handles adjourned/repeated hearings conservatively.
     start = max(current_dates)
     later = [
         (key, when)
