@@ -1,8 +1,8 @@
 """Explainable issue and procedural-stage detection for an active case.
 
-This first pathway-intelligence layer is deterministic on purpose. It does not
-predict a court outcome. It reports issues/stages only when supported by words
-present in the user's description or attached document text.
+This layer is deterministic on purpose. It does not predict a court outcome.
+Issues and stages are reported only when supported by language found in the
+user's saved case record or attached documents.
 """
 from __future__ import annotations
 
@@ -13,30 +13,126 @@ from typing import Iterable
 ISSUES: dict[str, tuple[str, ...]] = {
     "Divorce / Khula": ("divorce", "khula", "dissolution of marriage", "dissolution"),
     "Dowry Recovery": ("dowry", "bridal gift", "dowry articles", "jahez"),
-    "Dower / Mehr": ("dower", "mehr", "haq mehr", "haq meher"),
-    "Maintenance": ("maintenance", "nafaqa", "monthly maintenance"),
-    "Child Custody / Guardianship": ("custody", "guardianship", "visitation", "minor child", "guardian"),
-    "Murder / Homicide": ("murder", "homicide", "qatal", "section 302", "302 ppc"),
-    "Bail": ("bail", "pre-arrest bail", "post-arrest bail"),
+    "Dower / Mehr": ("dower", "mehr", "meher", "haq mehr", "haq meher"),
+    "Maintenance": ("maintenance", "nafaqa", "monthly maintenance", "maintenance allowance"),
+    "Child Custody / Guardianship": ("custody", "guardianship", "visitation", "minor child", "guardian petition"),
+    "Murder / Homicide": ("murder", "homicide", "qatal", "qatl", "section 302", "302 ppc"),
+    "Attempted Murder": ("attempted murder", "section 324", "324 ppc"),
+    "Bail": ("bail", "pre-arrest bail", "post-arrest bail", "pre arrest bail", "post arrest bail"),
     "Fraud / Deception": ("fraud", "cheating", "forgery", "forged", "deception", "misrepresentation"),
-    "Property / Ownership": ("property", "ownership", "possession", "mutation", "land", "inheritance"),
+    "Property / Ownership": ("property", "ownership", "possession", "mutation", "land", "inheritance", "partition"),
     "Employment / Service": ("termination", "dismissal", "employment", "service matter", "employee"),
 }
 
-# Ordered from earliest to latest. Percentages are pathway-position indicators,
-# not estimates of time remaining or probability of success.
+# Ordered from earliest to latest. Position values are display coordinates in a
+# generic litigation pathway. They are NOT percent time complete and NOT an
+# outcome probability.
 STAGES: list[dict] = [
-    {"key": "pre_filing", "label": "Pre-filing / dispute preparation", "progress": 5, "terms": ("legal notice", "notice served", "cause of action", "demand notice")},
-    {"key": "filed", "label": "Case / petition filed", "progress": 15, "terms": ("suit filed", "petition filed", "complaint filed", "case filed", "instituted", "filed before")},
-    {"key": "service", "label": "Service / appearance", "progress": 25, "terms": ("summons", "served upon", "service effected", "appearance", "notice issued")},
-    {"key": "pleadings", "label": "Pleadings / written statement", "progress": 35, "terms": ("written statement", "reply filed", "counter affidavit", "replication", "pleadings")},
-    {"key": "interim", "label": "Interim applications / temporary orders", "progress": 45, "terms": ("interim order", "interim maintenance", "stay order", "temporary injunction", "interim relief")},
-    {"key": "issues", "label": "Issues framed / case set for evidence", "progress": 52, "terms": ("issues framed", "framing of issues", "issues were framed", "fixed for evidence")},
-    {"key": "evidence", "label": "Evidence / witness stage", "progress": 65, "terms": ("evidence recorded", "cross examination", "cross-examination", "witness examined", "statement recorded", "examination-in-chief", "closed evidence", "evidence stage")},
-    {"key": "arguments", "label": "Final arguments", "progress": 78, "terms": ("final arguments", "arguments heard", "heard arguments", "arguments concluded", "reserved judgment")},
-    {"key": "decision", "label": "Decision / decree / judgment", "progress": 88, "terms": ("judgment announced", "decree passed", "suit decreed", "suit dismissed", "petition allowed", "petition dismissed", "final order")},
-    {"key": "appeal", "label": "Appeal / revision", "progress": 94, "terms": ("appeal filed", "appeal preferred", "revision petition", "challenged before the high court", "appellate court")},
-    {"key": "enforcement", "label": "Execution / enforcement", "progress": 100, "terms": ("execution petition", "execution proceedings", "enforcement", "recovery proceedings", "decree executed")},
+    {
+        "key": "pre_filing",
+        "label": "Before filing",
+        "position": 5,
+        "terms": (
+            "legal notice", "demand notice", "cause of action", "notice served before filing",
+            "pre litigation notice", "pre-litigation notice",
+        ),
+    },
+    {
+        "key": "filed",
+        "label": "Case filed",
+        "position": 15,
+        "terms": (
+            "suit filed", "petition filed", "complaint filed", "case filed", "instituted",
+            "filed before", "institution of suit", "plaint instituted", "petition instituted",
+        ),
+    },
+    {
+        "key": "service",
+        "label": "Notice / appearance",
+        "position": 25,
+        "terms": (
+            "summons issued", "summons served", "served upon", "service effected", "service completed",
+            "notice issued", "notice served", "respondent appeared", "defendant appeared",
+            "appearance entered", "proceeded ex parte", "proceeded ex-parte", "ex parte proceedings",
+        ),
+    },
+    {
+        "key": "pleadings",
+        "label": "Reply / written statement",
+        "position": 35,
+        "terms": (
+            "written statement", "reply filed", "reply submitted", "counter affidavit", "counter-affidavit",
+            "replication", "rejoinder", "pleadings completed", "written reply",
+        ),
+    },
+    {
+        "key": "interim",
+        "label": "Temporary / interim orders",
+        "position": 44,
+        "terms": (
+            "interim order", "interim maintenance", "stay order", "temporary injunction", "interim relief",
+            "interim custody", "interim bail", "ad interim", "ad-interim", "status quo order",
+        ),
+    },
+    {
+        "key": "issues",
+        "label": "Issues framed",
+        "position": 52,
+        "terms": (
+            "issues framed", "framing of issues", "issues were framed", "issues have been framed",
+            "fixed for evidence", "issues settled", "settlement of issues",
+        ),
+    },
+    {
+        "key": "evidence",
+        "label": "Evidence / witnesses",
+        "position": 65,
+        "terms": (
+            "evidence recorded", "evidence produced", "plaintiff evidence", "defence evidence", "defense evidence",
+            "cross examination", "cross-examination", "cross examined", "witness examined", "witnesses examined",
+            "statement recorded", "examination-in-chief", "examination in chief", "closed evidence",
+            "evidence closed", "evidence stage", "produced witnesses", "recorded statement",
+        ),
+    },
+    {
+        "key": "arguments",
+        "label": "Final arguments",
+        "position": 78,
+        "terms": (
+            "final arguments", "arguments heard", "heard arguments", "arguments concluded", "arguments completed",
+            "counsel addressed arguments", "fixed for arguments", "case fixed for arguments", "reserved judgment",
+            "judgment reserved", "reserved for judgment", "reserved for orders",
+        ),
+    },
+    {
+        "key": "decision",
+        "label": "Decision / decree",
+        "position": 88,
+        "terms": (
+            "judgment announced", "judgment pronounced", "decree passed", "decree granted", "suit decreed",
+            "suit dismissed", "petition allowed", "petition dismissed", "appeal allowed", "appeal dismissed",
+            "final order", "disposed of", "case decided", "decision announced", "order announced",
+        ),
+    },
+    {
+        "key": "appeal",
+        "label": "Appeal / revision",
+        "position": 94,
+        "terms": (
+            "appeal filed", "appeal preferred", "appeal pending", "revision petition", "revision filed",
+            "challenged before the high court", "challenged before high court", "appellate court",
+            "civil appeal", "criminal appeal", "intra court appeal", "intra-court appeal",
+        ),
+    },
+    {
+        "key": "enforcement",
+        "label": "Enforcement / execution",
+        "position": 100,
+        "terms": (
+            "execution petition", "execution application", "execution proceedings", "decree executed",
+            "enforcement proceedings", "recovery proceedings", "warrant of attachment", "attachment proceedings",
+        ),
+    },
 ]
 
 
@@ -51,6 +147,17 @@ def _hits(text: str, terms: Iterable[str]) -> list[str]:
         if re.search(pattern, text, flags=re.I):
             found.append(term)
     return found
+
+
+def _confidence(current: dict, detected_stages: list[dict], documents_count: int) -> tuple[str, str]:
+    current_hits = len(current.get("evidence_terms", []))
+    if current_hits >= 2 and (documents_count >= 1 or len(detected_stages) >= 3):
+        return "high", "Multiple phrases support the current stage and the record also contains surrounding procedural history."
+    if current_hits >= 1 and (documents_count >= 1 or len(detected_stages) >= 2):
+        return "moderate", "The current stage is supported by the record, but more orders or hearing documents would make it stronger."
+    if current_hits >= 1:
+        return "moderate", "One clear procedural phrase supports this stage."
+    return "low", "No reliable procedural-stage phrase was found in the available record."
 
 
 def analyze_case_pathway(case_type: str, description: str, documents: list[dict[str, str]]) -> dict:
@@ -70,63 +177,95 @@ def analyze_case_pathway(case_type: str, description: str, documents: list[dict[
         if evidence:
             issues.append({"issue": label, "evidence_terms": evidence[:6]})
 
-    detected_stages = []
+    detected_stages: list[dict] = []
+    detected_keys: set[str] = set()
     for stage in STAGES:
         evidence = _hits(record, stage["terms"])
         if evidence:
+            detected_keys.add(stage["key"])
             detected_stages.append({
                 "key": stage["key"],
                 "label": stage["label"],
-                "progress": stage["progress"],
-                "evidence_terms": evidence[:6],
+                "progress": stage["position"],  # backwards-compatible API field
+                "position": stage["position"],
+                "evidence_terms": evidence[:8],
             })
 
     if detected_stages:
-        current = max(detected_stages, key=lambda item: item["progress"])
+        current = max(detected_stages, key=lambda item: item["position"])
         current_index = next(i for i, stage in enumerate(STAGES) if stage["key"] == current["key"])
         next_stage = STAGES[current_index + 1] if current_index + 1 < len(STAGES) else None
-        stage_confidence = "high" if len(current["evidence_terms"]) >= 2 or len(documents) >= 2 else "moderate"
     else:
         current = {
             "key": "unknown",
-            "label": "Stage not reliably detected",
+            "label": "We need more information",
             "progress": 0,
+            "position": 0,
             "evidence_terms": [],
         }
+        current_index = -1
         next_stage = None
-        stage_confidence = "low"
 
-    # An overall pathway position is only meaningful when a stage is evidenced.
-    overall_progress = current["progress"]
+    stage_confidence, confidence_reason = _confidence(current, detected_stages, len(documents))
+    process_position = current["position"]
 
-    issue_progress = []
-    for issue in issues:
-        issue_progress.append({
-            "issue": issue["issue"],
-            "progress": overall_progress,
-            "basis": "Current procedural stage is shared across the uploaded case record; issue-specific stages require issue-linked orders/documents.",
-            "evidence_terms": issue["evidence_terms"],
+    journey_steps = []
+    for index, stage in enumerate(STAGES):
+        if current_index < 0:
+            state = "unknown"
+        elif index == current_index:
+            state = "current"
+        elif stage["key"] in detected_keys:
+            state = "confirmed"
+        elif index == current_index + 1:
+            state = "next"
+        elif index < current_index:
+            # Do not claim an unseen earlier step happened; court files can omit it.
+            state = "not_seen"
+        else:
+            state = "later"
+        evidence = next((item["evidence_terms"] for item in detected_stages if item["key"] == stage["key"]), [])
+        journey_steps.append({
+            "key": stage["key"],
+            "label": stage["label"],
+            "position": stage["position"],
+            "state": state,
+            "evidence_terms": evidence,
         })
+
+    issue_progress = [
+        {
+            "issue": issue["issue"],
+            "progress": process_position,
+            "basis": "This uses the latest procedural stage found across the case record. Issue-specific progress requires documents/orders tied to that particular issue.",
+            "evidence_terms": issue["evidence_terms"],
+        }
+        for issue in issues
+    ]
 
     warnings = []
     if not documents:
-        warnings.append("No case documents are attached; stage detection relies mainly on the saved case description and type.")
+        warnings.append("No case documents are attached; the journey is being read mainly from the saved case description.")
     if not issues:
         warnings.append("No specific legal issue was confidently detected from the available record.")
     if current["key"] == "unknown":
-        warnings.append("No reliable procedural-stage phrase was found. Upload orders, petitions, replies, evidence, or hearing documents for stage detection.")
+        warnings.append("Upload or describe the latest court order, hearing, reply, evidence, arguments, judgment, appeal, or execution step so WukaLAW can place the case on the journey.")
 
     return {
         "detected_issues": issues,
         "current_stage": current,
-        "overall_progress": overall_progress,
-        "progress_meaning": "Position within a generic litigation pathway, not percent of time completed and not outcome probability.",
+        "overall_progress": process_position,  # kept for existing clients
+        "court_process_position": process_position,
+        "position_label": "Court-process position",
+        "progress_meaning": "A visual position in a generic court journey. It is not percent of time completed, not percent of work completed, and not a win probability.",
         "issue_progress": issue_progress,
         "next_generic_stage": ({"key": next_stage["key"], "label": next_stage["label"]} if next_stage else None),
         "stage_confidence": stage_confidence,
+        "confidence_reason": confidence_reason,
         "documents_analyzed": len(documents),
         "document_titles": document_titles,
         "detected_stage_evidence": detected_stages,
+        "journey_steps": journey_steps,
         "warnings": warnings,
-        "disclaimer": "Procedural-stage detection is an automated research aid. Verify the current stage against the latest court order and complete case file.",
+        "disclaimer": "WukaLAW reads procedural clues from the available record. Verify the live stage and next listing against the latest court order or cause list.",
     }
