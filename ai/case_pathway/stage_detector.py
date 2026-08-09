@@ -149,11 +149,33 @@ def _hits(text: str, terms: Iterable[str]) -> list[str]:
     return found
 
 
-def _confidence(current: dict, detected_stages: list[dict], documents_count: int) -> tuple[str, str]:
+def _confidence(
+    current: dict,
+    detected_stages: list[dict],
+    documents: list[dict[str, str]],
+    description: str,
+) -> tuple[str, str]:
     current_hits = len(current.get("evidence_terms", []))
-    if current_hits >= 2 and (documents_count >= 1 or len(detected_stages) >= 3):
+    current_key = current.get("key")
+
+    # Corroboration means the same current stage appears in more than one source
+    # (saved description + one or more attached documents). This is stronger
+    # than merely seeing multiple synonyms in one paragraph.
+    current_stage = next((stage for stage in STAGES if stage["key"] == current_key), None)
+    corroborating_sources = 0
+    if current_stage is not None:
+        if _hits(_normalize(description), current_stage["terms"]):
+            corroborating_sources += 1
+        for document in documents:
+            source_text = _normalize(f"{document.get('title', '')} {document.get('text', '')}")
+            if _hits(source_text, current_stage["terms"]):
+                corroborating_sources += 1
+
+    if corroborating_sources >= 2:
+        return "high", "The current stage is independently supported by more than one part of the case record."
+    if current_hits >= 2 and (documents or len(detected_stages) >= 3):
         return "high", "Multiple phrases support the current stage and the record also contains surrounding procedural history."
-    if current_hits >= 1 and (documents_count >= 1 or len(detected_stages) >= 2):
+    if current_hits >= 1 and (documents or len(detected_stages) >= 2):
         return "moderate", "The current stage is supported by the record, but more orders or hearing documents would make it stronger."
     if current_hits >= 1:
         return "moderate", "One clear procedural phrase supports this stage."
@@ -186,7 +208,7 @@ def analyze_case_pathway(case_type: str, description: str, documents: list[dict[
             detected_stages.append({
                 "key": stage["key"],
                 "label": stage["label"],
-                "progress": stage["position"],  # backwards-compatible API field
+                "progress": stage["position"],
                 "position": stage["position"],
                 "evidence_terms": evidence[:8],
             })
@@ -206,7 +228,7 @@ def analyze_case_pathway(case_type: str, description: str, documents: list[dict[
         current_index = -1
         next_stage = None
 
-    stage_confidence, confidence_reason = _confidence(current, detected_stages, len(documents))
+    stage_confidence, confidence_reason = _confidence(current, detected_stages, documents, description)
     process_position = current["position"]
 
     journey_steps = []
@@ -220,7 +242,6 @@ def analyze_case_pathway(case_type: str, description: str, documents: list[dict[
         elif index == current_index + 1:
             state = "next"
         elif index < current_index:
-            # Do not claim an unseen earlier step happened; court files can omit it.
             state = "not_seen"
         else:
             state = "later"
@@ -254,7 +275,7 @@ def analyze_case_pathway(case_type: str, description: str, documents: list[dict[
     return {
         "detected_issues": issues,
         "current_stage": current,
-        "overall_progress": process_position,  # kept for existing clients
+        "overall_progress": process_position,
         "court_process_position": process_position,
         "position_label": "Court-process position",
         "progress_meaning": "A visual position in a generic court journey. It is not percent of time completed, not percent of work completed, and not a win probability.",
