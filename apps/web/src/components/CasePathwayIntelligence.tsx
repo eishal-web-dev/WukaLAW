@@ -1,10 +1,53 @@
-import { useEffect, useState } from 'react'
-import { AlertTriangle, ArrowRight, ChevronDown, ChevronUp, CheckCircle2, Route } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+import {
+  AlertTriangle,
+  ArrowRight,
+  Check,
+  CheckCircle2,
+  ChevronDown,
+  ChevronUp,
+  Circle,
+  Route,
+} from 'lucide-react'
 import { Badge, Card, G } from './design'
 import Spinner from './Spinner'
 import ErrorAlert from './ErrorAlert'
 import { getCasePathwayIntelligence } from '../lib/casePathway'
-import type { CasePathwayResponse } from '../lib/casePathway'
+import type { CasePathwayResponse, JourneyStep } from '../lib/casePathway'
+
+function confidenceText(value: string): string {
+  if (value === 'high') return 'Strong stage match'
+  if (value === 'moderate') return 'Likely stage'
+  return 'More information needed'
+}
+
+function StepIcon({ step }: { step: JourneyStep }) {
+  if (step.state === 'current') {
+    return (
+      <span
+        className="w-7 h-7 rounded-full flex items-center justify-center border-2 shadow-[0_0_20px_rgba(212,175,55,0.18)]"
+        style={{ borderColor: G, backgroundColor: `${G}18`, color: G }}
+      >
+        <Circle size={9} fill="currentColor" />
+      </span>
+    )
+  }
+  if (step.state === 'confirmed') {
+    return (
+      <span className="w-7 h-7 rounded-full flex items-center justify-center bg-emerald-500/10 border border-emerald-500/25 text-emerald-400">
+        <Check size={13} />
+      </span>
+    )
+  }
+  if (step.state === 'next') {
+    return (
+      <span className="w-7 h-7 rounded-full flex items-center justify-center border border-white/15 bg-white/[0.025] text-foreground">
+        <ArrowRight size={12} />
+      </span>
+    )
+  }
+  return <span className="w-7 h-7 rounded-full border border-white/[0.08] bg-white/[0.015]" />
+}
 
 export default function CasePathwayIntelligence({ caseId }: { caseId: number | string }) {
   const [data, setData] = useState<CasePathwayResponse | null>(null)
@@ -28,34 +71,47 @@ export default function CasePathwayIntelligence({ caseId }: { caseId: number | s
     void load()
   }, [caseId])
 
-  if (loading) return <Card className="p-5"><Spinner label="Checking where your case is now…" /></Card>
+  const visibleJourney = useMemo(() => {
+    if (!data?.journey_steps?.length) return []
+    const currentIndex = data.journey_steps.findIndex((step) => step.state === 'current')
+    if (currentIndex < 0) return data.journey_steps.slice(0, 6)
+    const start = Math.max(0, currentIndex - 3)
+    const end = Math.min(data.journey_steps.length, currentIndex + 4)
+    return data.journey_steps.slice(start, end)
+  }, [data])
+
+  if (loading) return <Card className="p-5"><Spinner label="Reading your case journey…" /></Card>
   if (error) return <ErrorAlert message={error} />
   if (!data) return null
 
   const stageKnown = data.current_stage.key !== 'unknown'
+  const position = data.court_process_position ?? data.overall_progress
 
   return (
-    <Card className="p-4 border-[#D4AF37]/15">
-      <div className="flex flex-wrap items-center justify-between gap-4">
+    <Card className="p-4 md:p-5 border-[#D4AF37]/15 overflow-hidden">
+      <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: `${G}15`, color: G }}>
-            <Route size={16} />
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: `${G}15`, color: G }}>
+            <Route size={17} />
           </div>
           <div className="min-w-0">
-            <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Where your case is now</div>
-            <div className="text-sm font-semibold text-foreground truncate">{data.current_stage.label}</div>
+            <div className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground">Your case journey</div>
+            <div className="text-base font-semibold text-foreground truncate mt-0.5">{data.current_stage.label}</div>
+            <div className="text-[11px] text-muted-foreground mt-0.5">{stageKnown ? 'This is the latest court stage WukaLAW could verify from your record.' : 'Add the latest order or hearing details to place your case on the journey.'}</div>
           </div>
         </div>
 
-        <div className="flex items-center gap-5">
-          <div className="text-right">
-            <div className="text-xl font-bold" style={{ color: G }}>{stageKnown ? `${data.overall_progress}%` : '—'}</div>
-            <div className="text-[10px] text-muted-foreground">case journey</div>
-          </div>
+        <div className="flex items-center gap-5 ml-auto">
+          {stageKnown && (
+            <div className="text-right">
+              <div className="text-xl font-bold tabular-nums" style={{ color: G }}>{position}</div>
+              <div className="text-[9px] uppercase tracking-wide text-muted-foreground">position / 100</div>
+            </div>
+          )}
           <div className="hidden sm:block h-9 w-px bg-white/[0.08]" />
-          <div className="hidden sm:block">
-            <div className="text-[10px] uppercase tracking-wide text-muted-foreground">What usually comes next</div>
-            <div className="text-xs font-semibold text-foreground mt-0.5 flex items-center gap-1.5">
+          <div className="hidden sm:block max-w-[230px]">
+            <div className="text-[9px] uppercase tracking-wide text-muted-foreground">What usually comes next</div>
+            <div className="text-xs font-semibold text-foreground mt-1 flex items-center gap-1.5">
               <ArrowRight size={12} style={{ color: G }} />
               {data.next_generic_stage?.label ?? 'We need more information'}
             </div>
@@ -64,41 +120,72 @@ export default function CasePathwayIntelligence({ caseId }: { caseId: number | s
       </div>
 
       {data.detected_issues.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 mt-3">
+        <div className="flex flex-wrap gap-1.5 mt-4">
           {data.detected_issues.map((item) => <Badge key={item.issue} label={item.issue} />)}
-          <Badge label={data.stage_confidence === 'high' ? 'We’re fairly confident' : data.stage_confidence === 'moderate' ? 'Some confidence' : 'More information needed'} />
+          <Badge label={confidenceText(data.stage_confidence)} />
         </div>
       )}
 
-      {stageKnown && (
-        <div className="mt-3 h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
-          <div className="h-full rounded-full" style={{ width: `${Math.max(0, Math.min(100, data.overall_progress))}%`, backgroundColor: G }} />
+      {stageKnown && visibleJourney.length > 0 && (
+        <div className="mt-5 rounded-xl border border-white/[0.06] bg-white/[0.015] p-3 md:p-4">
+          <div className="flex items-center justify-between gap-2 mb-3">
+            <div className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground">Court journey</div>
+            <div className="text-[10px] text-muted-foreground">Only ✓ steps were actually found in your record</div>
+          </div>
+
+          <div className="overflow-x-auto pb-1">
+            <div className="flex min-w-max items-start">
+              {visibleJourney.map((step, index) => (
+                <div key={step.key} className="flex items-start">
+                  <div className="w-28 md:w-32 text-center">
+                    <div className="flex justify-center"><StepIcon step={step} /></div>
+                    <div className={`text-[10px] mt-2 leading-tight ${step.state === 'current' ? 'font-semibold text-foreground' : step.state === 'confirmed' ? 'text-foreground/80' : 'text-muted-foreground'}`}>
+                      {step.label}
+                    </div>
+                    {step.state === 'current' && <div className="text-[9px] font-semibold mt-1" style={{ color: G }}>YOU ARE HERE</div>}
+                    {step.state === 'next' && <div className="text-[9px] text-muted-foreground mt-1">NEXT</div>}
+                  </div>
+                  {index < visibleJourney.length - 1 && <div className="w-6 md:w-10 h-px bg-white/[0.08] mt-3.5" />}
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       )}
+
+      <div className="sm:hidden mt-3 rounded-lg border border-white/[0.06] bg-white/[0.02] p-3">
+        <div className="text-[9px] uppercase tracking-wide text-muted-foreground">What usually comes next</div>
+        <div className="text-xs font-semibold text-foreground mt-1">{data.next_generic_stage?.label ?? 'We need more information'}</div>
+      </div>
 
       <button
         onClick={() => setOpen((value) => !value)}
-        className="mt-3 text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 transition-colors"
+        className="mt-4 text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 transition-colors"
       >
         {open ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
-        {open ? 'Hide why we think this' : 'Why do we think this?'}
+        {open ? 'Hide how we worked this out' : 'How did WukaLAW work this out?'}
       </button>
 
       {open && (
         <div className="mt-4 pt-4 border-t border-white/[0.06] space-y-4">
-          <div className="sm:hidden rounded-lg border border-white/[0.06] bg-white/[0.02] p-3">
-            <div className="text-[10px] uppercase tracking-wide text-muted-foreground">What usually comes next</div>
-            <div className="text-xs font-semibold text-foreground mt-1">{data.next_generic_stage?.label ?? 'We need more information'}</div>
-          </div>
+          {data.confidence_reason && (
+            <div className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-3">
+              <div className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">How sure are we?</div>
+              <div className="text-xs text-foreground">{data.confidence_reason}</div>
+            </div>
+          )}
 
           {data.detected_stage_evidence.length > 0 && (
             <div>
-              <div className="text-[10px] uppercase tracking-wide text-muted-foreground mb-2">What we found in your case</div>
+              <div className="text-[10px] uppercase tracking-wide text-muted-foreground mb-2">Court steps found in your record</div>
               <div className="space-y-2">
                 {data.detected_stage_evidence.map((stage) => (
                   <div key={stage.key} className="flex items-start gap-2 text-xs text-muted-foreground">
                     <CheckCircle2 size={13} className="mt-0.5 flex-shrink-0 text-emerald-400" />
-                    <div><span className="text-foreground font-medium">{stage.label}</span>{stage.evidence_terms.length > 0 && <span> — {stage.evidence_terms.join(', ')}</span>}</div>
+                    <div>
+                      <span className="text-foreground font-medium">{stage.label}</span>
+                      {stage.evidence_terms.length > 0 && <span> — matched “{stage.evidence_terms.join('”, “')}”</span>}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -106,7 +193,7 @@ export default function CasePathwayIntelligence({ caseId }: { caseId: number | s
           )}
 
           {data.warnings.length > 0 && (
-            <div className="rounded-lg border border-amber-500/20 bg-amber-500/[0.04] p-3 space-y-1">
+            <div className="rounded-lg border border-amber-500/20 bg-amber-500/[0.04] p-3 space-y-1.5">
               {data.warnings.map((warning) => (
                 <div key={warning} className="flex items-start gap-2 text-[11px] text-muted-foreground">
                   <AlertTriangle size={12} className="mt-0.5 text-amber-400 flex-shrink-0" />
@@ -116,7 +203,9 @@ export default function CasePathwayIntelligence({ caseId }: { caseId: number | s
             </div>
           )}
 
-          <p className="text-[10px] text-muted-foreground leading-relaxed">This progress shows where the case appears to be in the court process. It is not a win chance or a promise about timing. Always check the latest court order.</p>
+          <p className="text-[10px] text-muted-foreground leading-relaxed">
+            {data.progress_meaning} {data.disclaimer}
+          </p>
         </div>
       )}
     </Card>
