@@ -9,6 +9,15 @@ export interface PathwayStage {
   key: string
   label: string
   progress: number
+  position?: number
+  evidence_terms: string[]
+}
+
+export interface JourneyStep {
+  key: string
+  label: string
+  position: number
+  state: 'confirmed' | 'current' | 'next' | 'not_seen' | 'later' | 'unknown' | string
   evidence_terms: string[]
 }
 
@@ -23,13 +32,17 @@ export interface CasePathwayResponse {
   detected_issues: PathwayIssue[]
   current_stage: PathwayStage
   overall_progress: number
+  court_process_position?: number
+  position_label?: string
   progress_meaning: string
   issue_progress: IssueProgress[]
   next_generic_stage: { key: string; label: string } | null
   stage_confidence: 'high' | 'moderate' | 'low' | string
+  confidence_reason?: string
   documents_analyzed: number
   document_titles: string[]
   detected_stage_evidence: PathwayStage[]
+  journey_steps?: JourneyStep[]
   warnings: string[]
   disclaimer: string
   source_case: {
