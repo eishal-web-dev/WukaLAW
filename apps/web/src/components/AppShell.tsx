@@ -79,20 +79,19 @@ function pageTitle(pathname: string): string {
   if (pathname.startsWith('/cases/')) return 'Case Detail'
   if (pathname.startsWith('/documents/')) return 'Document Detail'
   const match = Object.keys(TITLES).find((p) => pathname.startsWith(p))
-  return match ? TITLES[match] : 'WakuLaw'
+  return match ? TITLES[match] : 'WukaLAW'
 }
 
 function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void }) {
   const navigate = useNavigate()
   const { pathname } = useLocation()
   const { user, logout } = useAuth()
-  const displayName = user?.name || 'WakuLaw User'
+  const displayName = user?.name || 'WukaLAW User'
 
   return (
     <div
       className={`flex flex-col h-full transition-all duration-300 border-r border-sidebar-border bg-sidebar flex-shrink-0 ${collapsed ? 'w-[60px]' : 'w-[220px]'}`}
     >
-      {/* Logo */}
       <button
         onClick={() => navigate('/dashboard')}
         className="flex items-center gap-3 px-4 py-5 border-b border-sidebar-border text-left"
@@ -105,7 +104,7 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
         </div>
         {!collapsed && (
           <div>
-            <div className="text-sm font-bold text-foreground tracking-wide">WakuLaw</div>
+            <div className="text-sm font-bold text-foreground tracking-wide">WukaLAW</div>
             <div className="text-[10px]" style={{ color: G }}>
               AI Legal Intelligence
             </div>
@@ -113,7 +112,6 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
         )}
       </button>
 
-      {/* Nav */}
       <nav className="flex-1 overflow-y-auto py-4 px-2 space-y-5">
         {NAV_GROUPS.map((group) => (
           <div key={group.label}>
@@ -156,7 +154,6 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
         ))}
       </nav>
 
-      {/* Footer */}
       <div className="border-t border-sidebar-border p-3">
         {!collapsed ? (
           <div className="flex items-center gap-3 px-1">
@@ -205,7 +202,7 @@ function Topbar() {
   return (
     <div className="h-14 flex items-center justify-between px-6 border-b border-border bg-background flex-shrink-0">
       <div className="flex items-center gap-2 text-sm">
-        <span className="text-muted-foreground">WakuLaw</span>
+        <span className="text-muted-foreground">WukaLAW</span>
         <ChevronRight size={14} className="text-muted-foreground" />
         <span className="text-foreground font-medium">{pageTitle(pathname)}</span>
       </div>
@@ -231,14 +228,13 @@ function Topbar() {
           <span className="absolute top-1 right-1 w-2 h-2 rounded-full" style={{ backgroundColor: G }} />
         </button>
         <button onClick={() => navigate('/profile')}>
-          <Avatar name={user?.name || 'WakuLaw User'} size="sm" />
+          <Avatar name={user?.name || 'WukaLAW User'} size="sm" />
         </button>
       </div>
     </div>
   )
 }
 
-/** Authenticated app frame: sidebar + topbar + routed content. */
 export default function AppShell() {
   const [collapsed, setCollapsed] = useState(false)
   return (
