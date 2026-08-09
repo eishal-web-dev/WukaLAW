@@ -119,9 +119,9 @@ STAGES: list[dict] = [
         "label": "Appeal / revision",
         "position": 94,
         "terms": (
-            "appeal filed", "appeal preferred", "appeal pending", "revision petition", "revision filed",
-            "challenged before the high court", "challenged before high court", "appellate court",
-            "civil appeal", "criminal appeal", "intra court appeal", "intra-court appeal",
+            "appeal filed", "appeal was filed", "appeal preferred", "appeal was preferred", "appeal pending",
+            "revision petition", "revision filed", "challenged before the high court", "challenged before high court",
+            "appellate court", "civil appeal", "criminal appeal", "intra court appeal", "intra-court appeal",
         ),
     },
     {
@@ -158,9 +158,6 @@ def _confidence(
     current_hits = len(current.get("evidence_terms", []))
     current_key = current.get("key")
 
-    # Corroboration means the same current stage appears in more than one source
-    # (saved description + one or more attached documents). This is stronger
-    # than merely seeing multiple synonyms in one paragraph.
     current_stage = next((stage for stage in STAGES if stage["key"] == current_key), None)
     corroborating_sources = 0
     if current_stage is not None:
