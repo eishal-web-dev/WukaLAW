@@ -57,6 +57,30 @@ export interface HistoricalPathway {
   disclaimer: string
 }
 
+export interface HistoricalTimingObservation {
+  document_id: string | null
+  title: string
+  court: string | null
+  next_stage_key: string
+  next_stage_label: string
+  days: number
+}
+
+export interface HistoricalTiming {
+  available: boolean
+  reason: string | null
+  current_stage_key: string
+  current_stage_label?: string
+  records_reviewed: number
+  dated_transitions_found: number
+  minimum_sample: number
+  median_days: number | null
+  typical_low_days: number | null
+  typical_high_days: number | null
+  observations: HistoricalTimingObservation[]
+  disclaimer: string
+}
+
 export interface CasePathwayResponse {
   detected_issues: PathwayIssue[]
   current_stage: PathwayStage
@@ -73,6 +97,7 @@ export interface CasePathwayResponse {
   detected_stage_evidence: PathwayStage[]
   journey_steps?: JourneyStep[]
   historical_pathway?: HistoricalPathway
+  historical_timing?: HistoricalTiming
   warnings: string[]
   disclaimer: string
   source_case: {
