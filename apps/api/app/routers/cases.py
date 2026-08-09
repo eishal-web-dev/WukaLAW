@@ -3,6 +3,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from ai.analysis.contradictions import find_contradictions
+from ai.case_pathway import analyze_case_pathway, analyze_historical_pathways
 from ai.similar_cases import SimilarCaseRequest
 from ai.timeline.extract import extract_events
 from app.auth import get_current_user
@@ -23,8 +24,6 @@ router = APIRouter(prefix="/cases", tags=["cases"])
 ALLOWED_STATUS = {"Active", "Review", "On Hold", "Closed"}
 ALLOWED_PRIORITY = {"Low", "Medium", "High", "Critical"}
 
-# Case-management labels provide only a BROAD legal-domain hint. Specific
-# sub-issues must come from the user's facts/documents or explicit custom focus.
 CASE_TYPE_HINTS = {
     "family": "Pakistani family-law dispute ordinarily heard under the family-court framework",
     "criminal": "Pakistani criminal-law matter governed by criminal procedure and penal law",
@@ -77,7 +76,6 @@ def _case_type_hint(case_type: str) -> str:
 
 
 def _similar_case_seed(case: Case, documents: list[Document], focus: str | None = None) -> str:
-    """Build a focused legal/factual profile of a user's case for precedent retrieval."""
     parts = [
         "Jurisdiction: Pakistan",
         f"Case title: {case.title}",
@@ -87,8 +85,6 @@ def _similar_case_seed(case: Case, documents: list[Document], focus: str | None 
     if case.description and case.description.strip():
         parts.append(f"Case facts and issues: {case.description.strip()}")
     if focus and focus.strip():
-        # Custom focus is deliberately explicit and high in the seed so the
-        # retriever/ranker prioritises the user's chosen fact pattern.
         parts.append(f"USER-SELECTED SEARCH FOCUS: {focus.strip()}")
 
     for document in documents[:4]:
@@ -213,7 +209,6 @@ def case_similar_judgments(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    """Automatically search historical Pakistani judgments using the user's case record."""
     case = _get_owned_case(db, case_id, user)
     documents = list(db.scalars(
         select(Document).where(Document.case_id == case.id).order_by(Document.created_at.desc())
@@ -229,18 +224,67 @@ def case_similar_judgments_custom(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    """Search the same corpus while prioritising user-selected legal/factual filters."""
     case = _get_owned_case(db, case_id, user)
     documents = list(db.scalars(
         select(Document).where(Document.case_id == case.id).order_by(Document.created_at.desc())
     ).all())
     clean_focus = " ".join(focus.split())
-    return _run_similar_search(
-        case=case,
-        documents=documents,
-        top_k=top_k,
-        focus=clean_focus,
-    )
+    return _run_similar_search(case=case, documents=documents, top_k=top_k, focus=clean_focus)
+
+
+@router.get("/{case_id}/pathway-intelligence")
+def case_pathway_intelligence(
+    case_id: int,
+    historical_top_k: int = Query(default=20, ge=5, le=40),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Current case journey plus observed later stages in similar historical cases."""
+    case = _get_owned_case(db, case_id, user)
+    documents = list(db.scalars(
+        select(Document).where(Document.case_id == case.id).order_by(Document.created_at.desc())
+    ).all())
+
+    document_records = [
+        {"title": document.title or "Untitled document", "text": document.text or ""}
+        for document in documents
+    ]
+    pathway = analyze_case_pathway(case.case_type, case.description or "", document_records)
+
+    historical = {
+        "available": False,
+        "reason": "Historical comparison was not run because the current stage is not yet reliable.",
+        "current_stage_key": pathway["current_stage"]["key"],
+        "comparable_cases_reviewed": 0,
+        "cases_with_later_stage": 0,
+        "cases_without_later_stage": 0,
+        "most_common_next_stage": None,
+        "distribution": [],
+        "examples": [],
+        "disclaimer": "Historical pathway counts are research observations, not predictions.",
+    }
+
+    if pathway["current_stage"]["key"] != "unknown":
+        similar = _run_similar_search(
+            case=case,
+            documents=documents,
+            top_k=historical_top_k,
+        )
+        historical = analyze_historical_pathways(
+            pathway["current_stage"]["key"],
+            similar.get("results") or [],
+        )
+        historical["retrieval_candidates"] = similar.get("total_candidates", 0)
+
+    pathway["historical_pathway"] = historical
+    pathway["source_case"] = {
+        "id": case.id,
+        "case_number": case.case_number,
+        "title": case.title,
+        "case_type": case.case_type,
+        "status": case.status,
+    }
+    return pathway
 
 
 @router.post("/{case_id}/contradictions", response_model=ContradictionsResponse)
