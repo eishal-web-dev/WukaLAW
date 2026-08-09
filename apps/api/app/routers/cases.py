@@ -3,7 +3,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from ai.analysis.contradictions import find_contradictions
-from ai.case_pathway import analyze_case_pathway, analyze_historical_pathways
+from ai.case_pathway import analyze_case_pathway, analyze_historical_pathways, analyze_historical_timing
 from ai.similar_cases import SimilarCaseRequest
 from ai.timeline.extract import extract_events
 from app.auth import get_current_user
@@ -239,7 +239,7 @@ def case_pathway_intelligence(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    """Current case journey plus observed later stages in similar historical cases."""
+    """Current journey plus observed next stages and timing in similar historical cases."""
     case = _get_owned_case(db, case_id, user)
     documents = list(db.scalars(
         select(Document).where(Document.case_id == case.id).order_by(Document.created_at.desc())
@@ -263,6 +263,19 @@ def case_pathway_intelligence(
         "examples": [],
         "disclaimer": "Historical pathway counts are research observations, not predictions.",
     }
+    timing = {
+        "available": False,
+        "reason": "Historical timing was not run because the current stage is not yet reliable.",
+        "current_stage_key": pathway["current_stage"]["key"],
+        "records_reviewed": 0,
+        "dated_transitions_found": 0,
+        "minimum_sample": 3,
+        "median_days": None,
+        "typical_low_days": None,
+        "typical_high_days": None,
+        "observations": [],
+        "disclaimer": "Historical timing describes explicit dated records; it is not an ETA for this case.",
+    }
 
     if pathway["current_stage"]["key"] != "unknown":
         similar = _run_similar_search(
@@ -270,13 +283,13 @@ def case_pathway_intelligence(
             documents=documents,
             top_k=historical_top_k,
         )
-        historical = analyze_historical_pathways(
-            pathway["current_stage"]["key"],
-            similar.get("results") or [],
-        )
+        results = similar.get("results") or []
+        historical = analyze_historical_pathways(pathway["current_stage"]["key"], results)
         historical["retrieval_candidates"] = similar.get("total_candidates", 0)
+        timing = analyze_historical_timing(pathway["current_stage"]["key"], results)
 
     pathway["historical_pathway"] = historical
+    pathway["historical_timing"] = timing
     pathway["source_case"] = {
         "id": case.id,
         "case_number": case.case_number,
