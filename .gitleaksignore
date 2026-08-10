@@ -1,0 +1,5 @@
+# Known historical finding: Supabase S3 keys committed in cadee76 ("cloud"),
+# scrubbed from the file in PR #66 and rotated. History cannot be rewritten
+# safely on a shared repo, so this single fingerprint is acknowledged here.
+# Do NOT add new fingerprints without rotating the exposed secret first.
+cadee76c1793318cc4efc9209ca7572b7d6ef1bc:.env.example:generic-api-key:66
