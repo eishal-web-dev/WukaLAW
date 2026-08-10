@@ -54,6 +54,7 @@ export type ResearchStrength = 'strong' | 'moderate' | 'limited'
 
 export interface PrecedentBrief {
   document_id: string
+  brief_source: 'ai_enhanced' | 'extractive'
   title: string | null
   court: string | null
   case_number: string | null

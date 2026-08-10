@@ -1,0 +1,7 @@
+[
+  {"query_id":"family-maintenance","query":"wife maintenance and child custody after divorce","expected_domain":"Family Law","expected_terms":["maintenance","custody","family"]},
+  {"query_id":"criminal-murder","query":"murder charge under section 302 PPC with alibi evidence","expected_domain":"Criminal Law","expected_terms":["302","murder","criminal"]},
+  {"query_id":"bail","query":"post arrest bail in a criminal case","expected_domain":"Criminal Law","expected_terms":["bail"]},
+  {"query_id":"property-civil","query":"civil property ownership possession and mutation dispute","expected_domain":"Property Law","expected_terms":["property","possession","mutation","civil"]},
+  {"query_id":"constitutional","query":"constitutional petition enforcing fundamental rights under Article 199","expected_domain":"Constitutional Law","expected_terms":["constitutional","fundamental rights","article 199"]}
+]

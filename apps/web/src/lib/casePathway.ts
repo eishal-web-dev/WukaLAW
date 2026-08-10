@@ -57,6 +57,7 @@ export interface HistoricalPathway {
   disclaimer: string
 }
 
+<<<<<<< HEAD
 export interface HistoricalTimingObservation {
   document_id: string | null
   title: string
@@ -81,6 +82,43 @@ export interface HistoricalTiming {
   disclaimer: string
 }
 
+=======
+export interface HistoricalTiming {
+  available: boolean
+  reason: string | null
+  comparable_cases_reviewed: number
+  sample_size: number
+  minimum_sample: number
+  median_days: number | null
+  iqr_days: [number, number] | null
+  by_next_stage: Array<{ stage_label: string; sample_size: number; median_days: number }>
+  examples: Array<{ document_id: string | null; title: string; next_stage_label: string; days: number; evidence: string }>
+  disclaimer: string
+}
+
+export interface HistoricalOutcomes {
+  available: boolean
+  comparable_cases_reviewed: number
+  usable_outcomes: number
+  favorable: number
+  partial_or_mixed: number
+  unfavorable: number
+  unclear: number
+  client_alignment_available: boolean
+  recorded_outcomes: Array<{ outcome: string; count: number }>
+  reason: string | null
+  disclaimer: string
+}
+
+export interface WatchNext {
+  headline: string
+  most_observed_next_step: string | null
+  historical_support_text: string
+  timing_text: string
+  attention_points: string[]
+  disclaimer: string
+}
+>>>>>>> bff5672 (feat(ai): complete deterministic case intelligence and brief fallback)
 export interface CasePathwayResponse {
   detected_issues: PathwayIssue[]
   current_stage: PathwayStage
@@ -98,6 +136,12 @@ export interface CasePathwayResponse {
   journey_steps?: JourneyStep[]
   historical_pathway?: HistoricalPathway
   historical_timing?: HistoricalTiming
+<<<<<<< HEAD
+=======
+  historical_outcomes?: HistoricalOutcomes
+  what_to_watch_next?: WatchNext
+  similar_cases_reviewed?: number
+>>>>>>> bff5672 (feat(ai): complete deterministic case intelligence and brief fallback)
   warnings: string[]
   disclaimer: string
   source_case: {

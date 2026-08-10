@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import io
 import json
+import logging
 import re
 from pathlib import PurePosixPath
 from typing import Any
@@ -19,12 +20,14 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ai.retrieval.models import LegalSearchQuery
+from ai.similar_cases.brief_fallback import build_extractive_brief
 from app.auth import get_current_user
 from app.config import settings
 from app.db import get_db
 from app.models import Case, Document, User
 
 router = APIRouter(prefix="/cases", tags=["precedent-briefs"])
+LOGGER = logging.getLogger("wukalaw.precedent_briefs")
 
 
 SUBSTANTIVE_CLIENT_TERMS = (
@@ -298,8 +301,18 @@ Return ONLY valid JSON with this exact schema:
   "evidence_limitations": "important information missing from either record that limits the comparison"
 }}
 """
-        raw = pipeline.llm.generate(prompt)
-        brief = _clean_json(raw)
+        try:
+            raw = pipeline.llm.generate(prompt)
+            brief = _clean_json(raw)
+            brief_source = "ai_enhanced"
+        except Exception as exc:
+            LOGGER.warning("Optional precedent-brief provider failed; using extractive fallback: %s", exc)
+            brief = build_extractive_brief(
+                historical_record,
+                chunks,
+                has_substantive_client_issue=has_substantive_client_issue,
+            )
+            brief_source = "extractive"
     except HTTPException:
         raise
     except (RuntimeError, ValueError) as exc:
@@ -319,6 +332,7 @@ Return ONLY valid JSON with this exact schema:
 
     return {
         "document_id": document_id,
+        "brief_source": brief_source,
         "title": first.title,
         "court": first.court,
         "case_number": first.case_number,
@@ -345,5 +359,5 @@ Return ONLY valid JSON with this exact schema:
         "next_verification_steps": _list(brief.get("next_verification_steps")),
         "key_laws": _list(brief.get("key_laws")),
         "evidence_limitations": _text(brief.get("evidence_limitations")),
-        "disclaimer": "AI-generated research analysis, not legal advice or a binding-authority determination. Verify the official judgment, ratio, later treatment and client facts before relying on it.",
+        "disclaimer": ("AI-enhanced research analysis" if brief_source == "ai_enhanced" else "Extracted case brief") + ", not legal advice or a binding-authority determination. Verify the official judgment, ratio, later treatment and client facts before relying on it.",
     }

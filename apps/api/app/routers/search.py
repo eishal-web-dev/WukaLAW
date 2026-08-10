@@ -1,3 +1,5 @@
+import re
+
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
@@ -21,6 +23,7 @@ def chunks_to_sources(
     user: User,
     limit: int,
     min_score: float = 0.0,
+    query: str | None = None,
 ) -> list[Source]:
     sources: list[Source] = []
     for chunk_id, score in hits:
@@ -29,6 +32,11 @@ def chunks_to_sources(
         chunk = db.get(Chunk, chunk_id)
         if chunk is None or chunk.document.owner_id != user.id:
             continue
+        if query:
+            query_terms = set(re.findall(r"[a-z0-9]+", query.casefold()))
+            chunk_terms = set(re.findall(r"[a-z0-9]+", chunk.text.casefold()))
+            if not query_terms.intersection(chunk_terms):
+                continue
         sources.append(
             Source(
                 document_id=chunk.document_id,
@@ -56,6 +64,8 @@ def similar_cases(
     )
     return {
         "results": chunks_to_sources(
-            db, hits, user, request.top_k, min_score=settings.min_answerable
+            db, hits, user, request.top_k,
+            min_score=0.0 if settings.fake_embeddings else settings.min_answerable,
+            query=request.query,
         )
     }

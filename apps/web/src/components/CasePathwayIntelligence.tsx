@@ -81,7 +81,7 @@ export default function CasePathwayIntelligence({ caseId }: { caseId: number | s
     return data.journey_steps.slice(start, end)
   }, [data])
 
-  if (loading) return <Card className="p-5"><Spinner label="Reading your case journey and similar completed cases…" /></Card>
+  if (loading) return <Card className="p-5"><Spinner label="Reading your case journey and similar completed casesâ€¦" /></Card>
   if (error) return <ErrorAlert message={error} />
   if (!data) return null
 
@@ -90,6 +90,11 @@ export default function CasePathwayIntelligence({ caseId }: { caseId: number | s
   const historical = data.historical_pathway
   const historicalTop = historical?.most_common_next_stage
   const timing = data.historical_timing
+<<<<<<< HEAD
+=======
+  const outcomes = data.historical_outcomes
+  const watch = data.what_to_watch_next
+>>>>>>> bff5672 (feat(ai): complete deterministic case intelligence and brief fallback)
 
   return (
     <Card className="p-4 md:p-5 border-[#D4AF37]/15 overflow-hidden">
@@ -107,7 +112,7 @@ export default function CasePathwayIntelligence({ caseId }: { caseId: number | s
           {stageKnown && (
             <div className="text-right">
               <div className="text-xl font-bold tabular-nums" style={{ color: G }}>{position}</div>
-              <div className="text-[9px] uppercase tracking-wide text-muted-foreground">position / 100</div>
+              <div className="text-[9px] uppercase tracking-wide text-muted-foreground">Court-process position</div>
             </div>
           )}
           <div className="hidden sm:block h-9 w-px bg-white/[0.08]" />
@@ -129,7 +134,7 @@ export default function CasePathwayIntelligence({ caseId }: { caseId: number | s
         <div className="mt-5 rounded-xl border border-white/[0.06] bg-white/[0.015] p-3 md:p-4">
           <div className="flex items-center justify-between gap-2 mb-3">
             <div className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground">Court journey</div>
-            <div className="text-[10px] text-muted-foreground">Only ✓ steps were actually found in your record</div>
+            <div className="text-[10px] text-muted-foreground">Only âœ“ steps were actually found in your record</div>
           </div>
           <div className="overflow-x-auto pb-1">
             <div className="flex min-w-max items-start">
@@ -204,6 +209,7 @@ export default function CasePathwayIntelligence({ caseId }: { caseId: number | s
         </div>
       )}
 
+<<<<<<< HEAD
       {timing && (
         <div className="mt-3 rounded-xl border border-white/[0.07] bg-white/[0.018] p-4">
           <div className="flex flex-wrap items-start justify-between gap-3">
@@ -230,6 +236,42 @@ export default function CasePathwayIntelligence({ caseId }: { caseId: number | s
         </div>
       )}
 
+=======
+      <div className="mt-4 grid gap-3 md:grid-cols-3">
+        <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+          <div className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground">Where your case is now</div>
+          <div className="text-sm font-semibold text-foreground mt-1">{data.current_stage.label}</div>
+          <div className="text-[11px] text-muted-foreground mt-1">{confidenceText(data.stage_confidence)}</div>
+        </div>
+        <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+          <div className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground">How long similar cases took</div>
+          {timing?.available ? (
+            <>
+              <div className="text-sm font-semibold text-foreground mt-1">{timing.median_days} days median</div>
+              <div className="text-[11px] text-muted-foreground mt-1">Middle 50%: {timing.iqr_days?.[0]}–{timing.iqr_days?.[1]} days · {timing.sample_size} dated records</div>
+            </>
+          ) : <div className="text-[11px] text-muted-foreground mt-1">{timing?.reason || 'Not enough explicit dated events.'}</div>}
+        </div>
+        <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+          <div className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground">What happened in comparable cases</div>
+          {outcomes?.available ? (
+            <>
+              <div className="text-sm font-semibold text-foreground mt-1">{outcomes.usable_outcomes} explicit outcomes found</div>
+              <div className="text-[11px] text-muted-foreground mt-1">{outcomes.client_alignment_available ? outcomes.favorable + ' favorable · ' + outcomes.partial_or_mixed + ' mixed · ' + outcomes.unfavorable + ' unfavorable' : 'Client alignment is unclear; no win/loss label is shown.'}</div>
+            </>
+          ) : <div className="text-[11px] text-muted-foreground mt-1">{outcomes?.reason || 'No explicit outcomes were usable.'}</div>}
+        </div>
+      </div>
+
+      {watch && (
+        <div className="mt-3 rounded-xl border border-[#D4AF37]/15 bg-[#D4AF37]/[0.025] p-4">
+          <div className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground">What to watch next</div>
+          <div className="text-sm font-semibold text-foreground mt-1">{watch.most_observed_next_step || 'Check the latest court order'}</div>
+          <p className="text-[11px] text-muted-foreground mt-1">{watch.historical_support_text}</p>
+          {watch.attention_points.length > 0 && <p className="text-[11px] text-foreground mt-2">{watch.attention_points[0]}</p>}
+        </div>
+      )}
+>>>>>>> bff5672 (feat(ai): complete deterministic case intelligence and brief fallback)
       <div className="sm:hidden mt-3 rounded-lg border border-white/[0.06] bg-white/[0.02] p-3">
         <div className="text-[9px] uppercase tracking-wide text-muted-foreground">Generic next court step</div>
         <div className="text-xs font-semibold text-foreground mt-1">{data.next_generic_stage?.label ?? 'We need more information'}</div>
@@ -247,7 +289,7 @@ export default function CasePathwayIntelligence({ caseId }: { caseId: number | s
               <div className="text-[10px] uppercase tracking-wide text-muted-foreground mb-2">Court steps found in your record</div>
               <div className="space-y-2">
                 {data.detected_stage_evidence.map((stage) => (
-                  <div key={stage.key} className="flex items-start gap-2 text-xs text-muted-foreground"><CheckCircle2 size={13} className="mt-0.5 flex-shrink-0 text-emerald-400" /><div><span className="text-foreground font-medium">{stage.label}</span>{stage.evidence_terms.length > 0 && <span> — matched “{stage.evidence_terms.join('”, “')}”</span>}</div></div>
+                  <div key={stage.key} className="flex items-start gap-2 text-xs text-muted-foreground"><CheckCircle2 size={13} className="mt-0.5 flex-shrink-0 text-emerald-400" /><div><span className="text-foreground font-medium">{stage.label}</span>{stage.evidence_terms.length > 0 && <span> â€” matched â€œ{stage.evidence_terms.join('â€, â€œ')}â€</span>}</div></div>
                 ))}
               </div>
             </div>

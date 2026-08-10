@@ -108,6 +108,8 @@ def chunk_text(
         if overlap_words is not None:
             raise ValueError("overlap_words requires chunk_words when overriding the adaptive plan")
         plan = choose_chunk_plan(len(words))
+        if len(words) <= int(plan.chunk_words * 1.5):
+            return [TextChunk(position=0, text=" ".join(words))]
         return _word_windows(
             words,
             chunk_words=plan.chunk_words,

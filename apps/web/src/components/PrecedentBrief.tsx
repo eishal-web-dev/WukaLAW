@@ -74,7 +74,7 @@ export default function PrecedentBrief({ caseId, documentId }: { caseId: number 
         <div className="mt-3">
           {loading && (
             <Card className="p-5">
-              <Spinner label="Reading this case and turning it into a simple summary…" />
+              <Spinner label="Reading this case and turning it into a simple summaryâ€¦" />
             </Card>
           )}
           {error && <ErrorAlert message={error} />}
@@ -84,9 +84,10 @@ export default function PrecedentBrief({ caseId, documentId }: { caseId: number 
                 <div className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">What happened in this earlier case</div>
                 <h5 className="text-sm font-semibold text-foreground mt-1">{brief.title || brief.case_number || 'Pakistani judgment'}</h5>
                 <div className="text-[11px] text-muted-foreground mt-1">
-                  {[brief.court, brief.case_number].filter(Boolean).join(' · ')} · {brief.record_source === 'full_source_file' ? 'full judgment checked' : `${brief.passages_reviewed} useful parts checked`}
+                  {[brief.court, brief.case_number].filter(Boolean).join(' Â· ')} Â· {brief.record_source === 'full_source_file' ? 'full judgment checked' : `${brief.passages_reviewed} useful parts checked`}
                 </div>
                 <div className="flex flex-wrap gap-2 mt-3">
+                  <Badge label={brief.brief_source === 'ai_enhanced' ? 'AI-enhanced brief' : 'Extracted case brief'} />
                   <Badge label={strengthLabel(brief.research_strength)} />
                   <Badge label={effectLabel(brief.client_effect)} />
                 </div>
