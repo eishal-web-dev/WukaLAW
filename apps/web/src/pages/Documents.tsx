@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+﻿import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { FileText, Search, Sparkles } from 'lucide-react'
 import { listDocuments, errorMessage } from '../lib/api'
@@ -64,11 +64,11 @@ export default function Documents() {
       </div>
 
       {loading ? (
-        <div className="py-10 flex justify-center"><Spinner label="Loading documents…" /></div>
+        <div className="py-10 flex justify-center"><Spinner label="Loading documentsâ€¦" /></div>
       ) : filtered.length === 0 ? (
         <Card className="p-10 text-center text-sm text-muted-foreground">
           {docs.length === 0
-            ? 'No documents yet — drop a file above to build your library.'
+            ? 'No documents yet â€” drop a file above to build your library.'
             : 'No documents match your search.'}
         </Card>
       ) : (
@@ -86,10 +86,14 @@ export default function Documents() {
                   </div>
                   <div className="text-xs font-semibold text-foreground mb-1 truncate">{doc.title}</div>
                   <div className="text-[10px] text-muted-foreground mb-2">
-                    {formatBytes(doc.size_bytes)} · {formatDate(doc.created_at)}
+                    {formatBytes(doc.size_bytes)} Â· {formatDate(doc.created_at)}
                   </div>
                   <div className="flex items-center justify-between">
-                    <Badge label={`${doc.num_chunks} chunks`} />
+                    <div className="flex flex-wrap gap-1">
+                      <Badge label={`${doc.num_chunks} chunks`} />
+                      {(doc.pages_ocrd ?? 0) > 0 && <Badge label="Scanned document" />}
+                      {doc.ocr_quality && <Badge label={`OCR quality: ${doc.ocr_quality.replace('_', ' ')}`} />}
+                    </div>
                     {doc.has_summary && (
                       <span className="flex items-center gap-1 text-[10px]" style={{ color: '#D4AF37' }}>
                         <Sparkles size={10} /> Summary

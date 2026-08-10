@@ -7,7 +7,6 @@ import {
   ChevronDown,
   ChevronUp,
   Circle,
-  Clock3,
   History,
   Route,
 } from 'lucide-react'
@@ -38,14 +37,6 @@ function StepIcon({ step }: { step: JourneyStep }) {
     return <span className="w-7 h-7 rounded-full flex items-center justify-center border border-white/15 bg-white/[0.025] text-foreground"><ArrowRight size={12} /></span>
   }
   return <span className="w-7 h-7 rounded-full border border-white/[0.08] bg-white/[0.015]" />
-}
-
-function daysText(value: number | null | undefined): string {
-  if (value == null) return '—'
-  if (value < 60) return `${Math.round(value)} days`
-  const months = value / 30.44
-  if (months < 18) return `${months.toFixed(1)} months`
-  return `${(value / 365.25).toFixed(1)} years`
 }
 
 export default function CasePathwayIntelligence({ caseId }: { caseId: number | string }) {
@@ -90,11 +81,8 @@ export default function CasePathwayIntelligence({ caseId }: { caseId: number | s
   const historical = data.historical_pathway
   const historicalTop = historical?.most_common_next_stage
   const timing = data.historical_timing
-<<<<<<< HEAD
-=======
   const outcomes = data.historical_outcomes
   const watch = data.what_to_watch_next
->>>>>>> bff5672 (feat(ai): complete deterministic case intelligence and brief fallback)
 
   return (
     <Card className="p-4 md:p-5 border-[#D4AF37]/15 overflow-hidden">
@@ -209,34 +197,6 @@ export default function CasePathwayIntelligence({ caseId }: { caseId: number | s
         </div>
       )}
 
-<<<<<<< HEAD
-      {timing && (
-        <div className="mt-3 rounded-xl border border-white/[0.07] bg-white/[0.018] p-4">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div className="flex items-start gap-2.5">
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 bg-white/[0.035] text-foreground"><Clock3 size={15} /></div>
-              <div>
-                <div className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground">How long did similar cases take to move on?</div>
-                {timing.available ? (
-                  <>
-                    <div className="text-sm font-semibold text-foreground mt-1">Median observed gap: {daysText(timing.median_days)}</div>
-                    <div className="text-[11px] text-muted-foreground mt-1">Middle half of dated records: {daysText(timing.typical_low_days)} – {daysText(timing.typical_high_days)}</div>
-                  </>
-                ) : (
-                  <div className="text-xs text-muted-foreground mt-1">{timing.reason || 'Not enough dated historical records yet.'}</div>
-                )}
-              </div>
-            </div>
-            <div className="text-right">
-              <div className="text-lg font-semibold text-foreground tabular-nums">{timing.dated_transitions_found}</div>
-              <div className="text-[9px] uppercase tracking-wide text-muted-foreground">dated transitions</div>
-            </div>
-          </div>
-          <div className="text-[10px] text-muted-foreground mt-3 leading-relaxed">{timing.disclaimer}</div>
-        </div>
-      )}
-
-=======
       <div className="mt-4 grid gap-3 md:grid-cols-3">
         <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
           <div className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground">Where your case is now</div>
@@ -271,7 +231,6 @@ export default function CasePathwayIntelligence({ caseId }: { caseId: number | s
           {watch.attention_points.length > 0 && <p className="text-[11px] text-foreground mt-2">{watch.attention_points[0]}</p>}
         </div>
       )}
->>>>>>> bff5672 (feat(ai): complete deterministic case intelligence and brief fallback)
       <div className="sm:hidden mt-3 rounded-lg border border-white/[0.06] bg-white/[0.02] p-3">
         <div className="text-[9px] uppercase tracking-wide text-muted-foreground">Generic next court step</div>
         <div className="text-xs font-semibold text-foreground mt-1">{data.next_generic_stage?.label ?? 'We need more information'}</div>

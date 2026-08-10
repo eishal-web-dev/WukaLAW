@@ -42,7 +42,7 @@ async function apiJson<T>(path: string, body: unknown): Promise<T> {
       body: JSON.stringify(body),
     })
   } catch {
-    throw new ApiError('Could not reach the WakuLaw API.', 0)
+    throw new ApiError('Could not reach the WukaLAW API.', 0)
   }
 
   if (response.status === 401) {
@@ -159,7 +159,7 @@ function uploadDocumentLocal(
       }
     }
 
-    xhr.onerror = () => reject(new ApiError('Could not reach the WakuLaw API.', 0))
+    xhr.onerror = () => reject(new ApiError('Could not reach the WukaLAW API.', 0))
     xhr.onabort = () => reject(new ApiError('Upload was cancelled.', 0))
 
     const form = new FormData()

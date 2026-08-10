@@ -1,5 +1,5 @@
 /**
- * WakuLaw API client.
+ * WukaLAW API client.
  *
  * Base URL comes from VITE_API_BASE_URL and defaults to the local
  * FastAPI backend at http://localhost:8000/api/v1.
@@ -79,6 +79,15 @@ export interface DocumentMeta {
   num_chunks: number
   created_at: string
   has_summary: boolean
+  extraction_method?: string | null
+  ocr_engine?: string | null
+  ocr_language?: string | null
+  ocr_confidence?: number | null
+  ocr_quality?: string | null
+  page_count?: number | null
+  pages_ocrd?: number | null
+  processing_warnings?: string[]
+  indexing_status?: string | null
 }
 
 export interface Summary {
@@ -255,7 +264,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     })
   } catch {
     throw new ApiError(
-      'Could not reach the WakuLaw API. Make sure the backend is running.',
+      'Could not reach the WukaLAW API. Make sure the backend is running.',
       0,
     )
   }
@@ -304,7 +313,7 @@ async function del(path: string): Promise<void> {
     })
   } catch {
     throw new ApiError(
-      'Could not reach the WakuLaw API. Make sure the backend is running.',
+      'Could not reach the WukaLAW API. Make sure the backend is running.',
       0,
     )
   }
@@ -546,7 +555,7 @@ export function uploadDocument(
     xhr.onerror = () =>
       reject(
         new ApiError(
-          'Could not reach the WakuLaw API. Make sure the backend is running.',
+          'Could not reach the WukaLAW API. Make sure the backend is running.',
           0,
         ),
       )

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, FileText, Sparkles, Scale, ListChecks, Target, BookMarked } from 'lucide-react'
 import { getDocument, summarizeDocument, getDocumentCitations, errorMessage } from '../lib/api'
@@ -81,7 +81,7 @@ export default function DocumentDetail() {
   if (loading) {
     return (
       <div className="p-8 flex justify-center h-full items-center">
-        <Spinner label="Loading document…" />
+        <Spinner label="Loading documentâ€¦" />
       </div>
     )
   }
@@ -121,10 +121,13 @@ export default function DocumentDetail() {
               <span>{formatBytes(doc.size_bytes)}</span>
               <span>{formatDate(doc.created_at)}</span>
               <Badge label={`${doc.num_chunks} chunks`} />
+              {(doc.pages_ocrd ?? 0) > 0 && <Badge label="Scanned document" />}
+              {doc.ocr_language && doc.ocr_language !== 'unknown' && <Badge label={doc.ocr_language === 'eng+urd' ? 'Urdu + English' : doc.ocr_language === 'urd' ? 'Urdu' : 'English'} />}
+              {doc.ocr_quality && <Badge label={`OCR quality: ${doc.ocr_quality.replace('_', ' ')}`} />}
             </div>
           </div>
           <Btn onClick={generateSummary} disabled={summarizing} icon={<Sparkles size={14} />}>
-            {summarizing ? 'Summarizing…' : doc.summary ? 'Regenerate Summary' : 'Generate Summary'}
+            {summarizing ? 'Summarizingâ€¦' : doc.summary ? 'Regenerate Summary' : 'Generate Summary'}
           </Btn>
         </div>
       </Card>
@@ -195,7 +198,7 @@ export default function DocumentDetail() {
           </Card>
         ) : citations === null ? (
           <Card className="p-5">
-            <Spinner label="Detecting citations…" />
+            <Spinner label="Detecting citationsâ€¦" />
           </Card>
         ) : citations.length === 0 ? (
           <Card className="p-5 text-sm text-muted-foreground">No citations detected.</Card>

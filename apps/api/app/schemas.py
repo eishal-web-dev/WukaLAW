@@ -41,6 +41,15 @@ class DocumentMeta(BaseModel):
     num_chunks: int
     created_at: datetime
     has_summary: bool
+    extraction_method: str | None = None
+    ocr_engine: str | None = None
+    ocr_language: str | None = None
+    ocr_confidence: float | None = None
+    ocr_quality: str | None = None
+    page_count: int | None = None
+    pages_ocrd: int | None = None
+    processing_warnings: list[str] = Field(default_factory=list)
+    indexing_status: str | None = None
 
 
 class DocumentOut(DocumentMeta):

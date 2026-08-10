@@ -1,4 +1,4 @@
-﻿import sys
+import sys
 from pathlib import Path
 
 # make `app` and the repository-level `ai` package importable regardless of cwd
@@ -41,7 +41,14 @@ with engine.connect() as connection:
     columns = [row[1] for row in connection.execute(text("PRAGMA table_info(documents)"))]
     if columns and "case_id" not in columns:
         connection.execute(text("ALTER TABLE documents ADD COLUMN case_id INTEGER"))
-        connection.commit()
+    if columns and "processing_metadata" not in columns:
+        connection.execute(text("ALTER TABLE documents ADD COLUMN processing_metadata JSON"))
+    chunk_columns = [row[1] for row in connection.execute(text("PRAGMA table_info(chunks)"))]
+    if chunk_columns and "page" not in chunk_columns:
+        connection.execute(text("ALTER TABLE chunks ADD COLUMN page INTEGER"))
+    if chunk_columns and "extraction_method" not in chunk_columns:
+        connection.execute(text("ALTER TABLE chunks ADD COLUMN extraction_method VARCHAR(32)"))
+    connection.commit()
 
 api = APIRouter(prefix="/api/v1")
 

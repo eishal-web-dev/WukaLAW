@@ -1,4 +1,4 @@
-"""Explainable issue and procedural-stage detection for an active case.
+﻿"""Explainable issue and procedural-stage detection for an active case.
 
 This layer is deterministic on purpose. It does not predict a court outcome.
 Issues and stages are reported only when supported by language found in the
@@ -88,7 +88,7 @@ STAGES: list[dict] = [
         "label": "Evidence / witnesses",
         "position": 65,
         "terms": (
-            "evidence recorded", "evidence produced", "plaintiff evidence", "defence evidence", "defense evidence",
+            "evidence recorded", "evidence was recorded", "evidence produced", "plaintiff evidence", "defence evidence", "defense evidence",
             "cross examination", "cross-examination", "cross examined", "witness examined", "witnesses examined",
             "statement recorded", "examination-in-chief", "examination in chief", "closed evidence",
             "evidence closed", "evidence stage", "produced witnesses", "recorded statement",

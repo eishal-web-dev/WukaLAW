@@ -57,32 +57,6 @@ export interface HistoricalPathway {
   disclaimer: string
 }
 
-<<<<<<< HEAD
-export interface HistoricalTimingObservation {
-  document_id: string | null
-  title: string
-  court: string | null
-  next_stage_key: string
-  next_stage_label: string
-  days: number
-}
-
-export interface HistoricalTiming {
-  available: boolean
-  reason: string | null
-  current_stage_key: string
-  current_stage_label?: string
-  records_reviewed: number
-  dated_transitions_found: number
-  minimum_sample: number
-  median_days: number | null
-  typical_low_days: number | null
-  typical_high_days: number | null
-  observations: HistoricalTimingObservation[]
-  disclaimer: string
-}
-
-=======
 export interface HistoricalTiming {
   available: boolean
   reason: string | null
@@ -118,7 +92,6 @@ export interface WatchNext {
   attention_points: string[]
   disclaimer: string
 }
->>>>>>> bff5672 (feat(ai): complete deterministic case intelligence and brief fallback)
 export interface CasePathwayResponse {
   detected_issues: PathwayIssue[]
   current_stage: PathwayStage
@@ -136,12 +109,9 @@ export interface CasePathwayResponse {
   journey_steps?: JourneyStep[]
   historical_pathway?: HistoricalPathway
   historical_timing?: HistoricalTiming
-<<<<<<< HEAD
-=======
   historical_outcomes?: HistoricalOutcomes
   what_to_watch_next?: WatchNext
   similar_cases_reviewed?: number
->>>>>>> bff5672 (feat(ai): complete deterministic case intelligence and brief fallback)
   warnings: string[]
   disclaimer: string
   source_case: {

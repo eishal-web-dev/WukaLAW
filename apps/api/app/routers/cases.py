@@ -3,9 +3,6 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from ai.analysis.contradictions import find_contradictions
-<<<<<<< HEAD
-from ai.case_pathway import analyze_case_pathway, analyze_historical_pathways, analyze_historical_timing
-=======
 from ai.case_pathway import (
     analyze_case_pathway,
     analyze_historical_outcomes,
@@ -13,7 +10,6 @@ from ai.case_pathway import (
     analyze_historical_timing,
     build_watch_next,
 )
->>>>>>> bff5672 (feat(ai): complete deterministic case intelligence and brief fallback)
 from ai.similar_cases import SimilarCaseRequest
 from ai.timeline.extract import extract_events
 from app.auth import get_current_user
@@ -249,11 +245,7 @@ def case_pathway_intelligence(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-<<<<<<< HEAD
-    """Current journey plus observed next stages and timing in similar historical cases."""
-=======
     """Independent current-stage, pathway, timing and outcome intelligence."""
->>>>>>> bff5672 (feat(ai): complete deterministic case intelligence and brief fallback)
     case = _get_owned_case(db, case_id, user)
     documents = list(db.scalars(
         select(Document).where(Document.case_id == case.id).order_by(Document.created_at.desc())
@@ -263,45 +255,6 @@ def case_pathway_intelligence(
         for document in documents
     ]
     pathway = analyze_case_pathway(case.case_type, case.description or "", document_records)
-<<<<<<< HEAD
-
-    historical = {
-        "available": False,
-        "reason": "Historical comparison was not run because the current stage is not yet reliable.",
-        "current_stage_key": pathway["current_stage"]["key"],
-        "comparable_cases_reviewed": 0,
-        "cases_with_later_stage": 0,
-        "cases_without_later_stage": 0,
-        "most_common_next_stage": None,
-        "distribution": [],
-        "examples": [],
-        "disclaimer": "Historical pathway counts are research observations, not predictions.",
-    }
-    timing = {
-        "available": False,
-        "reason": "Historical timing was not run because the current stage is not yet reliable.",
-        "current_stage_key": pathway["current_stage"]["key"],
-        "records_reviewed": 0,
-        "dated_transitions_found": 0,
-        "minimum_sample": 3,
-        "median_days": None,
-        "typical_low_days": None,
-        "typical_high_days": None,
-        "observations": [],
-        "disclaimer": "Historical timing describes explicit dated records; it is not an ETA for this case.",
-    }
-
-    if pathway["current_stage"]["key"] != "unknown":
-        similar = _run_similar_search(
-            case=case,
-            documents=documents,
-            top_k=historical_top_k,
-        )
-        results = similar.get("results") or []
-        historical = analyze_historical_pathways(pathway["current_stage"]["key"], results)
-        historical["retrieval_candidates"] = similar.get("total_candidates", 0)
-        timing = analyze_historical_timing(pathway["current_stage"]["key"], results)
-=======
     warnings = list(pathway.get("warnings") or [])
     similar_results: list[dict] = []
     retrieval_candidates = 0
@@ -314,7 +267,6 @@ def case_pathway_intelligence(
             warnings.extend(similar.get("warnings") or [])
         except Exception:
             warnings.append("Similar-case research is temporarily unavailable; the current case stage is still shown.")
->>>>>>> bff5672 (feat(ai): complete deterministic case intelligence and brief fallback)
 
     historical = analyze_historical_pathways(pathway["current_stage"]["key"], similar_results)
     historical["retrieval_candidates"] = retrieval_candidates
@@ -332,13 +284,10 @@ def case_pathway_intelligence(
     }
     pathway["historical_pathway"] = historical
     pathway["historical_timing"] = timing
-<<<<<<< HEAD
-=======
     pathway["historical_outcomes"] = outcomes
     pathway["what_to_watch_next"] = build_watch_next(pathway, historical, timing)
     pathway["similar_cases_reviewed"] = len(similar_results)
     pathway["warnings"] = list(dict.fromkeys(warnings))
->>>>>>> bff5672 (feat(ai): complete deterministic case intelligence and brief fallback)
     pathway["source_case"] = {
         "id": case.id,
         "case_number": case.case_number,

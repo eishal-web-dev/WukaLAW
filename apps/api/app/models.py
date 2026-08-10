@@ -48,6 +48,7 @@ class Document(Base):
     size_bytes: Mapped[int] = mapped_column(Integer)
     text: Mapped[str] = mapped_column(Text)
     summary: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    processing_metadata: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
     owner: Mapped[User] = relationship(back_populates="documents")
@@ -63,5 +64,7 @@ class Chunk(Base):
     document_id: Mapped[int] = mapped_column(ForeignKey("documents.id"), index=True)
     position: Mapped[int] = mapped_column(Integer)
     text: Mapped[str] = mapped_column(Text)
+    page: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    extraction_method: Mapped[str | None] = mapped_column(String(32), nullable=True)
 
     document: Mapped[Document] = relationship(back_populates="chunks")

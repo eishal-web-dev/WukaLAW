@@ -68,14 +68,14 @@ export default function UploadZone({
         </div>
         <div className="text-foreground font-medium mb-1">Drop files here to upload</div>
         <div className="text-sm text-muted-foreground">
-          PDF and TXT supported{caseId !== undefined ? ' · Files attach to this case' : ''}
+          PDF, TXT, JPG, PNG and WEBP supported{caseId !== undefined ? ' · Files attach to this case' : ''}
         </div>
         <Btn variant="secondary" className="mt-4 mx-auto">Browse Files</Btn>
         <input
           ref={fileInput}
           type="file"
           multiple
-          accept=".pdf,.txt,application/pdf,text/plain"
+          accept=".pdf,.txt,.jpg,.jpeg,.png,.webp,application/pdf,text/plain,image/jpeg,image/png,image/webp"
           className="hidden"
           onChange={(e) => {
             if (e.target.files?.length) void uploadFiles(e.target.files)
@@ -88,7 +88,7 @@ export default function UploadZone({
         <div key={u.name} className="rounded-xl border border-border bg-card p-3">
           <div className="flex items-center justify-between text-xs mb-2">
             <span className="text-foreground truncate">{u.name}</span>
-            <span className="font-semibold" style={{ color: G }}>{u.percent}%</span>
+            <span className="font-semibold" style={{ color: G }}>{u.percent < 35 ? 'Uploading document' : u.percent < 70 ? 'Reading document' : u.percent < 90 ? 'Scanning document' : u.percent < 100 ? 'Preparing for AI' : 'Ready'}</span>
           </div>
           <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
             <div

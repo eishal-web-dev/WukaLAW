@@ -79,6 +79,7 @@ def add_chunks(
     owner_id: int | None = None,
     document_id: int | None = None,
     document_title: str | None = None,
+    chunk_metadata: list[dict] | None = None,
 ) -> None:
     """Embed and index uploaded-document chunks.
 
@@ -87,6 +88,8 @@ def add_chunks(
     """
     if len(chunk_ids) != len(texts):
         raise ValueError("chunk_ids and texts must have the same length")
+    if chunk_metadata is not None and len(chunk_metadata) != len(texts):
+        raise ValueError("chunk_metadata and texts must have the same length")
     if not chunk_ids:
         return
 
@@ -108,7 +111,8 @@ def add_chunks(
 
         _ensure_collection()
         points = []
-        for chunk_id, text, vector in zip(chunk_ids, texts, vectors):
+        for offset, (chunk_id, text, vector) in enumerate(zip(chunk_ids, texts, vectors)):
+            metadata = chunk_metadata[offset] if chunk_metadata else {}
             points.append(
                 qm.PointStruct(
                     id=int(chunk_id),
@@ -117,6 +121,9 @@ def add_chunks(
                         "db_chunk_id": int(chunk_id),
                         "owner_id": int(owner_id),
                         "document_id": str(document_id) if document_id is not None else None,
+                        "case_id": metadata.get("case_id"),
+                        "page": metadata.get("page"),
+                        "extraction_method": metadata.get("extraction_method"),
                         "title": document_title,
                         "source_dataset": "user_uploads",
                         "document_type": "uploaded_document",
