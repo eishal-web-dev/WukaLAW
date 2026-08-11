@@ -1,25 +1,13 @@
-import sys
-from pathlib import Path
-
-# make `app` and the repository-level `ai` package importable regardless of cwd
-_API_ROOT = str(Path(__file__).resolve().parents[1])
-_REPO_ROOT = str(Path(__file__).resolve().parents[3])
-for _path in (_API_ROOT, _REPO_ROOT):
-    if _path in sys.path:
-        sys.path.remove(_path)
-sys.path.insert(0, _REPO_ROOT)
-sys.path.insert(1, _API_ROOT)
-
-from fastapi import APIRouter, FastAPI
+﻿from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.db import Base, engine
-from app.routers import auth_routes, case_custom_search, case_pathway, cases, documents, legal_intelligence, precedent_briefs, qa, rag, search, similar_cases
+from app.routers import auth_routes, case_custom_search, case_pathway, cases, documents, legal_intelligence, precedent_briefs, qa, rag, search, similar_cases, ocr
 
 app = FastAPI(
     title="WukaLAW API",
     description=(
-        "Explainable AI Legal Intelligence Platform — MVP. "
+        "Explainable AI Legal Intelligence Platform Ã¢â‚¬â€ MVP. "
         "Decision-support only; not legal advice."
     ),
     version="0.1.0",
@@ -64,6 +52,7 @@ api.include_router(case_custom_search.router)
 api.include_router(precedent_briefs.router)
 api.include_router(case_pathway.router)
 api.include_router(documents.router)
+api.include_router(ocr.router)
 api.include_router(search.router)
 api.include_router(qa.router)
 app.include_router(api)

@@ -1,7 +1,7 @@
 ﻿import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, FileText, Sparkles, Scale, ListChecks, Target, BookMarked } from 'lucide-react'
-import { getDocument, summarizeDocument, getDocumentCitations, errorMessage } from '../lib/api'
+import { ArrowLeft, FileText, Sparkles, Scale, ListChecks, Target, BookMarked, RefreshCw, ChevronDown, ChevronUp } from 'lucide-react'
+import { getDocument, summarizeDocument, getDocumentCitations, reprocessDocument, errorMessage } from '../lib/api'
 import type { Document, Citation, CitationType } from '../lib/api'
 import { formatBytes, formatDate } from '../lib/format'
 import { Btn, Card, Badge, G } from '../components/design'
@@ -37,6 +37,8 @@ export default function DocumentDetail() {
   const [summarizing, setSummarizing] = useState(false)
   const [citations, setCitations] = useState<Citation[] | null>(null)
   const [citationsError, setCitationsError] = useState<string | null>(null)
+  const [reprocessing, setReprocessing] = useState(false)
+  const [detailsOpen, setDetailsOpen] = useState(false)
 
   useEffect(() => {
     if (!id) return
@@ -78,6 +80,21 @@ export default function DocumentDetail() {
     }
   }
 
+  const readAgain = async () => {
+    if (!id) return
+    setReprocessing(true)
+    setError(null)
+    try {
+      setDoc(await reprocessDocument(id))
+      setCitations(null)
+      const refreshed = await getDocumentCitations(id)
+      setCitations(refreshed.citations)
+    } catch (err) {
+      setError(errorMessage(err))
+    } finally {
+      setReprocessing(false)
+    }
+  }
   if (loading) {
     return (
       <div className="p-8 flex justify-center h-full items-center">
@@ -132,6 +149,39 @@ export default function DocumentDetail() {
         </div>
       </Card>
 
+      <Card className="p-5">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <div className="text-sm font-semibold text-foreground">Document understanding</div>
+            <div className="flex flex-wrap gap-2 mt-3">
+              <Badge label={doc.extraction_method === 'native_pdf' ? 'Text PDF' : doc.extraction_method === 'hybrid' ? 'Mixed document' : doc.extraction_method === 'ocr' ? 'Scanned document' : 'Text document'} />
+              {doc.ocr_language && doc.ocr_language !== 'unknown' && <Badge label={doc.ocr_language === 'eng+urd' ? 'Urdu + English' : doc.ocr_language === 'urd' ? 'Urdu' : 'English'} />}
+              {doc.ocr_quality && <Badge label={`OCR quality: ${doc.ocr_quality.replace('_', ' ')}`} />}
+              {doc.page_count != null && <Badge label={`${doc.page_count} page${doc.page_count === 1 ? '' : 's'}`} />}
+              <Badge label={doc.indexing_status === 'indexed' ? 'Indexed for AI: yes' : 'Indexed for AI: no'} />
+            </div>
+            {doc.processing_status === 'ready_with_warning' || doc.processing_status === 'extraction_failed' ? (
+              <p className="text-xs text-amber-300 mt-3">This document needs review. A clearer scan may improve AI answers.</p>
+            ) : null}
+          </div>
+          {doc.can_reprocess && (
+            <Btn variant="secondary" onClick={() => void readAgain()} disabled={reprocessing} icon={<RefreshCw size={14} className={reprocessing ? 'animate-spin' : ''} />}>
+              {reprocessing ? 'Reading document…' : 'Read this document again'}
+            </Btn>
+          )}
+        </div>
+        <button onClick={() => setDetailsOpen((value) => !value)} className="mt-4 text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5">
+          {detailsOpen ? <ChevronUp size={13} /> : <ChevronDown size={13} />} Processing details
+        </button>
+        {detailsOpen && (
+          <div className="mt-3 grid sm:grid-cols-2 lg:grid-cols-4 gap-2 text-xs text-muted-foreground">
+            <div>Status: {doc.processing_status?.replaceAll('_', ' ') ?? 'ready'}</div>
+            <div>Extraction: {doc.extraction_method?.replaceAll('_', ' ') ?? 'unknown'}</div>
+            <div>OCR engine: {doc.ocr_engine ?? 'not used'}</div>
+            <div>OCR confidence: {doc.ocr_confidence == null ? 'not reported' : `${Math.round(doc.ocr_confidence)}%`}</div>
+          </div>
+        )}
+      </Card>
       {/* AI Summary */}
       {doc.summary && (
         <div className="space-y-4">

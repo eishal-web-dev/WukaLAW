@@ -1,4 +1,4 @@
-from pathlib import Path
+﻿from pathlib import Path
 
 from fastapi import APIRouter, Depends, Form, HTTPException, UploadFile
 from pydantic import BaseModel, Field
@@ -22,7 +22,7 @@ from app.schemas import (
     TimelineResponse,
 )
 from app.services import s3_storage
-from app.services.document_service import ingest_s3_object, ingest_upload
+from app.services.document_service import ingest_s3_object, ingest_upload, reprocess_document
 
 router = APIRouter(prefix="/documents", tags=["documents"])
 
@@ -36,7 +36,11 @@ def _meta(document: Document, num_chunks: int) -> dict:
         "num_chunks": num_chunks,
         "created_at": document.created_at,
         "has_summary": document.summary is not None,
-        **(document.processing_metadata or {}),
+        **{key: value for key, value in (document.processing_metadata or {}).items() if not key.startswith("_")},
+        "can_reprocess": (
+            (document.processing_metadata or {}).get("extraction_method") in {"ocr", "hybrid"}
+            or (document.processing_metadata or {}).get("processing_status") in {"ready_with_warning", "extraction_failed", "indexing_failed"}
+        ),
     }
 
 
@@ -153,6 +157,21 @@ def complete_s3_document_upload(
         _attach_to_case(db, document, request.case_id, user)
     return _meta(document, len(document.chunks))
 
+
+class ReprocessRequest(BaseModel):
+    ocr_language: str = Field(default="auto", pattern=r"^(auto|eng|urd|eng\+urd)$")
+
+
+@router.post("/{document_id}/reprocess", response_model=DocumentMeta)
+def reprocess_existing_document(
+    document_id: int,
+    request: ReprocessRequest,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    document = _get_owned_document(db, document_id, user)
+    document = reprocess_document(db, document, request.ocr_language)
+    return _meta(document, len(document.chunks))
 
 class DocumentUpdate(BaseModel):
     case_id: int | None = None

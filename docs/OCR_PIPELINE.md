@@ -42,3 +42,13 @@ Install the Tesseract binary separately and ensure it is on `PATH`. Install both
 ## Synthetic demo checklist
 
 Use non-private synthetic samples for: a clean English order scan, a poor English scan, an Urdu document, a mixed Urdu/English document, a searchable PDF, a scanned PDF, and a standalone image. Confirm source preservation, displayed metadata, page-aware chunks, retrieval, poor-quality warnings, and empty-text non-indexing.
+
+## Health, status, and retry
+
+`GET /api/v1/ocr/health` reports only executable readiness and installed language identifiers; it never returns executable or filesystem paths. Document metadata uses explicit processing states: `uploaded`, `reading`, `ocr_processing`, `ready`, `ready_with_warning`, `indexing_failed`, and `extraction_failed`. Synchronous ingestion normally returns one of the final four states.
+
+Eligible OCR documents expose **Read this document again**. Reprocessing reads the preserved original, extracts before changing stored content, removes stale Qdrant points, replaces database chunks, clears a stale summary, and indexes the replacement chunks. If stale-vector cleanup is unavailable, the prior document remains unchanged.
+
+## Secret handling
+
+Never store actual credentials, tokens, private endpoints, or account-specific URLs in `.env.example`. It must contain placeholders only. Real `.env` files remain Git-ignored and must not be printed in tests or logs.

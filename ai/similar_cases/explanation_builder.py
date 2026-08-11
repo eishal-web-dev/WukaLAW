@@ -30,7 +30,7 @@ def build_explanation(candidate, factors):
     return (
         "This judgment may be relevant because it contains "
         + ", ".join(phrases)
-        + ". The match score is a retrieval/ranking aid, not a prediction of the legal outcome."
+        + ". The match score is a retrieval/ranking aid and does not mean the cases will have the same result."
     )
 
 

@@ -1,4 +1,4 @@
-# WakuLaw — local development stack (free, runs entirely on your machine)
+﻿# WakuLaw â€” local development stack (free, runs entirely on your machine)
 # Usage:  docker compose -f docker/docker-compose.yml up --build
 #    or:  make docker-up   (from the repo root)
 #
@@ -7,7 +7,9 @@
 
 services:
   api:
-    build: ../apps/api
+    build:
+      context: ..
+      dockerfile: apps/api/Dockerfile
     container_name: wakulaw-api
     ports:
       - "8000:8000"

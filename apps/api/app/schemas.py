@@ -1,4 +1,4 @@
-from datetime import datetime
+﻿from datetime import datetime
 
 from pydantic import BaseModel, Field
 
@@ -50,6 +50,8 @@ class DocumentMeta(BaseModel):
     pages_ocrd: int | None = None
     processing_warnings: list[str] = Field(default_factory=list)
     indexing_status: str | None = None
+    processing_status: str | None = None
+    can_reprocess: bool = False
 
 
 class DocumentOut(DocumentMeta):

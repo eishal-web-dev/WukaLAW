@@ -1,4 +1,4 @@
-/**
+﻿/**
  * WukaLAW API client.
  *
  * Base URL comes from VITE_API_BASE_URL and defaults to the local
@@ -47,7 +47,7 @@ function authHeaders(): Record<string, string> {
 
 /**
  * A protected endpoint rejected our token: clear the session and send the
- * user to the login page. Auth endpoints (`/auth/*`) are exempt — a 401
+ * user to the login page. Auth endpoints (`/auth/*`) are exempt â€” a 401
  * there means "wrong credentials", not "session expired".
  */
 function handleSessionExpired(): ApiError {
@@ -88,6 +88,8 @@ export interface DocumentMeta {
   pages_ocrd?: number | null
   processing_warnings?: string[]
   indexing_status?: string | null
+  processing_status?: string | null
+  can_reprocess?: boolean
 }
 
 export interface Summary {
@@ -279,7 +281,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     try {
       message = detailFromBody(await res.json(), fallback)
     } catch {
-      // Non-JSON error body — keep the fallback message.
+      // Non-JSON error body â€” keep the fallback message.
     }
     throw new ApiError(message, res.status)
   }
@@ -324,7 +326,7 @@ async function del(path: string): Promise<void> {
     try {
       message = detailFromBody(await res.json(), fallback)
     } catch {
-      // Non-JSON error body — keep the fallback message.
+      // Non-JSON error body â€” keep the fallback message.
     }
     throw new ApiError(message, res.status)
   }
@@ -371,6 +373,14 @@ export function getDocument(id: number | string): Promise<Document> {
   return request<Document>(`/documents/${id}`)
 }
 
+/** POST /documents/{id}/reprocess */
+export function reprocessDocument(id: number | string, ocrLanguage = 'auto'): Promise<Document> {
+  return request<Document>(`/documents/${id}/reprocess`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ocr_language: ocrLanguage }),
+  })
+}
 /** POST /documents/{id}/summarize */
 export function summarizeDocument(
   id: number | string,
@@ -438,7 +448,7 @@ export function findSimilarCases(
   return postJson<SimilarCasesResponse>('/similar-cases', body)
 }
 
-/** PATCH /documents/{id} — reassign to a case and/or retitle. */
+/** PATCH /documents/{id} â€” reassign to a case and/or retitle. */
 export function updateDocument(
   id: number | string,
   payload: { case_id?: number | null; title?: string },
@@ -469,7 +479,7 @@ export function updateCase(
   return patchJson<Case>(`/cases/${id}`, payload)
 }
 
-/** DELETE /cases/{id} → 204 */
+/** DELETE /cases/{id} â†’ 204 */
 export function deleteCase(id: number | string): Promise<void> {
   return del(`/cases/${id}`)
 }
@@ -481,7 +491,7 @@ export function listCaseDocuments(
   return request<DocumentListResponse>(`/cases/${id}/documents`)
 }
 
-/** GET /documents/{id}/timeline — dated events extracted from one document. */
+/** GET /documents/{id}/timeline â€” dated events extracted from one document. */
 export function getDocumentTimeline(
   id: number | string,
 ): Promise<TimelineResponse> {
@@ -489,7 +499,7 @@ export function getDocumentTimeline(
 }
 
 /**
- * GET /cases/{id}/timeline — events merged & chronologically sorted across
+ * GET /cases/{id}/timeline â€” events merged & chronologically sorted across
  * all of the case's documents.
  */
 export function getCaseTimeline(
@@ -498,7 +508,7 @@ export function getCaseTimeline(
   return request<TimelineResponse>(`/cases/${id}/timeline`)
 }
 
-/** GET /documents/{id}/citations — legal citations detected in a document. */
+/** GET /documents/{id}/citations â€” legal citations detected in a document. */
 export function getDocumentCitations(
   id: number | string,
 ): Promise<CitationsResponse> {
@@ -506,7 +516,7 @@ export function getDocumentCitations(
 }
 
 /**
- * POST /cases/{id}/contradictions — cross-document contradiction analysis.
+ * POST /cases/{id}/contradictions â€” cross-document contradiction analysis.
  * Can take ~10-30s on the first run; callers should show an analyzing state.
  */
 export function analyzeCaseContradictions(
@@ -518,7 +528,7 @@ export function analyzeCaseContradictions(
 }
 
 /**
- * POST /documents/upload — multipart form field "file".
+ * POST /documents/upload â€” multipart form field "file".
  *
  * Uses XMLHttpRequest so upload progress can be reported (fetch has no
  * standard upload-progress API).

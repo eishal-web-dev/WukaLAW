@@ -81,3 +81,63 @@ def test_empty_ocr_is_stored_but_not_indexed(monkeypatch, client):
     assert response.status_code == 201
     assert response.json()["indexing_status"] == "skipped_empty"
     assert response.json()["num_chunks"] == 0
+
+def test_ocr_health_does_not_expose_machine_paths(client, monkeypatch):
+    monkeypatch.setattr("app.routers.ocr.TesseractEngine.health", lambda: {
+        "tesseract_available": True,
+        "installed_languages": ["eng", "urd"],
+        "english_available": True,
+        "urdu_available": True,
+        "ocr_ready": True,
+    })
+    response = client.get("/api/v1/ocr/health")
+    assert response.status_code == 200
+    assert response.json()["ocr_ready"] is True
+    assert "path" not in response.text.lower()
+
+
+def test_ocr_upload_is_retrievable_and_index_metadata_is_preserved(monkeypatch, client):
+    headers = register_user(client)
+    recognized = "family custody guardianship minor child visitation evidence " * 12
+    result = OCRResult(recognized, "eng", "fake-tesseract", 90, "ocr", "excellent", [OCRPage(3, recognized, "ocr", 90)], [])
+    monkeypatch.setattr(document_service, "_extract", lambda *args: result)
+    captured = []
+    original_add = document_service.vector_index.add_chunks
+    def recording_add(ids, texts, **kwargs):
+        captured.extend(kwargs["chunk_metadata"])
+        return original_add(ids, texts, **kwargs)
+    monkeypatch.setattr(document_service.vector_index, "add_chunks", recording_add)
+    upload = client.post("/api/v1/documents/upload", headers=headers, files={"file": ("custody.png", b"synthetic", "image/png")})
+    assert upload.status_code == 201, upload.text
+    assert captured and captured[0]["page"] == 3 and captured[0]["extraction_method"] == "ocr"
+    answer = client.post("/api/v1/ask", headers=headers, json={"question": "custody guardianship visitation"})
+    assert answer.status_code == 200
+    assert answer.json()["sources"]
+    assert "custody" in answer.json()["sources"][0]["text"].lower()
+
+
+def test_reprocess_replaces_chunks_and_vectors_without_duplicates(monkeypatch, client):
+    headers = register_user(client)
+    first_text = "obsolete alpha scan legal evidence hearing order " * 12
+    second_text = "replacement beta scan custody guardianship decision " * 12
+    results = iter([
+        OCRResult(first_text, "eng", "fake-tesseract", 40, "ocr", "review_recommended", [OCRPage(1, first_text, "ocr", 40)], []),
+        OCRResult(second_text, "eng", "fake-tesseract", 92, "ocr", "excellent", [OCRPage(2, second_text, "ocr", 92)], []),
+    ])
+    monkeypatch.setattr(document_service, "_extract", lambda *args: next(results))
+    upload = client.post("/api/v1/documents/upload", headers=headers, files={"file": ("retry.png", b"synthetic", "image/png")})
+    assert upload.status_code == 201
+    document_id = upload.json()["id"]
+    with SessionLocal() as db:
+        old_ids = [row.id for row in db.query(Chunk).filter(Chunk.document_id == document_id).all()]
+    retry = client.post(f"/api/v1/documents/{document_id}/reprocess", headers=headers, json={"ocr_language": "eng"})
+    assert retry.status_code == 200, retry.text
+    assert retry.json()["processing_status"] == "ready"
+    with SessionLocal() as db:
+        rows = db.query(Chunk).filter(Chunk.document_id == document_id).all()
+        assert rows
+        assert all("replacement beta" in row.text for row in rows)
+        assert not any("obsolete alpha" in row.text for row in rows)
+        assert len(rows) == retry.json()["num_chunks"]
+    hits = document_service.vector_index.search("replacement beta custody", 10, owner_id=1)
+    assert len({chunk_id for chunk_id, _ in hits}) == len(hits)
