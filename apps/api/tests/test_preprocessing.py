@@ -52,8 +52,10 @@ def test_adaptive_chunk_count_grows_with_document_length_not_fixed_count():
 
 
 def test_adaptive_mode_does_not_create_tiny_tail_chunk():
-    plan = choose_chunk_plan(1_000)
-    text = " ".join(f"word{i}" for i in range(plan.chunk_words + 5))
+    total_words = 225  # small band: 220-word chunks, so the 35-word tail is below min_tail (44)
+    plan = choose_chunk_plan(total_words)
+    assert total_words - (plan.chunk_words - plan.overlap_words) < plan.min_tail_words
+    text = " ".join(f"word{i}" for i in range(total_words))
     chunks = chunk_text(text)
 
     assert len(chunks) == 1

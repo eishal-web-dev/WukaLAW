@@ -69,7 +69,7 @@ def test_similar_cases(client):
     _upload(client, headers)
     response = client.post(
         "/api/v1/similar-cases",
-        json={"query": "eyewitness testimony reliability", "top_k": 3},
+        json={"query": "testimony of the two eyewitnesses who were present at the scene", "top_k": 3},
         headers=headers,
     )
     assert response.status_code == 200
