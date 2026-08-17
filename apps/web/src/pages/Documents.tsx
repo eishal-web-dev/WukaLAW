@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { FileText, Search, Sparkles } from 'lucide-react'
+import { FileText, Search, Sparkles, ScanText } from 'lucide-react'
 import { listDocuments, errorMessage } from '../lib/api'
 import type { DocumentMeta } from '../lib/api'
 import { formatBytes, formatDate } from '../lib/format'
@@ -88,6 +88,11 @@ export default function Documents() {
                   <div className="text-[10px] text-muted-foreground mb-2">
                     {formatBytes(doc.size_bytes)} · {formatDate(doc.created_at)}
                   </div>
+                  {doc.ocr_used && (
+                    <div className="flex items-center gap-1 text-[10px] text-muted-foreground mb-2" title="Text was recovered from a scanned PDF via OCR">
+                      <ScanText size={10} /> OCR
+                    </div>
+                  )}
                   <div className="flex items-center justify-between">
                     <Badge label={`${doc.num_chunks} chunks`} />
                     {doc.has_summary && (
