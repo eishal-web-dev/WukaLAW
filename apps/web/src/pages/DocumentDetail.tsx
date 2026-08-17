@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, FileText, Sparkles, Scale, ListChecks, Target, BookMarked } from 'lucide-react'
+import { ArrowLeft, FileText, Sparkles, Scale, ListChecks, Target, BookMarked, ScanText } from 'lucide-react'
 import { getDocument, summarizeDocument, getDocumentCitations, errorMessage } from '../lib/api'
 import type { Document, Citation, CitationType } from '../lib/api'
 import { formatBytes, formatDate } from '../lib/format'
@@ -121,6 +121,14 @@ export default function DocumentDetail() {
               <span>{formatBytes(doc.size_bytes)}</span>
               <span>{formatDate(doc.created_at)}</span>
               <Badge label={`${doc.num_chunks} chunks`} />
+              {doc.ocr_used && (
+                <span
+                  className="flex items-center gap-1"
+                  title="This document was a scanned PDF — text was recovered with OCR and may contain recognition errors"
+                >
+                  <ScanText size={12} /> OCR
+                </span>
+              )}
             </div>
           </div>
           <Btn onClick={generateSummary} disabled={summarizing} icon={<Sparkles size={14} />}>

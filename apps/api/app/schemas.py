@@ -41,6 +41,7 @@ class DocumentMeta(BaseModel):
     num_chunks: int
     created_at: datetime
     has_summary: bool
+    ocr_used: bool = False
 
 
 class DocumentOut(DocumentMeta):

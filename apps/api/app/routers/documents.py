@@ -36,6 +36,7 @@ def _meta(document: Document, num_chunks: int) -> dict:
         "num_chunks": num_chunks,
         "created_at": document.created_at,
         "has_summary": document.summary is not None,
+        "ocr_used": document.ocr_used,
     }
 
 

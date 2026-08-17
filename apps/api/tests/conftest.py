@@ -5,6 +5,7 @@ from pathlib import Path
 # fast deterministic embeddings + isolated storage, set before app imports
 os.environ["FAKE_EMBEDDINGS"] = "1"
 os.environ["FAKE_NLI"] = "1"
+os.environ["FAKE_OCR"] = "1"
 os.environ["DATABASE_URL"] = "sqlite:///./test_wakulaw.db"
 os.environ["UPLOAD_DIR"] = "./test_uploads"
 os.environ["STORAGE_DIR"] = "./test_storage"
