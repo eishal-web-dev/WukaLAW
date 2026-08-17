@@ -24,8 +24,8 @@ WakuLaw is a Final Year Project: an Explainable AI Legal Intelligence Platform f
 | Q&A | RAG with query-intent handling, sources, confidence; local LLM (Qwen2.5 3B via Ollama) with extractive fallback | ✅ Live |
 | Search | Similar-case semantic search with relevance threshold | ✅ Live |
 | UI | Figma design, 24 screens (live/preview/marketing split) | ✅ Live |
-| AI quality | Reranking (#46), hybrid BM25 search (#47), eval harness (#48) | 🔜 Planned |
-| Data | Bulk judgment collection (#24), CI (#39), testing report/user guide (#38/#40) | 🔜 Planned |
+| AI quality | Reranking (#46), hybrid BM25 search (#47) — implemented, pending PR review; eval harness (#48) — already done, see `docs/STRATIFIED_RETRIEVAL_REPORT.md` | ✅ / 🔜 Mixed, see note |
+| Data | Bulk judgment collection (#24) — already done (7,776 docs in S3); CI (#39) — already done; testing report (#38), user guide (#40), demo script (#37) — all written | ✅ Done |
 | Future | Outcome prediction (M10, needs hand-labeled data), courtroom simulation, contradiction detection, bias/fake-evidence detection, Urdu, voice | 🔭 Future scope |
 
 ## 3. Repository map
@@ -157,4 +157,4 @@ React SPA (Figma design), routes guarded by auth (`wakulaw_token`/`wakulaw_user`
 
 ---
 
-*Related docs: [MVP_SCOPE](MVP_SCOPE.md) · [ROADMAP](ROADMAP.md) · [ARCHITECTURE_MVP](ARCHITECTURE_MVP.md) · [DATASETS](DATASETS.md) · [ETHICS_AND_LIMITATIONS](ETHICS_AND_LIMITATIONS.md) · [GITHUB_WORKFLOW](GITHUB_WORKFLOW.md)*
+*Related docs: [MVP_SCOPE](MVP_SCOPE.md) · [ROADMAP](ROADMAP.md) · [ARCHITECTURE_MVP](ARCHITECTURE_MVP.md) · [DATASETS](DATASETS.md) · [ETHICS_AND_LIMITATIONS](ETHICS_AND_LIMITATIONS.md) · [GITHUB_WORKFLOW](GITHUB_WORKFLOW.md) · [DEMO_SCRIPT](DEMO_SCRIPT.md)*
