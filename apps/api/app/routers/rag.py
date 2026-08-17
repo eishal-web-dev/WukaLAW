@@ -17,7 +17,13 @@ from ai.rag.llm_provider import (
     OpenAIProvider,
 )
 from ai.rag.rag_pipeline import RagPipeline
-from ai.retrieval import LegalRetriever
+from ai.retrieval import (
+    CrossEncoderReranker,
+    HybridRetriever,
+    LegalRetriever,
+    LexicalOverlapReranker,
+    RerankingRetriever,
+)
 from ai.vectorstore.config import QdrantSettings
 from ai.vectorstore.qdrant_client import get_shared_qdrant_client
 
@@ -79,10 +85,51 @@ def get_pipeline():
         os.getenv("EMBEDDING_MODEL", "BAAI/bge-m3"),
         os.getenv("EMBEDDING_DEVICE", "auto"),
     )
+    dense = LegalRetriever(client, settings.collection, embeddings)
     return RagPipeline(
-        LegalRetriever(client, settings.collection, embeddings),
+        _build_retriever(dense),
         _provider(),
     )
+
+
+def _build_retriever(dense: LegalRetriever):
+    """Wraps the plain dense retriever with hybrid fusion and/or reranking,
+    per docs/STRATIFIED_RETRIEVAL_REPORT.md's recommendation, based on
+    environment configuration. Both default to off — a fresh deployment
+    keeps today's plain-dense behavior until explicitly opted in.
+
+    RETRIEVAL_MODE=hybrid enables HybridRetriever (issue #47): dense
+    retrieval fused with a lexical relevance score computed over the
+    retrieved candidate pool. RETRIEVAL_HYBRID_DENSE_WEIGHT (default 0.6)
+    controls the fusion balance.
+
+    RAG_RERANKER=lexical|cross_encoder enables a reranking pass (issue
+    #46) on top of whichever retriever RETRIEVAL_MODE selected.
+    'cross_encoder' needs the sentence-transformers package and
+    network/cache access to a model on first use; if that's unavailable
+    the request fails clearly (503) rather than silently degrading, since
+    a silent fallback would hide a misconfiguration in production. Use
+    'lexical' if that dependency isn't available.
+    """
+    retriever = dense
+    if os.getenv("RETRIEVAL_MODE", "dense").casefold() == "hybrid":
+        retriever = HybridRetriever(
+            retriever,
+            dense_weight=float(os.getenv("RETRIEVAL_HYBRID_DENSE_WEIGHT", "0.6")),
+        )
+
+    reranker_name = os.getenv("RAG_RERANKER", "").casefold()
+    if reranker_name == "lexical":
+        retriever = RerankingRetriever(retriever, LexicalOverlapReranker())
+    elif reranker_name == "cross_encoder":
+        retriever = RerankingRetriever(
+            retriever,
+            CrossEncoderReranker(os.getenv("CROSS_ENCODER_MODEL", "BAAI/bge-reranker-base")),
+        )
+    elif reranker_name not in {"", "none"}:
+        raise RuntimeError(f"Unsupported RAG_RERANKER: {reranker_name}")
+
+    return retriever
 
 
 @router.post("/query", response_model=RagQueryResponse)
