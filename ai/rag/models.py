@@ -71,6 +71,7 @@ class RagResult:
     legal_intelligence: dict[str, Any] | None = None
     applied_filters: dict[str, Any] = field(default_factory=dict)
     pipeline_warnings: list[str] = field(default_factory=list)
+    llm_provider: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         value = asdict(self)

@@ -30,7 +30,10 @@ class RagPipeline:
   if not context:answer="INSUFFICIENT_EVIDENCE";validation=ValidationResult(ValidationStatus.INSUFFICIENT_EVIDENCE,["Retrieval returned no usable chunks."])
   else:answer=self.llm.generate(build_prompt(analysis,context)).strip();validation=validate_response(answer,context)
   confidence={ValidationStatus.PASS:"high",ValidationStatus.LOW_CONFIDENCE:"low",ValidationStatus.INSUFFICIENT_EVIDENCE:"insufficient"}[validation.status]
-  return RagResult(answer=answer,confidence=confidence,citations=[x.citation for x in context],retrieved_chunks=[asdict(x) for x in results],processing_time_ms=(time.perf_counter()-started)*1000,validation=validation,analysis=analysis,original_question=question,retrieval_query=search.query,legal_intelligence=intelligence_data,applied_filters=instructions.applied_filters(),pipeline_warnings=list(dict.fromkeys(warnings)))
+  llm_provider=getattr(self.llm,"last_used",None) or getattr(self.llm,"name",None)
+  fallback_errors=getattr(self.llm,"last_errors",None)
+  if fallback_errors:warnings.append("LLM fallback attempts before success: "+"; ".join(fallback_errors))
+  return RagResult(answer=answer,confidence=confidence,citations=[x.citation for x in context],retrieved_chunks=[asdict(x) for x in results],processing_time_ms=(time.perf_counter()-started)*1000,validation=validation,analysis=analysis,original_question=question,retrieval_query=search.query,legal_intelligence=intelligence_data,applied_filters=instructions.applied_filters(),pipeline_warnings=list(dict.fromkeys(warnings)),llm_provider=llm_provider)
  @staticmethod
  def _legacy(question,filters,top_k,score_threshold):
   legacy=analyze_query(question,filters);f=legacy.filters;out=RetrievalInstructions(legacy.normalized_question,top_k=top_k,score_threshold=score_threshold,courts=list(f.get("court",[])),jurisdictions=list(f.get("jurisdiction",[])),section_numbers=list(f.get("section",[])),article_numbers=[],document_ids=list(f.get("document_id",[])));IntelligenceAdapter().merge_user_filters(out,filters);return out
