@@ -10,8 +10,10 @@ from pydantic import BaseModel, Field
 
 from ai.embeddings.model_provider import create_provider
 from ai.rag.llm_provider import (
+    FallbackLLMProvider,
     GeminiProvider,
     GroqProvider,
+    LLMProvider,
     LocalLlamaProvider,
     OllamaProvider,
     OpenAIProvider,
@@ -22,6 +24,8 @@ from ai.vectorstore.config import QdrantSettings
 from ai.vectorstore.qdrant_client import get_shared_qdrant_client
 
 router = APIRouter(prefix="/api/rag", tags=["rag"])
+
+DEFAULT_FALLBACK_ORDER = ("groq", "gemini", "openai", "ollama")
 
 
 class RagQueryRequest(BaseModel):
@@ -44,11 +48,10 @@ class RagQueryResponse(BaseModel):
     applied_filters: dict[str, Any]
     pipeline_warnings: list[str]
     processing_time_ms: float
+    llm_provider: str | None = None
 
 
-def _provider():
-    name = os.getenv("RAG_LLM_PROVIDER", "groq").casefold()
-
+def _build_named_provider(name: str) -> LLMProvider:
     if name == "groq":
         return GroqProvider(
             model=os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile"),
@@ -69,6 +72,49 @@ def _provider():
             os.getenv("OLLAMA_BASE_URL", "http://localhost:11434"),
         )
     raise RuntimeError(f"Unsupported RAG_LLM_PROVIDER: {name}")
+
+
+def _has_credentials(name: str) -> bool:
+    """Ollama/local don't need a key; the hosted APIs do. Skipping providers
+    with no configured key avoids a guaranteed-to-fail attempt in the chain."""
+    if name == "groq":
+        return bool(os.getenv("GROQ_API_KEY"))
+    if name == "gemini":
+        return bool(os.getenv("GEMINI_API_KEY"))
+    if name == "openai":
+        return bool(os.getenv("OPENAI_API_KEY"))
+    return True
+
+
+def _provider() -> LLMProvider:
+    """Selects the LLM provider for /api/rag/query.
+
+    RAG_LLM_PROVIDER=<name> (groq/gemini/openai/ollama/local) — legacy
+    behavior: use exactly that one provider, no fallback.
+
+    RAG_LLM_PROVIDER=auto — build a fallback chain from
+    RAG_LLM_FALLBACK_ORDER (comma-separated, default "groq,gemini,openai,
+    ollama"), skipping any hosted provider with no API key configured. If a
+    provider fails at generation time (rate limit, quota, network error),
+    the next one in the chain is tried automatically.
+    """
+    name = os.getenv("RAG_LLM_PROVIDER", "groq").casefold()
+
+    if name != "auto":
+        return _build_named_provider(name)
+
+    order = [
+        part.strip().casefold()
+        for part in os.getenv("RAG_LLM_FALLBACK_ORDER", ",".join(DEFAULT_FALLBACK_ORDER)).split(",")
+        if part.strip()
+    ]
+    chain = [(n, _build_named_provider(n)) for n in order if _has_credentials(n)]
+    if not chain:
+        raise RuntimeError(
+            "RAG_LLM_PROVIDER=auto but no provider in RAG_LLM_FALLBACK_ORDER has credentials configured "
+            "(set GROQ_API_KEY/GEMINI_API_KEY/OPENAI_API_KEY, or include 'ollama' for a free local option)"
+        )
+    return FallbackLLMProvider(chain)
 
 
 @lru_cache(maxsize=1)
@@ -113,4 +159,5 @@ def query_rag(request: RagQueryRequest):
         applied_filters=data["applied_filters"],
         pipeline_warnings=data["pipeline_warnings"],
         processing_time_ms=data["processing_time_ms"],
+        llm_provider=data.get("llm_provider"),
     )
