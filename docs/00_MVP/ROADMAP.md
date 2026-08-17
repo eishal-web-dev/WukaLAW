@@ -1,6 +1,6 @@
 # WakuLaw — Development Roadmap
 
-> **Status (2026-07-08):** M0–M8 are functionally complete — the MVP (auth, documents, cases, summarization, RAG Q&A with local LLM, similar cases, Figma UI) is merged and running. Remaining: M9 (testing report #38, CI #39, user guide #40, dataset collection #24) and the RAG quality track (#46 reranker, #47 hybrid search, #48 eval harness). M10 (prediction) stays optional. See `MASTER_SYSTEM_DOCUMENT.md` for the full current-state description.
+> **Status (2026-08-17):** M0–M8 are functionally complete — the MVP (auth, documents, cases, summarization, RAG Q&A with local LLM, similar cases, Figma UI) is merged and running. **M9 is now complete**: testing report (#38), CI (#39, was already live but undocumented), user guide (#40), demo script (#37), and dataset collection (#24, was already done — 7,776 documents in S3, just undocumented) — all written up in `docs/TESTING_REPORT.md`, `docs/12_User_Guide/User_Guide.md`, `docs/00_MVP/DEMO_SCRIPT.md`, and `datasets/README.md` respectively. The RAG quality track (#46 reranker, #47 hybrid search) is implemented and pending PR review (`ai/51-rag-quality-hybrid-reranker`); #48 (eval harness) was already done — see `docs/STRATIFIED_RETRIEVAL_REPORT.md`. M10 (prediction) stays optional. See `MASTER_SYSTEM_DOCUMENT.md` for the full current-state description.
 
 Each phase maps to a GitHub milestone. Work proceeds one issue at a time: issue → branch → pull request → review → merge. Milestone order is the dependency order; do not start a phase before its prerequisites are merged.
 
