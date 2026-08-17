@@ -79,6 +79,7 @@ export interface DocumentMeta {
   num_chunks: number
   created_at: string
   has_summary: boolean
+  ocr_used: boolean
 }
 
 export interface Summary {

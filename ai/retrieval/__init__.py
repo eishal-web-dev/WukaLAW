@@ -5,7 +5,11 @@ if _legacy_subpackage.is_dir() and str(_legacy_subpackage) not in __path__:
 
 """Traceable legal retrieval over Qdrant."""
 from .models import LegalSearchQuery,LegalSearchResult
-__all__=["LegalSearchQuery","LegalSearchResult","LegalRetriever"]
+__all__=[
+    "LegalSearchQuery","LegalSearchResult","LegalRetriever",
+    "HybridRetriever","Reranker","LexicalOverlapReranker","CrossEncoderReranker",
+    "RerankingRetriever","RerankerUnavailableError","lexical_score",
+]
 
 
 def __getattr__(name):
@@ -13,4 +17,10 @@ def __getattr__(name):
     if name == "LegalRetriever":
         from .retriever import LegalRetriever
         return LegalRetriever
+    if name in {
+        "HybridRetriever","Reranker","LexicalOverlapReranker","CrossEncoderReranker",
+        "RerankingRetriever","RerankerUnavailableError","lexical_score",
+    }:
+        from . import hybrid
+        return getattr(hybrid, name)
     raise AttributeError(name)

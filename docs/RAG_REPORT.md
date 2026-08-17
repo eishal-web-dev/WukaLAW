@@ -27,10 +27,36 @@ Response fields: `answer`, `confidence`, `citations`, `retrieved_chunks`, and `p
 
 - Fake provider for deterministic offline tests
 - OpenAI Responses API (`OPENAI_API_KEY`, never hardcoded)
+- Gemini API (`GEMINI_API_KEY`)
+- Groq API (`GROQ_API_KEY`)
 - Ollama generate API
 - OpenAI-compatible local Llama HTTP server
 
-`RAG_LLM_PROVIDER` selects the production provider. Retrieval reuses `ai.retrieval.LegalRetriever`; embedding and Qdrant settings are lazy and environment-backed.
+`RAG_LLM_PROVIDER` selects the production provider. Setting it to a specific name (`groq`, `gemini`, `openai`, `ollama`, `local`) uses exactly that provider with no fallback — this was the only mode until 2026-08-16. Setting it to `auto` builds an ordered fallback chain instead: providers are tried in `RAG_LLM_FALLBACK_ORDER` (default `groq,gemini,openai,ollama`), skipping any hosted provider with no API key configured, and moving to the next one automatically if the current one fails (rate limit, quota exhausted, network error). The response's `llm_provider` field reports which provider actually produced the answer, and `pipeline_warnings` lists any providers that failed before it succeeded — consistent with the app's broader "always show your evidence" positioning. See `ai/rag/llm_provider.py` (`FallbackLLMProvider`) and `tests/test_llm_fallback.py` / `tests/test_rag_provider_selection.py`.
+
+Retrieval reuses `ai.retrieval.LegalRetriever`; embedding and Qdrant settings are lazy and environment-backed.
+
+## Retrieval quality: hybrid search and reranking (#47, #46)
+
+`docs/STRATIFIED_RETRIEVAL_REPORT.md` ran a 600-chunk stratified evaluation of dense BGE-M3 retrieval and found a simple lexical baseline beating it at every reported cutoff (Recall@10 0.7368 vs 0.5263, MRR 0.5577 vs 0.4467), with dense semantic-style queries especially weak. Its recommendation was hybrid dense + lexical retrieval, metadata filtering, and reranking.
+
+`ai/retrieval/hybrid.py` implements the retrieval-quality half of that recommendation as composable wrappers around any `Retriever` (anything with `.search(query) -> list[LegalSearchResult]`), so they don't require changes to the Qdrant collection or `RagPipeline` itself:
+
+- **`HybridRetriever`** (#47) — overfetches from the dense retriever, computes a BM25-flavoured lexical score over the retrieved candidate pool (not the full corpus, which live Qdrant retrieval doesn't have cheap access to), and fuses it with the normalized dense score.
+- **`LexicalOverlapReranker`** (#46) — free, offline reranking pass using the same lexical score, always available.
+- **`CrossEncoderReranker`** (#46) — higher-quality reranking via a `sentence-transformers` `CrossEncoder` model; needs that package and network/cache access to the model on first use, and raises `RerankerUnavailableError` (surfaced as a 503) if unavailable rather than silently degrading.
+- **`RerankingRetriever`** — composes a reranker onto any retriever, so hybrid retrieval and reranking can be combined or used independently.
+
+Both are off by default (`apps/api/app/routers/rag.py`'s `_build_retriever`), so a fresh deployment keeps today's plain dense-only behavior. Opt in via env vars:
+
+| Variable | Values | Default |
+|---|---|---|
+| `RETRIEVAL_MODE` | `dense`, `hybrid` | `dense` |
+| `RETRIEVAL_HYBRID_DENSE_WEIGHT` | 0.0–1.0 | `0.6` |
+| `RAG_RERANKER` | `none`, `lexical`, `cross_encoder` | `none` |
+| `CROSS_ENCODER_MODEL` | any sentence-transformers cross-encoder | `BAAI/bge-reranker-base` |
+
+**Not yet done:** the stratified eval harness (`ai/evaluation/`) hasn't been re-run against `HybridRetriever`/`RerankingRetriever` on the real 70k-chunk corpus to confirm the numeric improvement predicted by the lexical-baseline comparison — that corpus lives in S3 and Qdrant, not in this repo, so re-running it needs the full dataset environment. `scripts/evaluate_stratified_retrieval.py` should be pointed at a `HybridRetriever`-wrapped collection to close that loop.
 
 ## Limitations and future work
 

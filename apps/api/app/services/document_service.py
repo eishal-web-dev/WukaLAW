@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from ai.preprocessing.chunk import chunk_text
 from ai.preprocessing.clean import clean_text
 from ai.preprocessing.extract import SUPPORTED_EXTENSIONS, extract_text
+from ai.preprocessing.ocr import OcrUnavailableError, ocr_pdf
 from ai.retrieval import index as vector_index
 from app.config import settings
 from app.models import Chunk, Document
@@ -34,6 +35,52 @@ def _validate_size(size_bytes: int, *, max_mb: int) -> None:
         raise HTTPException(status_code=400, detail="Uploaded file is empty.")
 
 
+def _extract_with_ocr_fallback(source_path: Path) -> tuple[str, bool]:
+    """Extract text, falling back to OCR for PDFs with too little embedded
+    text. Returns (cleaned_text, ocr_used)."""
+    try:
+        raw = extract_text(source_path)
+    except Exception as error:  # corrupt PDF etc.
+        raise HTTPException(status_code=422, detail=f"Could not extract text: {error}") from error
+
+    text = clean_text(raw)
+    if len(text.split()) >= settings.ocr_min_words:
+        return text, False
+
+    is_pdf = source_path.suffix.lower() == ".pdf"
+    if not is_pdf:
+        raise HTTPException(
+            status_code=422,
+            detail="The document contains too little extractable text.",
+        )
+    if not settings.ocr_enabled:
+        raise HTTPException(
+            status_code=422,
+            detail="The document contains too little extractable text (looks like a scanned PDF, and OCR is currently disabled).",
+        )
+
+    try:
+        ocr_raw = ocr_pdf(source_path)
+    except OcrUnavailableError as error:
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                "The document looks like a scanned PDF with no embedded text, and OCR could not "
+                f"recover readable text ({error}). Try a text-based PDF or a higher-quality scan."
+            ),
+        ) from error
+
+    ocr_text = clean_text(ocr_raw)
+    if len(ocr_text.split()) < settings.ocr_min_words:
+        raise HTTPException(
+            status_code=422,
+            detail="OCR ran on this scanned PDF but still found too little readable text. "
+            "Try a higher-resolution scan.",
+        )
+
+    return ocr_text, True
+
+
 def _index_extracted_document(
     db: Session,
     *,
@@ -42,17 +89,7 @@ def _index_extracted_document(
     owner_id: int,
     size_bytes: int,
 ) -> Document:
-    try:
-        raw = extract_text(source_path)
-    except Exception as error:  # corrupt PDF etc.
-        raise HTTPException(status_code=422, detail=f"Could not extract text: {error}") from error
-
-    text = clean_text(raw)
-    if len(text.split()) < 20:
-        raise HTTPException(
-            status_code=422,
-            detail="The document contains too little extractable text (scanned PDFs need OCR, which is future scope).",
-        )
+    text, ocr_used = _extract_with_ocr_fallback(source_path)
 
     document = Document(
         owner_id=owner_id,
@@ -60,6 +97,7 @@ def _index_extracted_document(
         title=Path(filename).stem.replace("_", " ").replace("-", " ").strip(),
         size_bytes=size_bytes,
         text=text,
+        ocr_used=ocr_used,
     )
     db.add(document)
     db.flush()  # assign document.id

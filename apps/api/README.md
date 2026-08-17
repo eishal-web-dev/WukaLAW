@@ -22,6 +22,20 @@ uvicorn app.main:app --reload --port 8000
 
 First document upload downloads the embedding model (`all-MiniLM-L6-v2`, ~90 MB) once; afterwards everything is offline.
 
+## Optional: OCR for scanned PDFs
+
+PDFs with a real text layer work with no setup. If a PDF looks like a scan (too little embedded text), upload automatically falls back to OCR — but this needs two system packages that aren't installed by `pip`:
+
+```bash
+# macOS
+brew install tesseract poppler
+
+# Debian/Ubuntu
+sudo apt-get install tesseract-ocr poppler-utils
+```
+
+Without them, scanned PDFs are still rejected with a clear message rather than the app crashing — OCR is attempted only if `pytesseract` reports the `tesseract` binary is actually available. Set `OCR_ENABLED=false` in `.env` to skip the OCR attempt entirely and go straight to that rejection message.
+
 ## Optional: better Q&A answers with a local LLM
 
 Without any setup, `/ask` uses a free extractive fallback (real sentences from your documents). For generated answers, install [Ollama](https://ollama.com) (free):

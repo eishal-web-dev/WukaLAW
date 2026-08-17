@@ -21,6 +21,7 @@ const DOC: Document = {
   num_chunks: 4,
   created_at: '2026-02-01T09:00:00Z',
   has_summary: false,
+  ocr_used: false,
   text: 'Full extracted text…',
   summary: null,
 }
