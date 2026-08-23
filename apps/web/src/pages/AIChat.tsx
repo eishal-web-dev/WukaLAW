@@ -106,10 +106,11 @@ export default function AIChat() {
     if (!question || busy) return
     setError(null)
     setInput('')
+    const history = messages.map((m) => ({ role: m.role, content: m.text }))
     setMessages((prev) => [...prev, { id: nextId.current++, role: 'user', text: question, time: now() }])
     setBusy(true)
     try {
-      const res: AskResponse = await askQuestion(question)
+      const res: AskResponse = await askQuestion(question, history)
       setMessages((prev) => [
         ...prev,
         {
