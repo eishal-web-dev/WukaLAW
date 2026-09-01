@@ -372,8 +372,17 @@ export function summarizeDocument(
   })
 }
 
+/** A prior conversation turn sent to the RAG assistant for context. */
+export interface ChatTurnInput {
+  role: 'user' | 'ai'
+  content: string
+}
+
 /** POST /ask */
-export async function askQuestion(question: string): Promise<AskResponse> {
+export async function askQuestion(
+  question: string,
+  history: ChatTurnInput[] = [],
+): Promise<AskResponse> {
   const res = await fetch('http://127.0.0.1:8000/api/rag/query', {
     method: 'POST',
     headers: {
@@ -385,6 +394,7 @@ export async function askQuestion(question: string): Promise<AskResponse> {
       score_threshold: null,
       filters: {},
       use_legal_intelligence: false,
+      history,
     }),
   })
 
@@ -416,7 +426,7 @@ export async function askQuestion(question: string): Promise<AskResponse> {
       text: chunk.text_preview || '',
       score: chunk.score,
     })),
-    model: 'gemini-rag',
+    model: data.llm_provider || 'rag',
   }
 }
 

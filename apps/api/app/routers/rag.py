@@ -34,12 +34,18 @@ router = APIRouter(prefix="/api/rag", tags=["rag"])
 DEFAULT_FALLBACK_ORDER = ("groq", "gemini", "openai", "ollama")
 
 
+class ChatTurnModel(BaseModel):
+    role: str = Field(pattern="^(user|ai|assistant)$")
+    content: str = Field(min_length=1, max_length=10000)
+
+
 class RagQueryRequest(BaseModel):
     question: str = Field(min_length=1, max_length=10000)
     top_k: int = Field(default=10, ge=1, le=100)
     score_threshold: float | None = None
     filters: dict[str, Any] = Field(default_factory=dict)
     use_legal_intelligence: bool = True
+    history: list[ChatTurnModel] = Field(default_factory=list, max_length=40)
 
 
 class RagQueryResponse(BaseModel):
@@ -187,6 +193,7 @@ def query_rag(request: RagQueryRequest):
             top_k=request.top_k,
             score_threshold=request.score_threshold,
             use_legal_intelligence=request.use_legal_intelligence,
+            history=[turn.model_dump() for turn in request.history],
         )
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
