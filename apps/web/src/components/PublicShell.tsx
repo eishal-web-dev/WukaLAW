@@ -279,7 +279,7 @@ export function PublicFooter() {
 
 export function BrowserWindow({
   children,
-  url = 'app.wakulaw.ai',
+  url = 'app.wukalaw.ai',
   className = '',
   style = {},
 }: {
