@@ -3,6 +3,7 @@ import {
   ApiError,
   clearAuthStorage,
   getStoredToken,
+  notifyNotificationsChanged,
 } from './api'
 import type { Document } from './api'
 
@@ -124,6 +125,7 @@ async function uploadDocumentS3(
     filename: file.name,
     case_id: caseId,
   })
+  notifyNotificationsChanged()
   onProgress?.(100)
   return document
 }
@@ -148,6 +150,7 @@ function uploadDocumentLocal(
 
     xhr.onload = () => {
       if (xhr.status >= 200 && xhr.status < 300) {
+        notifyNotificationsChanged()
         resolve(xhr.response as Document)
       } else if (xhr.status === 401) {
         clearAuthStorage()

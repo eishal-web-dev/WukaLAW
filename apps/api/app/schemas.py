@@ -25,6 +25,34 @@ class AuthResponse(BaseModel):
     user: UserOut
 
 
+class NotificationOut(BaseModel):
+    id: int
+    type: str
+    title: str
+    body: str
+    action_url: str | None
+    read: bool
+    created_at: datetime
+
+
+class NotificationList(BaseModel):
+    items: list[NotificationOut]
+    total: int
+    unread: int
+
+
+class NotificationUnreadCount(BaseModel):
+    unread: int
+
+
+class NotificationPreferences(BaseModel):
+    in_app_enabled: bool
+
+
+class NotificationPreferencesUpdate(BaseModel):
+    in_app_enabled: bool
+
+
 class SummaryOut(BaseModel):
     main_issue: str
     key_facts: list[str]

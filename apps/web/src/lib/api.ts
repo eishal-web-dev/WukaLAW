@@ -15,6 +15,13 @@ export const API_BASE_URL: string =
 
 const TOKEN_KEY = 'wakulaw_token'
 const USER_KEY = 'wakulaw_user'
+export const NOTIFICATIONS_CHANGED_EVENT = 'wakulaw:notifications-changed'
+
+export function notifyNotificationsChanged(): void {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event(NOTIFICATIONS_CHANGED_EVENT))
+  }
+}
 
 export function getStoredToken(): string | null {
   return localStorage.getItem(TOKEN_KEY)
@@ -166,6 +173,32 @@ export interface CaseListResponse {
   total: number
 }
 
+export type NotificationType = 'ai' | 'case' | 'system'
+
+export interface Notification {
+  id: number
+  type: NotificationType
+  title: string
+  body: string
+  action_url: string | null
+  read: boolean
+  created_at: string
+}
+
+export interface NotificationListResponse {
+  items: Notification[]
+  total: number
+  unread: number
+}
+
+export interface NotificationUnreadCount {
+  unread: number
+}
+
+export interface NotificationPreferences {
+  in_app_enabled: boolean
+}
+
 export interface CaseCreatePayload {
   title: string
   case_type: string
@@ -286,7 +319,12 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     throw new ApiError(message, res.status)
   }
 
-  return (await res.json()) as T
+  const data = (await res.json()) as T
+  const method = (init?.method ?? 'GET').toUpperCase()
+  if (!['GET', 'HEAD'].includes(method) && !path.startsWith('/notifications')) {
+    notifyNotificationsChanged()
+  }
+  return data
 }
 
 function postJson<T>(path: string, body: unknown): Promise<T> {
@@ -330,6 +368,7 @@ async function del(path: string): Promise<void> {
     }
     throw new ApiError(message, res.status)
   }
+  if (!path.startsWith('/notifications')) notifyNotificationsChanged()
 }
 
 // ---------------------------------------------------------------------------
@@ -361,6 +400,56 @@ export function getMe(): Promise<User> {
 /** GET /health */
 export function getHealth(): Promise<HealthResponse> {
   return request<HealthResponse>('/health')
+}
+
+/** GET /notifications */
+export function listNotifications(options?: {
+  type?: NotificationType
+  unreadOnly?: boolean
+  limit?: number
+  offset?: number
+}): Promise<NotificationListResponse> {
+  const params = new URLSearchParams()
+  if (options?.type) params.set('type', options.type)
+  if (options?.unreadOnly) params.set('unread_only', 'true')
+  if (options?.limit !== undefined) params.set('limit', String(options.limit))
+  if (options?.offset !== undefined) params.set('offset', String(options.offset))
+  const query = params.toString()
+  return request<NotificationListResponse>(`/notifications${query ? `?${query}` : ''}`)
+}
+
+/** GET /notifications/unread-count */
+export function getNotificationUnreadCount(): Promise<NotificationUnreadCount> {
+  return request<NotificationUnreadCount>('/notifications/unread-count')
+}
+
+/** PATCH /notifications/{id}/read */
+export function markNotificationRead(id: number): Promise<Notification> {
+  return patchJson<Notification>(`/notifications/${id}/read`, {})
+}
+
+/** POST /notifications/read-all */
+export function markAllNotificationsRead(): Promise<NotificationUnreadCount> {
+  return request<NotificationUnreadCount>('/notifications/read-all', { method: 'POST' })
+}
+
+/** DELETE /notifications/{id} */
+export function deleteNotification(id: number): Promise<void> {
+  return del(`/notifications/${id}`)
+}
+
+/** GET /notifications/preferences */
+export function getNotificationPreferences(): Promise<NotificationPreferences> {
+  return request<NotificationPreferences>('/notifications/preferences')
+}
+
+/** PATCH /notifications/preferences */
+export function updateNotificationPreferences(
+  inAppEnabled: boolean,
+): Promise<NotificationPreferences> {
+  return patchJson<NotificationPreferences>('/notifications/preferences', {
+    in_app_enabled: inAppEnabled,
+  })
 }
 
 /** GET /documents */

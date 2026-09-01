@@ -81,6 +81,7 @@ redirects to `/login`.
 | `/ai-chat`         | `POST /ask` — answer with line breaks, confidence badge + reason, grouped sources ("N passages from M documents"), model label |
 | `/similar-cases`   | `POST /similar-cases` — results grouped by document with scores |
 | `/profile`         | `GET /auth/me` + sign out                                       |
+| `/notifications`   | Persisted alerts, live unread badges, filters, read/delete actions, and saved in-app preference |
 
 All app routes require authentication (redirect to `/login`); `/login` and
 `/register` redirect to `/dashboard` when already signed in. AI outputs always
@@ -96,15 +97,14 @@ carry the permanent disclaimer: *"Decision-support only — not legal advice."*
 | `/timeline`      | Timeline Intelligence           |
 | `/reports`       | Reports                         |
 | `/analytics`     | Analytics                       |
-| `/notifications` | Notifications                   |
-| `/settings`      | Settings (not persisted)        |
+| `/settings`      | Settings (in-app notification preference is persisted; remaining controls are preview) |
 | `/admin`         | Admin dashboard                 |
 
 ## Project layout
 
 ```
 src/
-  lib/          api.ts (typed client), auth.tsx, sources.ts, format.ts,
+  lib/          api.ts (typed client), auth.tsx, notifications.tsx, sources.ts, format.ts,
                 theme.tsx (dark/light), mock.ts (preview sample data)
   components/   AppShell (sidebar/topbar), PublicShell (marketing nav/footer),
                 design.tsx (Btn/Card/Badge/KPICard/… primitives),

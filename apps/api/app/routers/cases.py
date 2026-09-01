@@ -24,6 +24,7 @@ from app.schemas import (
     DocumentList,
     TimelineResponse,
 )
+from app.services.notification_service import create_notification
 
 router = APIRouter(prefix="/cases", tags=["cases"])
 
@@ -153,6 +154,15 @@ def create_case(request: CaseCreate, db: Session = Depends(get_db), user: User =
         deadline=request.deadline,
     )
     db.add(case)
+    db.flush()
+    create_notification(
+        db,
+        user_id=user.id,
+        notification_type="case",
+        title="Case created",
+        body=f"{case.case_number} · {case.title} was added to your workspace.",
+        action_url=f"/cases/{case.id}",
+    )
     db.commit()
     db.refresh(case)
     return _case_out(db, case)
@@ -178,10 +188,22 @@ def update_case(
 ):
     case = _get_owned_case(db, case_id, user)
     _validate(request.status, request.priority)
+    changes: list[str] = []
     for field in ("title", "case_type", "status", "priority", "description", "deadline"):
         value = getattr(request, field)
-        if value is not None:
+        if value is not None and value != getattr(case, field):
             setattr(case, field, value)
+            if field != "description":
+                changes.append(field.replace("_", " "))
+    if changes:
+        create_notification(
+            db,
+            user_id=user.id,
+            notification_type="case",
+            title="Case updated",
+            body=f"{case.case_number} · {case.title}: {', '.join(changes)} updated.",
+            action_url=f"/cases/{case.id}",
+        )
     db.commit()
     db.refresh(case)
     return _case_out(db, case)
@@ -190,9 +212,18 @@ def update_case(
 @router.delete("/{case_id}", status_code=204)
 def delete_case(case_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     case = _get_owned_case(db, case_id, user)
+    case_label = f"{case.case_number} · {case.title}"
     for document in db.scalars(select(Document).where(Document.case_id == case.id)):
         document.case_id = None
     db.delete(case)
+    create_notification(
+        db,
+        user_id=user.id,
+        notification_type="case",
+        title="Case deleted",
+        body=f"{case_label} was removed. Its documents remain in your document library.",
+        action_url="/cases",
+    )
     db.commit()
 
 

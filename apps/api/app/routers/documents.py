@@ -23,6 +23,7 @@ from app.schemas import (
 )
 from app.services import s3_storage
 from app.services.document_service import ingest_s3_object, ingest_upload, reprocess_document
+from app.services.notification_service import create_notification
 
 router = APIRouter(prefix="/documents", tags=["documents"])
 
@@ -76,6 +77,15 @@ def upload_document(
         if case is None or case.owner_id != user.id:
             raise HTTPException(status_code=404, detail="Case not found.")
     document = ingest_upload(db, file, owner_id=user.id, case_id=case_id, ocr_language=ocr_language)
+    create_notification(
+        db,
+        user_id=user.id,
+        notification_type="case",
+        title="Document ready",
+        body=f"{document.title} was uploaded and indexed successfully.",
+        action_url=f"/documents/{document.id}",
+    )
+    db.commit()
     return _meta(document, len(document.chunks))
 
 
@@ -155,6 +165,15 @@ def complete_s3_document_upload(
     )
     if request.case_id is not None:
         _attach_to_case(db, document, request.case_id, user)
+    create_notification(
+        db,
+        user_id=user.id,
+        notification_type="case",
+        title="Document ready",
+        body=f"{document.title} was uploaded and indexed successfully.",
+        action_url=f"/documents/{document.id}",
+    )
+    db.commit()
     return _meta(document, len(document.chunks))
 
 
@@ -171,6 +190,15 @@ def reprocess_existing_document(
 ):
     document = _get_owned_document(db, document_id, user)
     document = reprocess_document(db, document, request.ocr_language)
+    create_notification(
+        db,
+        user_id=user.id,
+        notification_type="ai",
+        title="Document reprocessed",
+        body=f"AI processing completed for {document.title}.",
+        action_url=f"/documents/{document.id}",
+    )
+    db.commit()
     return _meta(document, len(document.chunks))
 
 class DocumentUpdate(BaseModel):
@@ -186,11 +214,24 @@ def update_document(
     user: User = Depends(get_current_user),
 ):
     document = _get_owned_document(db, document_id, user)
+    changes: list[str] = []
     if request.case_id is not None:
+        if request.case_id != document.case_id:
+            changes.append("case assignment")
         _attach_to_case(db, document, request.case_id, user)
-    if request.title is not None:
+    if request.title is not None and request.title.strip() != document.title:
         document.title = request.title.strip()
-        db.commit()
+        changes.append("title")
+    if changes:
+        create_notification(
+            db,
+            user_id=user.id,
+            notification_type="case",
+            title="Document updated",
+            body=f"{document.title}: {', '.join(changes)} updated.",
+            action_url=f"/documents/{document.id}",
+        )
+    db.commit()
     db.refresh(document)
     return _meta(document, len(document.chunks))
 
@@ -250,7 +291,17 @@ def summarize_document(
     user: User = Depends(get_current_user),
 ):
     document = _get_owned_document(db, document_id, user)
+    created = document.summary is None
     if document.summary is None:
         document.summary = summarize(document.text)
-        db.commit()
+    if created:
+        create_notification(
+            db,
+            user_id=user.id,
+            notification_type="ai",
+            title="AI summary ready",
+            body=f"The AI summary for {document.title} is ready to review.",
+            action_url=f"/documents/{document.id}",
+        )
+    db.commit()
     return {"document_id": document.id, "summary": document.summary}

@@ -25,6 +25,7 @@ import Evidence from './pages/Evidence'
 import AIChat from './pages/AIChat'
 import SimilarCases from './pages/SimilarCases'
 import Profile from './pages/Profile'
+import Notifications from './pages/Notifications'
 
 // App screens (preview — sample data)
 import Workspace from './pages/Workspace'
@@ -33,7 +34,6 @@ import Explainable from './pages/Explainable'
 import Timeline from './pages/Timeline'
 import Reports from './pages/Reports'
 import Analytics from './pages/Analytics'
-import Notifications from './pages/Notifications'
 import Settings from './pages/Settings'
 import Admin from './pages/Admin'
 
@@ -68,6 +68,7 @@ export default function App() {
           <Route path="/ai-chat" element={<AIChat />} />
           <Route path="/similar-cases" element={<SimilarCases />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/notifications" element={<Notifications />} />
           {/* Preview screens */}
           <Route path="/workspace" element={<Workspace />} />
           <Route path="/prediction" element={<Prediction />} />
@@ -75,7 +76,6 @@ export default function App() {
           <Route path="/timeline" element={<Timeline />} />
           <Route path="/reports" element={<Reports />} />
           <Route path="/analytics" element={<Analytics />} />
-          <Route path="/notifications" element={<Notifications />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/admin" element={<Admin />} />
         </Route>

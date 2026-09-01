@@ -1,6 +1,6 @@
 /**
  * Sample data used by PREVIEW screens (Prediction, Explainable AI, Timeline,
- * Reports, Analytics, Notifications, Admin, Workspace) and by decorative
+ * Reports, Analytics, Admin, Workspace) and by decorative
  * charts. Screens rendering this data carry a visible "Preview" banner.
  */
 
@@ -54,16 +54,6 @@ export const CASE_TYPE_PIE = [
 ]
 
 export const PIE_COLORS = ['#D4AF37', '#4F8EF7', '#34D399', '#F87171', '#A78BFA', '#FB923C']
-
-export const NOTIFICATIONS = [
-  { id: 1, type: 'ai', title: 'AI Prediction Updated', body: 'Win probability for WL-2024-003 increased to 82% based on new evidence.', time: '5m ago', read: false },
-  { id: 2, type: 'case', title: 'Deadline Approaching', body: 'WL-2024-003 DataTech LLC IP Dispute deadline is in 3 days.', time: '1h ago', read: false },
-  { id: 3, type: 'case', title: 'New Document Added', body: 'Expert Witness Report uploaded to WL-2024-003 by Sarah Chen.', time: '2h ago', read: false },
-  { id: 4, type: 'system', title: 'System Maintenance', body: 'Scheduled maintenance on March 10, 2024 from 2–4 AM UTC.', time: '3h ago', read: true },
-  { id: 5, type: 'ai', title: 'Similar Case Found', body: 'New precedent case matching 91% similarity to WL-2024-001 discovered.', time: '5h ago', read: true },
-  { id: 6, type: 'case', title: 'Hearing Scheduled', body: 'Preliminary hearing for WL-2024-006 set for March 20, 2024.', time: '1d ago', read: true },
-  { id: 7, type: 'system', title: 'AI Model Updated', body: 'WakuLaw AI updated to v4.2 — improved accuracy on employment cases.', time: '2d ago', read: true },
-]
 
 export const TIMELINE_EVENTS = [
   { date: 'Mar 15, 2024', event: 'Trial Date', desc: 'Scheduled trial commencement — Hon. Judge Patricia Wells presiding', type: 'hearing', case: 'WL-2024-001' },

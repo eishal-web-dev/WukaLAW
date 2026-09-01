@@ -26,6 +26,21 @@ export function formatDate(iso: string): string {
   })
 }
 
+/** Compact relative time for recent persisted notifications. */
+export function formatRelativeTime(iso: string): string {
+  const timestamp = new Date(iso).getTime()
+  if (Number.isNaN(timestamp)) return ''
+  const seconds = Math.max(0, Math.floor((Date.now() - timestamp) / 1000))
+  if (seconds < 60) return 'Just now'
+  const minutes = Math.floor(seconds / 60)
+  if (minutes < 60) return `${minutes}m ago`
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return `${hours}h ago`
+  const days = Math.floor(hours / 24)
+  if (days < 7) return `${days}d ago`
+  return new Date(iso).toLocaleDateString()
+}
+
 /** Similarity score (0..1) rendered as a percentage, e.g. 0.8234 -> "82%". */
 export function formatScore(score: number): string {
   const clamped = Math.max(0, Math.min(1, score))
