@@ -15,6 +15,16 @@ import LawyerProfile from './pages/LawyerProfile'
 import Login from './pages/Login'
 import Register from './pages/Register'
 
+// New public pages
+import Pricing from './pages/Pricing'
+import Features from './pages/Features'
+import Solutions from './pages/Solutions'
+import Blog from './pages/Blog'
+import FAQ from './pages/FAQ'
+import Careers from './pages/Careers'
+import Privacy from './pages/Privacy'
+import Terms from './pages/Terms'
+
 // App screens (live)
 import Dashboard from './pages/Dashboard'
 import Cases from './pages/Cases'
@@ -48,6 +58,14 @@ export default function App() {
       <Route path="/contact" element={<Contact />} />
       <Route path="/find-lawyer" element={<FindLawyer />} />
       <Route path="/lawyer-profile" element={<LawyerProfile />} />
+      <Route path="/pricing" element={<Pricing />} />
+      <Route path="/features" element={<Features />} />
+      <Route path="/solutions" element={<Solutions />} />
+      <Route path="/blog" element={<Blog />} />
+      <Route path="/faq" element={<FAQ />} />
+      <Route path="/careers" element={<Careers />} />
+      <Route path="/privacy" element={<Privacy />} />
+      <Route path="/terms" element={<Terms />} />
 
       {/* Auth (redirect to /dashboard when already signed in) */}
       <Route element={<GuestRoute />}>

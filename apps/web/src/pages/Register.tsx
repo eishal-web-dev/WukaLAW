@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Scale, User, Mail, Lock } from 'lucide-react'
+import { Scale, User, Mail, Lock, Sun, Moon } from 'lucide-react'
 import { useAuth } from '../lib/auth'
 import { errorMessage } from '../lib/api'
 import { usePublicTokens } from '../components/PublicShell'
@@ -10,7 +10,7 @@ import ErrorAlert from '../components/ErrorAlert'
 export default function Register() {
   const navigate = useNavigate()
   const { register } = useAuth()
-  const { dark, BG, CARDBG, TX, TX2, GA, BD } = usePublicTokens()
+  const { dark, toggleDark, BG, CARDBG, TX, TX2, GA, BD } = usePublicTokens()
   const [form, setForm] = useState({ name: '', email: '', password: '' })
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
@@ -39,20 +39,27 @@ export default function Register() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6" style={{ backgroundColor: BG, fontFamily: 'Inter, sans-serif' }}>
+    <div className="min-h-screen flex items-center justify-center p-6" style={{ backgroundColor: BG, position: 'relative', fontFamily: 'Inter, sans-serif' }}>
+      <button
+        onClick={toggleDark}
+        aria-label="Toggle theme"
+        style={{ position: 'absolute', top: 20, right: 20, zIndex: 10, width: 36, height: 36, borderRadius: 10, border: `1px solid ${BD}`, backgroundColor: dark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: TX2 }}
+      >
+        {dark ? <Sun size={16} /> : <Moon size={16} />}
+      </button>
       <div className="w-full max-w-md">
         <button onClick={() => navigate('/')} className="flex items-center gap-3 mb-8 justify-center w-full" style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
           <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ backgroundColor: GA }}>
             <Scale size={18} color={dark ? '#0D1117' : '#FFFFFF'} />
           </div>
-          <span style={{ color: TX, fontWeight: 700, fontSize: 20 }}>WakuLaw</span>
+          <span style={{ color: TX, fontWeight: 700, fontSize: 20 }}>WukaLAW</span>
         </button>
         <form
           onSubmit={submit}
           style={{ padding: 32, borderRadius: 20, backgroundColor: CARDBG, border: `1px solid ${BD}`, boxShadow: dark ? '0 20px 60px rgba(0,0,0,0.4)' : '0 20px 40px rgba(100,70,0,0.08)' }}
         >
           <h2 style={{ fontSize: 20, fontWeight: 700, color: TX, marginBottom: 4 }}>Create your account</h2>
-          <p style={{ color: TX2, fontSize: 14, marginBottom: 24 }}>Start using WakuLaw's AI legal intelligence.</p>
+          <p style={{ color: TX2, fontSize: 14, marginBottom: 24 }}>Start using WukaLAW's explainable AI legal intelligence.</p>
           <div className="space-y-4">
             {error && <ErrorAlert message={error} />}
             <div>
