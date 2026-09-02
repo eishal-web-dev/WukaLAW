@@ -6,13 +6,17 @@ import PreviewBanner from '../components/PreviewBanner'
 
 export default function Notifications() {
   const [filter, setFilter] = useState('all')
+  const [notifs, setNotifs] = useState(NOTIFICATIONS)
   const typeIcon: Record<string, React.ReactNode> = {
     ai: <Sparkles size={14} style={{ color: '#A78BFA' }} />,
     case: <Briefcase size={14} style={{ color: B }} />,
     system: <Settings size={14} className="text-muted-foreground" />,
   }
-  const filtered = filter === 'all' ? NOTIFICATIONS : NOTIFICATIONS.filter((n) => n.type === filter)
-  const unread = NOTIFICATIONS.filter((n) => !n.read).length
+  const filtered = filter === 'all' ? notifs : notifs.filter((n) => n.type === filter)
+  const unread = notifs.filter((n) => !n.read).length
+
+  const markAllRead = () => setNotifs((ns) => ns.map((n) => ({ ...n, read: true })))
+  const markRead = (id: number) => setNotifs((ns) => ns.map((n) => (n.id === id ? { ...n, read: true } : n)))
 
   return (
     <div className="p-8 space-y-7 overflow-y-auto h-full">
@@ -22,7 +26,7 @@ export default function Notifications() {
           <h1 className="text-2xl font-bold text-foreground">Notifications</h1>
           <p className="text-muted-foreground text-sm mt-1">{unread} unread notifications</p>
         </div>
-        <Btn variant="secondary" size="sm">Mark all read</Btn>
+        <Btn variant="secondary" size="sm" onClick={markAllRead} disabled={unread === 0}>Mark all read</Btn>
       </div>
 
       <div className="flex gap-2">
@@ -40,9 +44,10 @@ export default function Notifications() {
 
       <div className="space-y-2">
         {filtered.map((n) => (
-          <div
+          <button
             key={n.id}
-            className={`flex items-start gap-4 p-4 rounded-2xl border transition-all cursor-pointer hover:border-white/10 ${!n.read ? 'border-white/[0.08]' : 'border-white/[0.04]'}`}
+            onClick={() => markRead(n.id)}
+            className={`flex items-start gap-4 p-4 rounded-2xl border transition-all cursor-pointer hover:border-white/10 w-full text-left ${!n.read ? 'border-white/[0.08]' : 'border-white/[0.04]'}`}
             style={{ backgroundColor: !n.read ? 'rgba(212,175,55,0.04)' : 'rgba(30,37,48,0.5)' }}
           >
             <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${n.type === 'ai' ? 'bg-purple-500/10' : n.type === 'case' ? 'bg-blue-500/10' : 'bg-white/[0.05]'}`}>
@@ -63,7 +68,7 @@ export default function Notifications() {
                 </div>
               </div>
             </div>
-          </div>
+          </button>
         ))}
       </div>
     </div>
