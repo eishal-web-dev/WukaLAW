@@ -96,12 +96,12 @@ export default function Dashboard() {
 
       {error && <ErrorAlert message={error} />}
 
-      {/* KPI Cards — case/document counts are live */}
+      {/* KPI Cards — case/document counts are live, distinct accent colors like the Figma design */}
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
-        <KPICard icon={<Briefcase size={18} />} label="Total Cases" value={loading ? '…' : String(caseTotal)} sub={`${activeCases} active`} />
-        <KPICard icon={<FileText size={18} />} label="Documents" value={loading ? '…' : String(docTotal)} sub="Across all cases" />
-        <KPICard icon={<Award size={18} />} label="Win Rate" value="78.4%" sub="Sample metric (preview)" />
-        <KPICard icon={<Brain size={18} />} label="AI Accuracy" value="94.2%" sub="Sample metric (preview)" />
+        <KPICard icon={<Briefcase size={18} />} label="Total Cases" value={loading ? '…' : String(caseTotal)} sub={`${activeCases} active`} color={G} />
+        <KPICard icon={<FileText size={18} />} label="Documents" value={loading ? '…' : String(docTotal)} sub="Across all cases" color="#8B5CF6" />
+        <KPICard icon={<Award size={18} />} label="Win Rate" value="78.4%" sub="Sample metric (preview)" color="#3B82F6" />
+        <KPICard icon={<Brain size={18} />} label="AI Accuracy" value="94.2%" sub="Sample metric (preview)" color="#10B981" />
       </div>
 
       {/* Chart + Case Status Breakdown */}
@@ -171,9 +171,18 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      {/* Get Started */}
-      <Card className="p-6">
-        <SectionHeader title="Get Started" />
+      {/* Get Started — styled like the Figma design's AI panel treatment, honest content */}
+      <Card className="p-6 relative overflow-hidden" style={{ background: 'linear-gradient(135deg, rgba(139,92,246,0.08), transparent)' }}>
+        <div className="flex items-center gap-2 mb-4">
+          <Sparkles size={16} style={{ color: '#8B5CF6' }} />
+          <span className="text-sm font-bold text-foreground">Get Started</span>
+          <span
+            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider"
+            style={{ background: 'rgba(139,92,246,0.15)', color: '#8B5CF6' }}
+          >
+            Live
+          </span>
+        </div>
         <div className="grid sm:grid-cols-3 gap-4">
           {insights.map((ins, i) => (
             <div
