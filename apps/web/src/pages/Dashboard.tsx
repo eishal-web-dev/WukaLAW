@@ -1,19 +1,24 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
-  Plus, Briefcase, FileText, Brain, Award, Lightbulb, AlertCircle,
+  Plus, Briefcase, FileText, Bell, Activity, Lightbulb, AlertCircle,
   Sparkles, ArrowRight,
 } from 'lucide-react'
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  PieChart, Pie, Cell,
 } from 'recharts'
 import { listCases, listDocuments, errorMessage } from '../lib/api'
-import type { Case } from '../lib/api'
+import type { Case, DocumentMeta } from '../lib/api'
 import { useAuth } from '../lib/auth'
+import { useNotifications } from '../lib/notifications'
 import { formatDate } from '../lib/format'
-import { AREA_DATA } from '../lib/mock'
 import { Btn, Card, KPICard, Badge, SectionHeader, CustomTooltip, G, B } from '../components/design'
 import ErrorAlert from '../components/ErrorAlert'
+
+const STATUS_COLORS: Record<string, string> = {
+  Active: '#10B981', Review: '#8B5CF6', 'On Hold': '#F59E0B', Closed: '#6B7280',
+}
 
 function daysUntil(iso: string | null): number | null {
   if (!iso) return null
@@ -25,7 +30,9 @@ function daysUntil(iso: string | null): number | null {
 export default function Dashboard() {
   const navigate = useNavigate()
   const { user } = useAuth()
+  const { unreadCount } = useNotifications()
   const [cases, setCases] = useState<Case[]>([])
+  const [documents, setDocuments] = useState<DocumentMeta[]>([])
   const [caseTotal, setCaseTotal] = useState(0)
   const [docTotal, setDocTotal] = useState(0)
   const [loading, setLoading] = useState(true)
@@ -37,6 +44,7 @@ export default function Dashboard() {
       .then(([cs, docs]) => {
         if (cancelled) return
         setCases(cs.items)
+        setDocuments(docs.items)
         setCaseTotal(cs.total)
         setDocTotal(docs.total)
       })
@@ -56,6 +64,39 @@ export default function Dashboard() {
   const today = new Date().toLocaleDateString(undefined, {
     weekday: 'long', month: 'long', day: 'numeric', year: 'numeric',
   })
+
+  // Real distribution of your actual cases by status — no invented numbers.
+  const statusData = useMemo(() => {
+    const counts = new Map<string, number>()
+    for (const c of cases) counts.set(c.status, (counts.get(c.status) ?? 0) + 1)
+    return Array.from(counts.entries()).map(([status, count]) => ({ status, count }))
+  }, [cases])
+
+  const activityData = useMemo(() => {
+    const months = Array.from({ length: 6 }, (_, index) => {
+      const date = new Date()
+      date.setDate(1)
+      date.setMonth(date.getMonth() - (5 - index))
+      return {
+        key: `${date.getFullYear()}-${date.getMonth()}`,
+        month: date.toLocaleDateString(undefined, { month: 'short' }),
+        cases: 0,
+        documents: 0,
+      }
+    })
+    const monthMap = new Map(months.map((month) => [month.key, month]))
+    for (const item of cases) {
+      const date = new Date(item.created_at)
+      const month = monthMap.get(`${date.getFullYear()}-${date.getMonth()}`)
+      if (month) month.cases += 1
+    }
+    for (const item of documents) {
+      const date = new Date(item.created_at)
+      const month = monthMap.get(`${date.getFullYear()}-${date.getMonth()}`)
+      if (month) month.documents += 1
+    }
+    return months
+  }, [cases, documents])
 
   const insights = [
     { icon: <Lightbulb size={14} />, text: 'Ask the AI assistant about any uploaded document — answers come with sources and confidence.', action: 'Open AI Chat', path: '/ai-chat' },
@@ -84,22 +125,22 @@ export default function Dashboard() {
 
       {error && <ErrorAlert message={error} />}
 
-      {/* KPI Cards — case/document counts are live */}
+      {/* KPI Cards — every value is live; colors and layout follow the Figma design. */}
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
-        <KPICard icon={<Briefcase size={18} />} label="Total Cases" value={loading ? '…' : String(caseTotal)} sub={`${activeCases} active`} />
-        <KPICard icon={<FileText size={18} />} label="Documents" value={loading ? '…' : String(docTotal)} sub="Across all cases" />
-        <KPICard icon={<Award size={18} />} label="Win Rate" value="78.4%" sub="Sample metric (preview)" />
-        <KPICard icon={<Brain size={18} />} label="AI Accuracy" value="94.2%" sub="Sample metric (preview)" />
+        <KPICard icon={<Briefcase size={18} />} label="Total Cases" value={loading ? '…' : String(caseTotal)} sub={`${activeCases} active`} color={G} />
+        <KPICard icon={<Activity size={18} />} label="Active Cases" value={loading ? '…' : String(activeCases)} sub="Currently in progress" color="#34D399" />
+        <KPICard icon={<FileText size={18} />} label="Documents" value={loading ? '…' : String(docTotal)} sub="Across all cases" color="#7C3AED" />
+        <KPICard icon={<Bell size={18} />} label="Unread Notifications" value={String(unreadCount)} sub={unreadCount === 0 ? 'All caught up' : 'Open notification center'} color={B} onClick={() => navigate('/notifications')} />
       </div>
 
-      {/* Chart + Insights */}
+      {/* Chart + Case Status Breakdown */}
       <div className="grid lg:grid-cols-3 gap-6">
         <Card className="lg:col-span-2 p-6">
           <SectionHeader
-            title="Case Activity (sample)"
+            title="Workspace Activity"
             action={
               <div className="flex gap-2">
-                {['Filed', 'Closed'].map((l, i) => (
+                {['Cases', 'Documents'].map((l, i) => (
                   <div key={l} className="flex items-center gap-1.5 text-xs text-muted-foreground">
                     <div className="w-2 h-2 rounded-full" style={{ backgroundColor: [G, B][i] }} />
                     {l}
@@ -109,7 +150,7 @@ export default function Dashboard() {
             }
           />
           <ResponsiveContainer width="100%" height={220}>
-            <AreaChart data={AREA_DATA} margin={{ top: 5, right: 5, bottom: 0, left: -20 }}>
+            <AreaChart data={activityData} margin={{ top: 5, right: 5, bottom: 0, left: -20 }}>
               <defs>
                 <linearGradient id="dash-grad-gold" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor={G} stopOpacity={0.3} />
@@ -124,37 +165,75 @@ export default function Dashboard() {
               <XAxis dataKey="month" tick={{ fill: '#B3B3B3', fontSize: 11 }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fill: '#B3B3B3', fontSize: 11 }} axisLine={false} tickLine={false} />
               <Tooltip content={<CustomTooltip />} />
-              <Area type="monotone" dataKey="filed" name="Filed" stroke={G} strokeWidth={2} fill="url(#dash-grad-gold)" />
-              <Area type="monotone" dataKey="closed" name="Closed" stroke={B} strokeWidth={2} fill="url(#dash-grad-blue)" />
+              <Area type="monotone" dataKey="cases" name="Cases" stroke={G} strokeWidth={2} fill="url(#dash-grad-gold)" />
+              <Area type="monotone" dataKey="documents" name="Documents" stroke={B} strokeWidth={2} fill="url(#dash-grad-blue)" />
             </AreaChart>
           </ResponsiveContainer>
         </Card>
 
         <Card className="p-6">
-          <SectionHeader title="Get Started" />
-          <div className="space-y-4">
-            {insights.map((ins, i) => (
-              <div
-                key={i}
-                className="p-3 rounded-xl border border-white/[0.05] hover:border-white/10 transition-colors"
-                style={{ backgroundColor: 'rgba(255,255,255,0.02)' }}
-              >
-                <div className="flex items-start gap-2 mb-2">
-                  <div className="mt-0.5" style={{ color: G }}>{ins.icon}</div>
-                  <p className="text-xs text-muted-foreground leading-relaxed">{ins.text}</p>
-                </div>
-                <button
-                  onClick={() => navigate(ins.path)}
-                  className="text-xs font-medium flex items-center gap-1 hover:gap-2 transition-all"
-                  style={{ color: G }}
-                >
-                  {ins.action} <ArrowRight size={11} />
-                </button>
+          <SectionHeader title="Cases by Status" />
+          {statusData.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-10 text-center">No cases yet.</p>
+          ) : (
+            <>
+              <ResponsiveContainer width="100%" height={160}>
+                <PieChart>
+                  <Pie data={statusData} dataKey="count" nameKey="status" innerRadius={40} outerRadius={65} paddingAngle={2}>
+                    {statusData.map((entry) => (
+                      <Cell key={entry.status} fill={STATUS_COLORS[entry.status] ?? '#6B7280'} />
+                    ))}
+                  </Pie>
+                  <Tooltip content={<CustomTooltip />} />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="flex flex-wrap gap-x-4 gap-y-1.5 mt-3 justify-center">
+                {statusData.map((entry) => (
+                  <div key={entry.status} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: STATUS_COLORS[entry.status] ?? '#6B7280' }} />
+                    {entry.status} ({entry.count})
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            </>
+          )}
         </Card>
       </div>
+
+      {/* Get Started — styled like the Figma design's AI panel treatment, honest content */}
+      <Card className="p-6 relative overflow-hidden" style={{ background: 'linear-gradient(135deg, rgba(139,92,246,0.08), transparent)' }}>
+        <div className="flex items-center gap-2 mb-4">
+          <Sparkles size={16} style={{ color: '#8B5CF6' }} />
+          <span className="text-sm font-bold text-foreground">Get Started</span>
+          <span
+            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider"
+            style={{ background: 'rgba(139,92,246,0.15)', color: '#8B5CF6' }}
+          >
+            Live
+          </span>
+        </div>
+        <div className="grid sm:grid-cols-3 gap-4">
+          {insights.map((ins, i) => (
+            <div
+              key={i}
+              className="p-3 rounded-xl border border-white/[0.05] hover:border-white/10 transition-colors"
+              style={{ backgroundColor: 'rgba(255,255,255,0.02)' }}
+            >
+              <div className="flex items-start gap-2 mb-2">
+                <div className="mt-0.5" style={{ color: G }}>{ins.icon}</div>
+                <p className="text-xs text-muted-foreground leading-relaxed">{ins.text}</p>
+              </div>
+              <button
+                onClick={() => navigate(ins.path)}
+                className="text-xs font-medium flex items-center gap-1 hover:gap-2 transition-all"
+                style={{ color: G }}
+              >
+                {ins.action} <ArrowRight size={11} />
+              </button>
+            </div>
+          ))}
+        </div>
+      </Card>
 
       {/* Recent Cases + Deadlines */}
       <div className="grid lg:grid-cols-3 gap-6">

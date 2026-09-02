@@ -2,107 +2,109 @@
 
 :root {
   --font-size: 16px;
-  --background: #0D1117;
-  --foreground: #FFFFFF;
-  --card: #1E2530;
-  --card-foreground: #FFFFFF;
-  --popover: #161B22;
-  --popover-foreground: #FFFFFF;
+  --background: #07090F;
+  --foreground: #F0F0F5;
+  --card: #0F1521;
+  --card-foreground: #F0F0F5;
+  --popover: #131C2E;
+  --popover-foreground: #F0F0F5;
   --primary: #D4AF37;
-  --primary-foreground: #0D1117;
-  --secondary: #161B22;
-  --secondary-foreground: #FFFFFF;
-  --muted: #1E2530;
-  --muted-foreground: #B3B3B3;
-  --accent: #4F8EF7;
+  --primary-foreground: #07090F;
+  --secondary: #131C2E;
+  --secondary-foreground: #F0F0F5;
+  --muted: #0F1521;
+  --muted-foreground: #8892A4;
+  --accent: #7C3AED;
   --accent-foreground: #FFFFFF;
   --destructive: #EF4444;
   --destructive-foreground: #FFFFFF;
-  --border: rgba(255, 255, 255, 0.07);
-  --input: rgba(255, 255, 255, 0.05);
-  --input-background: rgba(255, 255, 255, 0.05);
-  --switch-background: #2D3748;
+  --border: rgba(255, 255, 255, 0.06);
+  --input: rgba(255, 255, 255, 0.04);
+  --input-background: rgba(255, 255, 255, 0.04);
+  --switch-background: #1E2A3A;
   --font-weight-medium: 500;
   --font-weight-normal: 400;
   --ring: #D4AF37;
   --chart-1: #D4AF37;
-  --chart-2: #4F8EF7;
+  --chart-2: #7C3AED;
   --chart-3: #34D399;
   --chart-4: #F87171;
-  --chart-5: #A78BFA;
-  --radius: 0.75rem;
-  --sidebar: #0D1117;
-  --sidebar-foreground: #FFFFFF;
+  --chart-5: #60A5FA;
+  --radius: 0.625rem;
+  --sidebar: #050810;
+  --sidebar-foreground: #F0F0F5;
   --sidebar-primary: #D4AF37;
-  --sidebar-primary-foreground: #0D1117;
-  --sidebar-accent: #1E2530;
-  --sidebar-accent-foreground: #FFFFFF;
-  --sidebar-border: rgba(255, 255, 255, 0.06);
+  --sidebar-primary-foreground: #07090F;
+  --sidebar-accent: #0F1521;
+  --sidebar-accent-foreground: #F0F0F5;
+  --sidebar-border: rgba(255, 255, 255, 0.05);
   --sidebar-ring: #D4AF37;
+  --purple: #7C3AED;
+  --gold: #D4AF37;
 }
 
 .dark {
-  --background: #0D1117;
-  --foreground: #FFFFFF;
-  --card: #1E2530;
-  --card-foreground: #FFFFFF;
-  --popover: #161B22;
-  --popover-foreground: #FFFFFF;
+  --background: #07090F;
+  --foreground: #F0F0F5;
+  --card: #0F1521;
+  --card-foreground: #F0F0F5;
+  --popover: #131C2E;
+  --popover-foreground: #F0F0F5;
   --primary: #D4AF37;
-  --primary-foreground: #0D1117;
-  --secondary: #161B22;
-  --secondary-foreground: #FFFFFF;
-  --muted: #1E2530;
-  --muted-foreground: #B3B3B3;
-  --accent: #4F8EF7;
+  --primary-foreground: #07090F;
+  --secondary: #131C2E;
+  --secondary-foreground: #F0F0F5;
+  --muted: #0F1521;
+  --muted-foreground: #8892A4;
+  --accent: #7C3AED;
   --accent-foreground: #FFFFFF;
   --destructive: #EF4444;
   --destructive-foreground: #FFFFFF;
-  --border: rgba(255, 255, 255, 0.07);
-  --input: rgba(255, 255, 255, 0.05);
+  --border: rgba(255, 255, 255, 0.06);
+  --input: rgba(255, 255, 255, 0.04);
   --ring: #D4AF37;
   --font-weight-medium: 500;
   --font-weight-normal: 400;
   --chart-1: #D4AF37;
-  --chart-2: #4F8EF7;
+  --chart-2: #7C3AED;
   --chart-3: #34D399;
   --chart-4: #F87171;
-  --chart-5: #A78BFA;
-  --sidebar: #0D1117;
-  --sidebar-foreground: #FFFFFF;
+  --chart-5: #60A5FA;
+  --sidebar: #050810;
+  --sidebar-foreground: #F0F0F5;
   --sidebar-primary: #D4AF37;
-  --sidebar-primary-foreground: #0D1117;
-  --sidebar-accent: #1E2530;
-  --sidebar-accent-foreground: #FFFFFF;
-  --sidebar-border: rgba(255, 255, 255, 0.06);
+  --sidebar-primary-foreground: #07090F;
+  --sidebar-accent: #0F1521;
+  --sidebar-accent-foreground: #F0F0F5;
+  --sidebar-border: rgba(255, 255, 255, 0.05);
   --sidebar-ring: #D4AF37;
 }
 
 .wk-light {
-  --background: #F8F4EC;
-  --foreground: #1A1005;
+  --background: #F4F1EC;
+  --foreground: #0E0A03;
   --card: #FFFFFF;
-  --card-foreground: #1A1005;
-  --popover: #EDE8D8;
-  --popover-foreground: #1A1005;
-  --primary: #8B6514;
+  --card-foreground: #0E0A03;
+  --popover: #EDE8DF;
+  --popover-foreground: #0E0A03;
+  --primary: #8B5E0A;
   --primary-foreground: #FFFFFF;
-  --secondary: #EDE8D8;
-  --secondary-foreground: #1A1005;
-  --muted: #F0EAD8;
-  --muted-foreground: #6B5533;
-  --accent: #8B6514;
+  --secondary: #EDE8DF;
+  --secondary-foreground: #0E0A03;
+  --muted: #E8E3D8;
+  --muted-foreground: #5C4A28;
+  --accent: #5B21B6;
   --accent-foreground: #FFFFFF;
-  --border: rgba(60, 30, 0, 0.09);
-  --input: rgba(60, 30, 0, 0.05);
-  --ring: #8B6514;
-  --sidebar: #EDE8D8;
-  --sidebar-foreground: #1A1005;
-  --sidebar-primary: #8B6514;
+  --border: rgba(60, 30, 0, 0.08);
+  --input: rgba(60, 30, 0, 0.04);
+  --ring: #8B5E0A;
+  --sidebar: #EDE8DF;
+  --sidebar-foreground: #0E0A03;
+  --sidebar-primary: #8B5E0A;
   --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent: #F0EAD8;
-  --sidebar-accent-foreground: #1A1005;
-  --sidebar-border: rgba(60, 30, 0, 0.09);
+  --sidebar-accent: #E3DDD3;
+  --sidebar-accent-foreground: #0E0A03;
+  --sidebar-border: rgba(60, 30, 0, 0.08);
 }
 
 @theme inline {
@@ -132,10 +134,10 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 4px);
+  --radius-xl: calc(var(--radius) + 8px);
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -159,48 +161,74 @@
     font-size: var(--font-size);
   }
 
-  h1 {
-    font-size: var(--text-2xl);
-    font-weight: var(--font-weight-medium);
-    line-height: 1.5;
-  }
-
-  h2 {
-    font-size: var(--text-xl);
-    font-weight: var(--font-weight-medium);
-    line-height: 1.5;
-  }
-
-  h3 {
-    font-size: var(--text-lg);
-    font-weight: var(--font-weight-medium);
-    line-height: 1.5;
-  }
-
-  h4 {
-    font-size: var(--text-base);
-    font-weight: var(--font-weight-medium);
-    line-height: 1.5;
-  }
-
-  label {
-    font-size: var(--text-base);
-    font-weight: var(--font-weight-medium);
-    line-height: 1.5;
-  }
-
-  button {
-    font-size: var(--text-base);
-    font-weight: var(--font-weight-medium);
-    line-height: 1.5;
-  }
-
-  input {
-    font-size: var(--text-base);
-    font-weight: var(--font-weight-normal);
-    line-height: 1.5;
-  }
+  h1 { font-size: var(--text-2xl); font-weight: 700; line-height: 1.2; }
+  h2 { font-size: var(--text-xl); font-weight: 600; line-height: 1.3; }
+  h3 { font-size: var(--text-lg); font-weight: 600; line-height: 1.4; }
+  h4 { font-size: var(--text-base); font-weight: 500; line-height: 1.5; }
+  label { font-size: var(--text-sm); font-weight: 500; line-height: 1.5; }
+  button { font-size: var(--text-sm); font-weight: 500; line-height: 1.5; }
+  input { font-size: var(--text-sm); font-weight: 400; line-height: 1.5; }
 }
+
+/* Figma Make motion primitives used by the imported public and portal UI. */
+@keyframes wk-float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-12px) rotate(1deg); }
+}
+@keyframes wk-float2 {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-8px) rotate(-1deg); }
+}
+@keyframes wk-glow {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+@keyframes wk-marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+@keyframes wk-fade-up {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes wk-spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+@keyframes wk-pulse-ring {
+  0% { transform: scale(1); opacity: 0.6; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+@keyframes wk-loader-bar {
+  0% { width: 0%; }
+  30% { width: 45%; }
+  60% { width: 72%; }
+  85% { width: 91%; }
+  100% { width: 100%; }
+}
+@keyframes wk-logo-in {
+  from { opacity: 0; transform: scale(0.85); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes wk-urdu-drift {
+  0% { transform: translateY(0) translateX(0); opacity: 0.04; }
+  50% { transform: translateY(-20px) translateX(8px); opacity: 0.07; }
+  100% { transform: translateY(0) translateX(0); opacity: 0.04; }
+}
+
+.animate-wk-float { animation: wk-float 6s ease-in-out infinite; }
+.animate-wk-float2 { animation: wk-float2 8s ease-in-out infinite; }
+.animate-wk-glow { animation: wk-glow 3s ease-in-out infinite; }
+.animate-wk-marquee { animation: wk-marquee 30s linear infinite; }
+.animate-wk-fade-up { animation: wk-fade-up 0.6s ease forwards; }
+.animate-wk-spin-slow { animation: wk-spin-slow 20s linear infinite; }
+.animate-wk-pulse-ring { animation: wk-pulse-ring 2s ease-out infinite; }
+.animate-wk-logo-in { animation: wk-logo-in 0.5s ease forwards; }
+
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.2); }
 
 /* --------------------------------------------------------------------------
    WukaLAW motion language

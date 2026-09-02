@@ -1,0 +1,3 @@
+const logoSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#D4AF37"/><stop offset="1" stop-color="#7C3AED"/></linearGradient></defs><rect width="96" height="96" rx="24" fill="#0F1521"/><path d="M48 17v57M30 76h36M25 32h46M31 32 18 52h26L31 32Zm34 0L52 52h26L65 32Z" fill="none" stroke="url(#g)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/><path d="M18 52c2 8 8 12 13 12s11-4 13-12M52 52c2 8 8 12 13 12s11-4 13-12" fill="none" stroke="#D4AF37" stroke-width="4" stroke-linecap="round"/></svg>`
+
+export const wukaIcon = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(logoSvg)}`
