@@ -83,9 +83,9 @@ export function Badge({ label, variant = 'default' }: { label: string; variant?:
   )
 }
 
-export function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
+export function Card({ children, className = '', onClick }: { children: React.ReactNode; className?: string; onClick?: () => void }) {
   return (
-    <div className={`rounded-2xl border border-border bg-card text-card-foreground ${className}`}>
+    <div className={`rounded-2xl border border-border bg-card text-card-foreground ${className}`} onClick={onClick}>
       {children}
     </div>
   )
