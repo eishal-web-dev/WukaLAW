@@ -14,7 +14,7 @@ from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.db import Base, engine
-from app.routers import auth_routes, case_custom_search, case_pathway, cases, documents, legal_intelligence, precedent_briefs, qa, rag, search, similar_cases
+from app.routers import auth_routes, case_custom_search, case_pathway, cases, documents, legal_intelligence, notifications, precedent_briefs, qa, rag, search, similar_cases
 
 app = FastAPI(
     title="WukaLAW API",
@@ -41,7 +41,10 @@ with engine.connect() as connection:
     columns = [row[1] for row in connection.execute(text("PRAGMA table_info(documents)"))]
     if columns and "case_id" not in columns:
         connection.execute(text("ALTER TABLE documents ADD COLUMN case_id INTEGER"))
-        connection.commit()
+    user_columns = [row[1] for row in connection.execute(text("PRAGMA table_info(users)"))]
+    if user_columns and "notifications_enabled" not in user_columns:
+        connection.execute(text("ALTER TABLE users ADD COLUMN notifications_enabled BOOLEAN NOT NULL DEFAULT 1"))
+    connection.commit()
 
 api = APIRouter(prefix="/api/v1")
 
@@ -52,6 +55,7 @@ def health():
 
 
 api.include_router(auth_routes.router)
+api.include_router(notifications.router)
 api.include_router(cases.router)
 api.include_router(case_custom_search.router)
 api.include_router(precedent_briefs.router)

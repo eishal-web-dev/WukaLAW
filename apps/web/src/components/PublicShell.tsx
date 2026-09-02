@@ -71,7 +71,6 @@ export function PublicNav({ current }: { current?: string }) {
   const { dark, toggleDark, TX, TX2, GA, BD, NAVBG } = usePublicTokens()
   const navLinks = [
     { label: 'Practice Areas', path: '/practice-areas' },
-    { label: 'Pricing', path: '/pricing' },
     { label: 'About', path: '/about' },
     { label: 'Case Studies', path: '/case-studies' },
     { label: 'Contact', path: '/contact' },
@@ -106,7 +105,7 @@ export function PublicNav({ current }: { current?: string }) {
           style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'none', border: 'none', cursor: 'pointer' }}
         >
           <LogoMark dark={dark} GA={GA} />
-          <span style={{ color: TX, fontWeight: 800, fontSize: 18, letterSpacing: '-0.03em' }}>WukaLAW</span>
+          <span style={{ color: TX, fontWeight: 800, fontSize: 18, letterSpacing: '-0.03em' }}>WakuLaw</span>
           <span
             style={{
               fontSize: 10,
@@ -209,7 +208,7 @@ export function PublicFooter() {
   const { dark, TX, TX2, GA, BD, SURF } = usePublicTokens()
   return (
     <footer style={{ borderTop: `1px solid ${BD}`, backgroundColor: SURF, padding: '48px 24px', fontFamily: 'Inter, sans-serif' }}>
-      <div style={{ maxWidth: 1200, margin: '0 auto', display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr', gap: 40 }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto', display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', gap: 48 }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
             <div
@@ -229,17 +228,16 @@ export function PublicFooter() {
                 <path d="M2 12l10 5 10-5" />
               </svg>
             </div>
-            <span style={{ color: TX, fontWeight: 800, fontSize: 16 }}>WukaLAW</span>
+            <span style={{ color: TX, fontWeight: 800, fontSize: 16 }}>WakuLaw</span>
           </div>
           <p style={{ fontSize: 13, color: TX2, lineHeight: 1.7, maxWidth: 260 }}>
-            Pakistan's explainable AI legal research platform.
+            Pakistan's premier AI legal intelligence platform. Serving advocates since 2024.
           </p>
         </div>
         {[
           { heading: 'Platform', links: [['AI Prediction', '/prediction'], ['Case Workspace', '/workspace'], ['Legal Search', '/similar-cases'], ['AI Assistant', '/ai-chat']] },
-          { heading: 'Firm', links: [['Practice Areas', '/practice-areas'], ['Case Studies', '/case-studies'], ['About', '/about'], ['Careers', '/careers']] },
-          { heading: 'Resources', links: [['Features', '/features'], ['Pricing', '/pricing'], ['Blog', '/blog'], ['FAQ', '/faq']] },
-          { heading: 'Legal', links: [['Privacy Policy', '/privacy'], ['Terms of Service', '/terms'], ['Contact', '/contact']] },
+          { heading: 'Firm', links: [['Practice Areas', '/practice-areas'], ['Case Studies', '/case-studies'], ['About', '/about'], ['Contact', '/contact']] },
+          { heading: 'Legal', links: [['Privacy Policy', '/'], ['Terms of Service', '/'], ['Security', '/'], ['Compliance', '/']] },
         ].map((col) => (
           <div key={col.heading}>
             <div style={{ fontSize: 11, fontWeight: 700, color: TX, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 16 }}>
@@ -270,7 +268,7 @@ export function PublicFooter() {
           alignItems: 'center',
         }}
       >
-        <span style={{ fontSize: 12, color: TX2 }}>© 2024 WukaLAW Inc. · Karachi, Pakistan</span>
+        <span style={{ fontSize: 12, color: TX2 }}>© 2024 WakuLaw Inc. · Karachi, Pakistan</span>
         <span style={{ fontSize: 12, color: TX2 }}>Built for Pakistan's legal community</span>
       </div>
     </footer>
@@ -279,7 +277,7 @@ export function PublicFooter() {
 
 export function BrowserWindow({
   children,
-  url = 'app.wukalaw.ai',
+  url = 'app.wakulaw.ai',
   className = '',
   style = {},
 }: {

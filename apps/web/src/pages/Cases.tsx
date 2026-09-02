@@ -1,12 +1,12 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Search, Edit2, Trash2, Eye, X, Grid as GridIcon, List as ListIcon, FileText, Briefcase } from 'lucide-react'
+import { Plus, Search, Edit2, Trash2, Eye, X } from 'lucide-react'
 import {
   listCases, createCase, updateCase, deleteCase, errorMessage,
 } from '../lib/api'
 import type { Case, CaseCreatePayload, CaseStatus, CasePriority } from '../lib/api'
 import { formatDate } from '../lib/format'
-import { Btn, Card, Badge, Input, KPICard, G } from '../components/design'
+import { Btn, Card, Badge, Input, G } from '../components/design'
 import ErrorAlert from '../components/ErrorAlert'
 import Spinner from '../components/Spinner'
 
@@ -136,8 +136,6 @@ export default function Cases() {
   const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [filterStatus, setFilterStatus] = useState('All')
-  const [filterType, setFilterType] = useState('All')
-  const [view, setView] = useState<'table' | 'grid'>('table')
   const [creating, setCreating] = useState(false)
   const [editing, setEditing] = useState<Case | null>(null)
   const [deleting, setDeleting] = useState<Case | null>(null)
@@ -160,23 +158,13 @@ export default function Cases() {
   }, [refresh])
 
   const statuses = ['All', ...STATUSES]
-  // Type filter options are derived from the case types actually present,
-  // not a hardcoded assumed list — the current account may not use every
-  // category a generic legal-practice mockup would show.
-  const caseTypes = useMemo(
-    () => ['All', ...Array.from(new Set(cases.map((c) => c.case_type).filter(Boolean))).sort()],
-    [cases],
-  )
   const filtered = cases.filter(
     (c) =>
       (filterStatus === 'All' || c.status === filterStatus) &&
-      (filterType === 'All' || c.case_type === filterType) &&
       (c.title.toLowerCase().includes(search.toLowerCase()) ||
         c.case_number.toLowerCase().includes(search.toLowerCase())),
   )
   const activeCount = cases.filter((c) => c.status === 'Active').length
-  const upcomingDeadlineCount = cases.filter((c) => c.deadline).length
-  const totalDocs = cases.reduce((sum, c) => sum + c.num_documents, 0)
 
   const payloadFrom = (form: CaseFormState): CaseCreatePayload => ({
     title: form.title.trim(),
@@ -218,19 +206,11 @@ export default function Cases() {
 
       {error && <ErrorAlert message={error} />}
 
-      {/* KPI row — every value here is computed live from your actual cases */}
-      <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
-        <KPICard icon={<Briefcase size={18} />} label="Total Cases" value={loading ? '…' : String(cases.length)} sub={`${activeCount} active`} />
-        <KPICard icon={<FileText size={18} />} label="Documents" value={loading ? '…' : String(totalDocs)} sub="Across all cases" />
-        <KPICard icon={<Eye size={18} />} label="With Deadlines" value={loading ? '…' : String(upcomingDeadlineCount)} sub="Tracked deadlines" />
-        <KPICard icon={<GridIcon size={18} />} label="Case Types" value={loading ? '…' : String(Math.max(caseTypes.length - 1, 0))} sub="Distinct categories" />
-      </div>
-
       {/* Filters */}
-      <Card className="p-4 space-y-3">
+      <Card className="p-4">
         <div className="flex flex-col sm:flex-row gap-4">
           <Input placeholder="Search cases..." value={search} onChange={setSearch} icon={<Search size={14} />} className="flex-1" />
-          <div className="flex gap-2 flex-wrap">
+          <div className="flex gap-2">
             {statuses.map((s) => (
               <button
                 key={s}
@@ -242,74 +222,18 @@ export default function Cases() {
               </button>
             ))}
           </div>
-          <div className="flex rounded-lg overflow-hidden border border-white/10 self-start">
-            <button
-              onClick={() => setView('table')}
-              title="Table view"
-              className="p-2"
-              style={view === 'table' ? { backgroundColor: G, color: '#0D1117' } : { color: 'var(--muted-foreground)' }}
-            >
-              <ListIcon size={14} />
-            </button>
-            <button
-              onClick={() => setView('grid')}
-              title="Grid view"
-              className="p-2"
-              style={view === 'grid' ? { backgroundColor: G, color: '#0D1117' } : { color: 'var(--muted-foreground)' }}
-            >
-              <GridIcon size={14} />
-            </button>
-          </div>
         </div>
-        {caseTypes.length > 1 && (
-          <div className="flex gap-2 flex-wrap">
-            {caseTypes.map((t) => (
-              <button
-                key={t}
-                onClick={() => setFilterType(t)}
-                className={`px-2.5 py-1 rounded-full text-[11px] font-medium border transition-all ${filterType === t ? 'border-transparent' : 'border-white/10 text-muted-foreground hover:text-foreground'}`}
-                style={filterType === t ? { backgroundColor: `${G}22`, color: G } : {}}
-              >
-                {t}
-              </button>
-            ))}
-          </div>
-        )}
       </Card>
 
-      {/* Table / Grid */}
-      {loading ? (
-        <Card className="p-10 flex justify-center"><Spinner label="Loading cases…" /></Card>
-      ) : filtered.length === 0 ? (
-        <Card className="p-10 text-center text-sm text-muted-foreground">
-          {cases.length === 0 ? 'No cases yet — create your first case.' : 'No cases match your filters.'}
-        </Card>
-      ) : view === 'grid' ? (
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
-          {filtered.map((c) => (
-            <Card
-              key={c.id}
-              className="p-4 hover:border-[#D4AF37]/30 cursor-pointer transition-all"
-              onClick={() => navigate(`/cases/${c.id}`)}
-            >
-              <div className="flex items-start justify-between mb-3">
-                <div>
-                  <div className="text-xs font-mono" style={{ color: G }}>{c.case_number}</div>
-                  <div className="text-sm font-bold text-foreground mt-0.5 leading-tight">{c.title}</div>
-                </div>
-                <Badge label={c.priority} />
-              </div>
-              <div className="text-xs text-muted-foreground mb-3">{c.case_type} · <Badge label={c.status} /></div>
-              {c.description && <p className="text-[11px] text-muted-foreground mb-3 line-clamp-2">{c.description}</p>}
-              <div className="flex items-center justify-between text-[11px] text-muted-foreground pt-2 border-t border-white/[0.06]">
-                <span>{c.num_documents} doc{c.num_documents === 1 ? '' : 's'}</span>
-                <span>{c.deadline ? formatDate(c.deadline) : 'No deadline'}</span>
-              </div>
-            </Card>
-          ))}
-        </div>
-      ) : (
-        <Card className="overflow-hidden">
+      {/* Table */}
+      <Card className="overflow-hidden">
+        {loading ? (
+          <div className="p-10 flex justify-center"><Spinner label="Loading cases…" /></div>
+        ) : filtered.length === 0 ? (
+          <div className="p-10 text-center text-sm text-muted-foreground">
+            {cases.length === 0 ? 'No cases yet — create your first case.' : 'No cases match your filters.'}
+          </div>
+        ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -369,13 +293,13 @@ export default function Cases() {
               </tbody>
             </table>
           </div>
-          <div className="flex items-center justify-between px-4 py-3 border-t border-white/[0.06]">
-            <span className="text-xs text-muted-foreground">
-              Showing {filtered.length} of {cases.length} cases
-            </span>
-          </div>
-        </Card>
-      )}
+        )}
+        <div className="flex items-center justify-between px-4 py-3 border-t border-white/[0.06]">
+          <span className="text-xs text-muted-foreground">
+            Showing {filtered.length} of {cases.length} cases
+          </span>
+        </div>
+      </Card>
 
       {creating && (
         <CaseFormDialog

@@ -1,14 +1,44 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useAuth } from '../lib/auth'
+import {
+  errorMessage,
+  getNotificationPreferences,
+  updateNotificationPreferences,
+} from '../lib/api'
 import { Btn, Card, G } from '../components/design'
 import PreviewBanner from '../components/PreviewBanner'
+import ErrorAlert from '../components/ErrorAlert'
 
 export default function Settings() {
   const { user } = useAuth()
   const [notifications, setNotifications] = useState(true)
+  const [notificationSaving, setNotificationSaving] = useState(false)
+  const [notificationError, setNotificationError] = useState<string | null>(null)
   const [emailAlerts, setEmailAlerts] = useState(false)
   const [aiMemory, setAiMemory] = useState(true)
   const [twoFactor, setTwoFactor] = useState(true)
+
+  useEffect(() => {
+    getNotificationPreferences()
+      .then((preferences) => setNotifications(preferences.in_app_enabled))
+      .catch((error) => setNotificationError(errorMessage(error)))
+  }, [])
+
+  const toggleNotifications = async () => {
+    if (notificationSaving) return
+    const next = !notifications
+    setNotifications(next)
+    setNotificationSaving(true)
+    setNotificationError(null)
+    try {
+      await updateNotificationPreferences(next)
+    } catch (error) {
+      setNotifications(!next)
+      setNotificationError(errorMessage(error))
+    } finally {
+      setNotificationSaving(false)
+    }
+  }
 
   const Toggle = ({ on, toggle }: { on: boolean; toggle: () => void }) => (
     <button
@@ -39,7 +69,7 @@ export default function Settings() {
     {
       title: 'Notifications',
       items: [
-        { label: 'In-app notifications', type: 'toggle', value: notifications, toggle: () => setNotifications(!notifications) },
+        { label: 'In-app notifications', type: 'toggle', value: notifications, toggle: () => void toggleNotifications() },
         { label: 'Email alerts for deadlines', type: 'toggle', value: emailAlerts, toggle: () => setEmailAlerts(!emailAlerts) },
       ],
     },
@@ -62,11 +92,13 @@ export default function Settings() {
 
   return (
     <div className="p-8 space-y-7 overflow-y-auto h-full">
-      <PreviewBanner note="Settings are not persisted yet." />
+      <PreviewBanner note="In-app notifications are saved. Other settings are preview-only." />
       <div>
         <h1 className="text-2xl font-bold text-foreground">Settings</h1>
         <p className="text-muted-foreground text-sm mt-1">Manage your account and preferences</p>
       </div>
+
+      {notificationError && <ErrorAlert message={notificationError} />}
 
       {sections.map((section) => (
         <Card key={section.title} className="overflow-hidden">

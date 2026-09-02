@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Plus, Briefcase, FileText, Brain, Award, Lightbulb, AlertCircle,
@@ -6,7 +6,6 @@ import {
 } from 'lucide-react'
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell,
 } from 'recharts'
 import { listCases, listDocuments, errorMessage } from '../lib/api'
 import type { Case } from '../lib/api'
@@ -15,10 +14,6 @@ import { formatDate } from '../lib/format'
 import { AREA_DATA } from '../lib/mock'
 import { Btn, Card, KPICard, Badge, SectionHeader, CustomTooltip, G, B } from '../components/design'
 import ErrorAlert from '../components/ErrorAlert'
-
-const STATUS_COLORS: Record<string, string> = {
-  Active: '#10B981', Review: '#8B5CF6', 'On Hold': '#F59E0B', Closed: '#6B7280',
-}
 
 function daysUntil(iso: string | null): number | null {
   if (!iso) return null
@@ -62,13 +57,6 @@ export default function Dashboard() {
     weekday: 'long', month: 'long', day: 'numeric', year: 'numeric',
   })
 
-  // Real distribution of your actual cases by status — no invented numbers.
-  const statusData = useMemo(() => {
-    const counts = new Map<string, number>()
-    for (const c of cases) counts.set(c.status, (counts.get(c.status) ?? 0) + 1)
-    return Array.from(counts.entries()).map(([status, count]) => ({ status, count }))
-  }, [cases])
-
   const insights = [
     { icon: <Lightbulb size={14} />, text: 'Ask the AI assistant about any uploaded document — answers come with sources and confidence.', action: 'Open AI Chat', path: '/ai-chat' },
     { icon: <AlertCircle size={14} />, text: 'Upload case documents to build your searchable evidence library.', action: 'Upload', path: '/documents' },
@@ -96,15 +84,15 @@ export default function Dashboard() {
 
       {error && <ErrorAlert message={error} />}
 
-      {/* KPI Cards — case/document counts are live, distinct accent colors like the Figma design */}
+      {/* KPI Cards — case/document counts are live */}
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
-        <KPICard icon={<Briefcase size={18} />} label="Total Cases" value={loading ? '…' : String(caseTotal)} sub={`${activeCases} active`} color={G} />
-        <KPICard icon={<FileText size={18} />} label="Documents" value={loading ? '…' : String(docTotal)} sub="Across all cases" color="#8B5CF6" />
-        <KPICard icon={<Award size={18} />} label="Win Rate" value="78.4%" sub="Sample metric (preview)" color="#3B82F6" />
-        <KPICard icon={<Brain size={18} />} label="AI Accuracy" value="94.2%" sub="Sample metric (preview)" color="#10B981" />
+        <KPICard icon={<Briefcase size={18} />} label="Total Cases" value={loading ? '…' : String(caseTotal)} sub={`${activeCases} active`} />
+        <KPICard icon={<FileText size={18} />} label="Documents" value={loading ? '…' : String(docTotal)} sub="Across all cases" />
+        <KPICard icon={<Award size={18} />} label="Win Rate" value="78.4%" sub="Sample metric (preview)" />
+        <KPICard icon={<Brain size={18} />} label="AI Accuracy" value="94.2%" sub="Sample metric (preview)" />
       </div>
 
-      {/* Chart + Case Status Breakdown */}
+      {/* Chart + Insights */}
       <div className="grid lg:grid-cols-3 gap-6">
         <Card className="lg:col-span-2 p-6">
           <SectionHeader
@@ -143,68 +131,30 @@ export default function Dashboard() {
         </Card>
 
         <Card className="p-6">
-          <SectionHeader title="Cases by Status" />
-          {statusData.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-10 text-center">No cases yet.</p>
-          ) : (
-            <>
-              <ResponsiveContainer width="100%" height={160}>
-                <PieChart>
-                  <Pie data={statusData} dataKey="count" nameKey="status" innerRadius={40} outerRadius={65} paddingAngle={2}>
-                    {statusData.map((entry) => (
-                      <Cell key={entry.status} fill={STATUS_COLORS[entry.status] ?? '#6B7280'} />
-                    ))}
-                  </Pie>
-                  <Tooltip content={<CustomTooltip />} />
-                </PieChart>
-              </ResponsiveContainer>
-              <div className="flex flex-wrap gap-x-4 gap-y-1.5 mt-3 justify-center">
-                {statusData.map((entry) => (
-                  <div key={entry.status} className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: STATUS_COLORS[entry.status] ?? '#6B7280' }} />
-                    {entry.status} ({entry.count})
-                  </div>
-                ))}
+          <SectionHeader title="Get Started" />
+          <div className="space-y-4">
+            {insights.map((ins, i) => (
+              <div
+                key={i}
+                className="p-3 rounded-xl border border-white/[0.05] hover:border-white/10 transition-colors"
+                style={{ backgroundColor: 'rgba(255,255,255,0.02)' }}
+              >
+                <div className="flex items-start gap-2 mb-2">
+                  <div className="mt-0.5" style={{ color: G }}>{ins.icon}</div>
+                  <p className="text-xs text-muted-foreground leading-relaxed">{ins.text}</p>
+                </div>
+                <button
+                  onClick={() => navigate(ins.path)}
+                  className="text-xs font-medium flex items-center gap-1 hover:gap-2 transition-all"
+                  style={{ color: G }}
+                >
+                  {ins.action} <ArrowRight size={11} />
+                </button>
               </div>
-            </>
-          )}
+            ))}
+          </div>
         </Card>
       </div>
-
-      {/* Get Started — styled like the Figma design's AI panel treatment, honest content */}
-      <Card className="p-6 relative overflow-hidden" style={{ background: 'linear-gradient(135deg, rgba(139,92,246,0.08), transparent)' }}>
-        <div className="flex items-center gap-2 mb-4">
-          <Sparkles size={16} style={{ color: '#8B5CF6' }} />
-          <span className="text-sm font-bold text-foreground">Get Started</span>
-          <span
-            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider"
-            style={{ background: 'rgba(139,92,246,0.15)', color: '#8B5CF6' }}
-          >
-            Live
-          </span>
-        </div>
-        <div className="grid sm:grid-cols-3 gap-4">
-          {insights.map((ins, i) => (
-            <div
-              key={i}
-              className="p-3 rounded-xl border border-white/[0.05] hover:border-white/10 transition-colors"
-              style={{ backgroundColor: 'rgba(255,255,255,0.02)' }}
-            >
-              <div className="flex items-start gap-2 mb-2">
-                <div className="mt-0.5" style={{ color: G }}>{ins.icon}</div>
-                <p className="text-xs text-muted-foreground leading-relaxed">{ins.text}</p>
-              </div>
-              <button
-                onClick={() => navigate(ins.path)}
-                className="text-xs font-medium flex items-center gap-1 hover:gap-2 transition-all"
-                style={{ color: G }}
-              >
-                {ins.action} <ArrowRight size={11} />
-              </button>
-            </div>
-          ))}
-        </div>
-      </Card>
 
       {/* Recent Cases + Deadlines */}
       <div className="grid lg:grid-cols-3 gap-6">
