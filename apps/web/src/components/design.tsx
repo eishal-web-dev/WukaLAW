@@ -83,9 +83,9 @@ export function Badge({ label, variant = 'default' }: { label: string; variant?:
   )
 }
 
-export function Card({ children, className = '', onClick }: { children: React.ReactNode; className?: string; onClick?: () => void }) {
+export function Card({ children, className = '', onClick, style }: { children: React.ReactNode; className?: string; onClick?: () => void; style?: React.CSSProperties }) {
   return (
-    <div className={`rounded-2xl border border-border bg-card text-card-foreground ${className}`} onClick={onClick}>
+    <div className={`rounded-2xl border border-border bg-card text-card-foreground ${className}`} onClick={onClick} style={style}>
       {children}
     </div>
   )
@@ -98,6 +98,7 @@ export function KPICard({
   change,
   changeDir,
   sub,
+  color = G,
 }: {
   icon: React.ReactNode
   label: string
@@ -105,12 +106,13 @@ export function KPICard({
   change?: string
   changeDir?: 'up' | 'down'
   sub?: string
+  color?: string
 }) {
   return (
     <Card className="p-5">
       <div className="flex items-start justify-between mb-3">
-        <div className="p-2 rounded-lg" style={{ backgroundColor: 'rgba(212,175,55,0.1)' }}>
-          <span style={{ color: G }}>{icon}</span>
+        <div className="p-2 rounded-lg" style={{ backgroundColor: `${color}1a` }}>
+          <span style={{ color }}>{icon}</span>
         </div>
         {change && (
           <div
