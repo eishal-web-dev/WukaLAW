@@ -1,10 +1,13 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   User, Calendar, FileText, Edit2, Brain, BookOpen, Gavel, Users, Target,
   CheckCircle, Sparkles, AlertCircle, Award, Lightbulb, Search, Send, Cpu,
 } from 'lucide-react'
-import { CASES, NOTIFICATIONS, TIMELINE_EVENTS, INIT_MESSAGES } from '../lib/mock'
+import { CASES, TIMELINE_EVENTS, INIT_MESSAGES } from '../lib/mock'
 import type { MockMessage } from '../lib/mock'
+import { useNotifications } from '../lib/notifications'
+import { formatRelativeTime } from '../lib/format'
 import { Btn, Card, Badge, ProgressBar, G, B, C } from '../components/design'
 import PreviewBanner from '../components/PreviewBanner'
 
@@ -20,6 +23,8 @@ const DOCS = [
 ]
 
 export default function Workspace() {
+  const navigate = useNavigate()
+  const { notifications, markRead } = useNotifications()
   const [leftTab, setLeftTab] = useState('cases')
   const [centerTab, setCenterTab] = useState('overview')
   const [rightTab, setRightTab] = useState('chat')
@@ -456,9 +461,24 @@ export default function Workspace() {
 
           {rightTab === 'notifs' && (
             <div className="flex-1 overflow-y-auto p-3 space-y-2">
-              {NOTIFICATIONS.slice(0, 5).map((n) => (
+              {notifications.length === 0 && (
+                <div className="text-xs text-[#B3B3B3] text-center py-8">No notifications yet.</div>
+              )}
+              {notifications.slice(0, 5).map((n) => (
                 <div
                   key={n.id}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => {
+                    if (!n.read) void markRead(n.id)
+                    if (n.action_url) navigate(n.action_url)
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      if (!n.read) void markRead(n.id)
+                      if (n.action_url) navigate(n.action_url)
+                    }
+                  }}
                   className={`p-3 rounded-xl border transition-colors ${!n.read ? 'border-white/10' : 'border-white/[0.04]'}`}
                   style={{ backgroundColor: !n.read ? 'rgba(212,175,55,0.05)' : 'rgba(30,37,48,0.5)' }}
                 >
@@ -467,7 +487,7 @@ export default function Workspace() {
                     <div>
                       <div className="text-xs font-medium text-white">{n.title}</div>
                       <div className="text-[10px] text-[#B3B3B3] mt-0.5 leading-relaxed">{n.body}</div>
-                      <div className="text-[10px] text-[#B3B3B3]/60 mt-1">{n.time}</div>
+                      <div className="text-[10px] text-[#B3B3B3]/60 mt-1">{formatRelativeTime(n.created_at)}</div>
                     </div>
                   </div>
                 </div>

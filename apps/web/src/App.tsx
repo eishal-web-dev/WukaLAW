@@ -15,16 +15,6 @@ import LawyerProfile from './pages/LawyerProfile'
 import Login from './pages/Login'
 import Register from './pages/Register'
 
-// New public pages
-import Pricing from './pages/Pricing'
-import Features from './pages/Features'
-import Solutions from './pages/Solutions'
-import Blog from './pages/Blog'
-import FAQ from './pages/FAQ'
-import Careers from './pages/Careers'
-import Privacy from './pages/Privacy'
-import Terms from './pages/Terms'
-
 // App screens (live)
 import Dashboard from './pages/Dashboard'
 import Cases from './pages/Cases'
@@ -35,6 +25,7 @@ import Evidence from './pages/Evidence'
 import AIChat from './pages/AIChat'
 import SimilarCases from './pages/SimilarCases'
 import Profile from './pages/Profile'
+import Notifications from './pages/Notifications'
 
 // App screens (preview — sample data)
 import Workspace from './pages/Workspace'
@@ -43,7 +34,6 @@ import Explainable from './pages/Explainable'
 import Timeline from './pages/Timeline'
 import Reports from './pages/Reports'
 import Analytics from './pages/Analytics'
-import Notifications from './pages/Notifications'
 import Settings from './pages/Settings'
 import Admin from './pages/Admin'
 
@@ -58,14 +48,6 @@ export default function App() {
       <Route path="/contact" element={<Contact />} />
       <Route path="/find-lawyer" element={<FindLawyer />} />
       <Route path="/lawyer-profile" element={<LawyerProfile />} />
-      <Route path="/pricing" element={<Pricing />} />
-      <Route path="/features" element={<Features />} />
-      <Route path="/solutions" element={<Solutions />} />
-      <Route path="/blog" element={<Blog />} />
-      <Route path="/faq" element={<FAQ />} />
-      <Route path="/careers" element={<Careers />} />
-      <Route path="/privacy" element={<Privacy />} />
-      <Route path="/terms" element={<Terms />} />
 
       {/* Auth (redirect to /dashboard when already signed in) */}
       <Route element={<GuestRoute />}>
@@ -86,6 +68,7 @@ export default function App() {
           <Route path="/ai-chat" element={<AIChat />} />
           <Route path="/similar-cases" element={<SimilarCases />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/notifications" element={<Notifications />} />
           {/* Preview screens */}
           <Route path="/workspace" element={<Workspace />} />
           <Route path="/prediction" element={<Prediction />} />
@@ -93,7 +76,6 @@ export default function App() {
           <Route path="/timeline" element={<Timeline />} />
           <Route path="/reports" element={<Reports />} />
           <Route path="/analytics" element={<Analytics />} />
-          <Route path="/notifications" element={<Notifications />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/admin" element={<Admin />} />
         </Route>

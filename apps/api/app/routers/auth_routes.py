@@ -6,6 +6,7 @@ from app.auth import create_token, get_current_user, hash_password, verify_passw
 from app.db import get_db
 from app.models import User
 from app.schemas import AuthResponse, LoginRequest, RegisterRequest, UserOut
+from app.services.notification_service import create_notification
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -24,6 +25,15 @@ def register(request: RegisterRequest, db: Session = Depends(get_db)):
         raise HTTPException(status_code=409, detail="An account with this email already exists.")
     user = User(email=email, name=request.name.strip(), password_hash=hash_password(request.password))
     db.add(user)
+    db.flush()
+    create_notification(
+        db,
+        user_id=user.id,
+        notification_type="system",
+        title="Welcome to WukaLAW",
+        body="Your secure legal workspace is ready. Create a case or upload a document to get started.",
+        action_url="/dashboard",
+    )
     db.commit()
     db.refresh(user)
     return _auth_response(user)
