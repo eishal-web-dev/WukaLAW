@@ -1,8 +1,13 @@
-import { useState } from 'react'
-import { Settings as SettingsIcon, Bell, Sparkles, Shield } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { useAuth } from '../lib/auth'
+import {
+  errorMessage,
+  getNotificationPreferences,
+  updateNotificationPreferences,
+} from '../lib/api'
 import { Btn, Card, G } from '../components/design'
 import PreviewBanner from '../components/PreviewBanner'
+import ErrorAlert from '../components/ErrorAlert'
 
 const Toggle = ({ on, toggle }: { on: boolean; toggle: () => void }) => (
   <button
@@ -18,55 +23,111 @@ export default function Settings() {
   const { user } = useAuth()
   const [section, setSection] = useState('general')
   const [notifications, setNotifications] = useState(true)
+  const [notificationSaving, setNotificationSaving] = useState(false)
+  const [notificationError, setNotificationError] = useState<string | null>(null)
   const [emailAlerts, setEmailAlerts] = useState(false)
   const [aiMemory, setAiMemory] = useState(true)
   const [autoAnalyze, setAutoAnalyze] = useState(true)
   const [similarAlerts, setSimilarAlerts] = useState(true)
   const [twoFactor, setTwoFactor] = useState(true)
 
-  const sections = [
-    { id: 'general', label: 'General', icon: <SettingsIcon size={14} /> },
-    { id: 'notifications', label: 'Notifications', icon: <Bell size={14} /> },
-    { id: 'ai', label: 'AI Preferences', icon: <Sparkles size={14} /> },
-    { id: 'security', label: 'Security', icon: <Shield size={14} /> },
+  useEffect(() => {
+    getNotificationPreferences()
+      .then((preferences) => setNotifications(preferences.in_app_enabled))
+      .catch((error) => setNotificationError(errorMessage(error)))
+  }, [])
+
+  const toggleNotifications = async () => {
+    if (notificationSaving) return
+    const next = !notifications
+    setNotifications(next)
+    setNotificationSaving(true)
+    setNotificationError(null)
+    try {
+      await updateNotificationPreferences(next)
+    } catch (error) {
+      setNotifications(!next)
+      setNotificationError(errorMessage(error))
+    } finally {
+      setNotificationSaving(false)
+    }
+  }
+
+  const Toggle = ({ on, toggle }: { on: boolean; toggle: () => void }) => (
+    <button
+      onClick={toggle}
+      className={`w-10 h-5 rounded-full transition-colors relative ${on ? '' : 'bg-white/20'}`}
+      style={on ? { backgroundColor: G } : {}}
+    >
+      <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-all ${on ? 'left-5' : 'left-0.5'}`} />
+    </button>
+  )
+
+  interface SettingItem {
+    label: string
+    type: 'input' | 'select' | 'toggle'
+    value: string | boolean
+    toggle?: () => void
+  }
+
+  const sections: { title: string; items: SettingItem[] }[] = [
+    {
+      title: 'Account',
+      items: [
+        { label: 'Full Name', type: 'input', value: user?.name ?? '—' },
+        { label: 'Email', type: 'input', value: user?.email ?? '—' },
+        { label: 'Time Zone', type: 'select', value: 'PKT (UTC+5)' },
+      ],
+    },
+    {
+      title: 'Notifications',
+      items: [
+        { label: 'In-app notifications', type: 'toggle', value: notifications, toggle: () => void toggleNotifications() },
+        { label: 'Email alerts for deadlines', type: 'toggle', value: emailAlerts, toggle: () => setEmailAlerts(!emailAlerts) },
+      ],
+    },
+    {
+      title: 'AI Settings',
+      items: [
+        { label: 'AI Memory (case context retention)', type: 'toggle', value: aiMemory, toggle: () => setAiMemory(!aiMemory) },
+        { label: 'Auto-analyze new documents', type: 'toggle', value: true, toggle: () => {} },
+        { label: 'AI Model Version', type: 'select', value: 'v4.2 (Latest)' },
+      ],
+    },
+    {
+      title: 'Security',
+      items: [
+        { label: 'Two-factor authentication', type: 'toggle', value: twoFactor, toggle: () => setTwoFactor(!twoFactor) },
+        { label: 'Session timeout', type: 'select', value: '4 hours' },
+      ],
+    },
   ]
 
   return (
-    <div className="p-8 space-y-6 overflow-y-auto h-full">
-      <PreviewBanner note="Settings are not persisted yet." />
+    <div className="p-8 space-y-7 overflow-y-auto h-full">
+      <PreviewBanner note="In-app notifications are saved. Other settings are preview-only." />
       <div>
         <h1 className="text-2xl font-bold text-foreground">Settings</h1>
         <p className="text-muted-foreground text-sm mt-1">Manage your account and preferences</p>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-6">
-        <div className="sm:w-44 flex-shrink-0 flex sm:flex-col gap-1 overflow-x-auto">
-          {sections.map((s) => (
-            <button
-              key={s.id}
-              onClick={() => setSection(s.id)}
-              className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-left text-sm font-medium transition-all whitespace-nowrap"
-              style={section === s.id ? { background: `${G}22`, color: G } : { color: 'var(--muted-foreground)' }}
-            >
-              {s.icon} {s.label}
-            </button>
-          ))}
-        </div>
+      {notificationError && <ErrorAlert message={notificationError} />}
 
-        <div className="flex-1 space-y-4">
-          {section === 'general' && (
-            <Card className="p-5">
-              <h3 className="text-sm font-semibold text-foreground mb-4">Account</h3>
-              <div className="space-y-3">
-                {[
-                  ['Full Name', user?.name ?? '—'],
-                  ['Email', user?.email ?? '—'],
-                  ['User ID', user?.id !== undefined ? String(user.id) : '—'],
-                  ['Time Zone', 'PKT (UTC+5)'],
-                ].map(([label, value]) => (
-                  <div key={label} className="flex items-center justify-between py-2 border-b border-white/[0.04] last:border-0">
-                    <span className="text-sm text-muted-foreground">{label}</span>
-                    <span className="text-sm text-foreground font-medium">{value}</span>
+      {sections.map((section) => (
+        <Card key={section.title} className="overflow-hidden">
+          <div className="px-5 py-3 border-b border-white/[0.06]" style={{ backgroundColor: 'rgba(255,255,255,0.02)' }}>
+            <h3 className="text-sm font-semibold text-foreground">{section.title}</h3>
+          </div>
+          <div className="divide-y divide-white/[0.04]">
+            {section.items.map((item) => (
+              <div key={item.label} className="flex items-center justify-between px-5 py-4">
+                <div className="text-sm text-foreground">{item.label}</div>
+                {item.type === 'toggle' ? (
+                  <Toggle on={item.value as boolean} toggle={item.toggle ?? (() => {})} />
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground">{item.value as string}</span>
+                    <button className="text-xs px-2 py-1 border border-white/10 rounded-lg text-muted-foreground hover:text-foreground transition-colors">Edit</button>
                   </div>
                 ))}
               </div>

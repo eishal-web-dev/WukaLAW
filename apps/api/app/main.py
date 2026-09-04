@@ -1,4 +1,5 @@
-﻿import sys
+﻿import os
+import sys
 from pathlib import Path
 
 # make `app` and the repository-level `ai` package importable regardless of cwd
@@ -14,7 +15,7 @@ from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.db import Base, engine
-from app.routers import admin, auth_routes, case_custom_search, case_pathway, cases, documents, legal_intelligence, precedent_briefs, qa, rag, search, similar_cases
+from app.routers import auth_routes, case_custom_search, case_pathway, cases, documents, legal_intelligence, notifications, precedent_briefs, qa, rag, search, similar_cases
 
 app = FastAPI(
     title="WukaLAW API",
@@ -25,9 +26,19 @@ app = FastAPI(
     version="0.1.0",
 )
 
+_cors_origins = [
+    origin.strip()
+    for origin in os.getenv(
+        "CORS_ORIGINS",
+        "http://localhost:5173,http://127.0.0.1:5173",
+    ).split(",")
+    if origin.strip()
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_origins=_cors_origins,
+    allow_origin_regex=r"https?://(localhost|127\.0\.0\.1)(:\d+)?",
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -41,7 +52,10 @@ with engine.connect() as connection:
     columns = [row[1] for row in connection.execute(text("PRAGMA table_info(documents)"))]
     if columns and "case_id" not in columns:
         connection.execute(text("ALTER TABLE documents ADD COLUMN case_id INTEGER"))
-        connection.commit()
+    user_columns = [row[1] for row in connection.execute(text("PRAGMA table_info(users)"))]
+    if user_columns and "notifications_enabled" not in user_columns:
+        connection.execute(text("ALTER TABLE users ADD COLUMN notifications_enabled BOOLEAN NOT NULL DEFAULT 1"))
+    connection.commit()
 
     user_columns = [row[1] for row in connection.execute(text("PRAGMA table_info(users)"))]
     if user_columns and "role" not in user_columns:
@@ -57,7 +71,7 @@ def health():
 
 
 api.include_router(auth_routes.router)
-api.include_router(admin.router)
+api.include_router(notifications.router)
 api.include_router(cases.router)
 api.include_router(case_custom_search.router)
 api.include_router(precedent_briefs.router)

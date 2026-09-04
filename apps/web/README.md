@@ -23,9 +23,9 @@ The app runs at http://localhost:5173.
 
 ## Configuration
 
-The frontend talks to the WakuLaw API. The base URL is read from
-`VITE_API_BASE_URL` and defaults to `http://localhost:8000/api/v1` (the local
-FastAPI backend).
+The frontend talks to the WukaLAW API. During local development, requests use
+`/api` and Vite proxies them to `http://127.0.0.1:8000`. This works even if
+Vite selects a port other than 5173 and avoids browser CORS failures.
 
 To override it, copy `.env.example` to `.env` and edit the value:
 
@@ -34,10 +34,12 @@ cp .env.example .env
 ```
 
 ```env
-VITE_API_BASE_URL=http://localhost:8000/api/v1
+VITE_API_BASE_URL=
+VITE_DEV_API_TARGET=http://127.0.0.1:8000
 ```
 
-Restart `npm run dev` after changing environment variables.
+For a deployed frontend, set `VITE_API_BASE_URL` to the public FastAPI URL,
+including `/api/v1`. Restart `npm run dev` after changing either variable.
 
 Auth uses a bearer token kept in `localStorage` (`wakulaw_token` /
 `wakulaw_user`). A 401 from any protected endpoint clears the session and
@@ -81,6 +83,7 @@ redirects to `/login`.
 | `/ai-chat`         | `POST /ask` — answer with line breaks, confidence badge + reason, grouped sources ("N passages from M documents"), model label |
 | `/similar-cases`   | `POST /similar-cases` — results grouped by document with scores |
 | `/profile`         | `GET /auth/me` + sign out                                       |
+| `/notifications`   | Persisted alerts, live unread badges, filters, read/delete actions, and saved in-app preference |
 
 All app routes require authentication (redirect to `/login`); `/login` and
 `/register` redirect to `/dashboard` when already signed in. AI outputs always
@@ -96,15 +99,14 @@ carry the permanent disclaimer: *"Decision-support only — not legal advice."*
 | `/timeline`      | Timeline Intelligence           |
 | `/reports`       | Reports                         |
 | `/analytics`     | Analytics                       |
-| `/notifications` | Notifications                   |
-| `/settings`      | Settings (not persisted)        |
+| `/settings`      | Settings (in-app notification preference is persisted; remaining controls are preview) |
 | `/admin`         | Admin dashboard                 |
 
 ## Project layout
 
 ```
 src/
-  lib/          api.ts (typed client), auth.tsx, sources.ts, format.ts,
+  lib/          api.ts (typed client), auth.tsx, notifications.tsx, sources.ts, format.ts,
                 theme.tsx (dark/light), mock.ts (preview sample data)
   components/   AppShell (sidebar/topbar), PublicShell (marketing nav/footer),
                 design.tsx (Btn/Card/Badge/KPICard/… primitives),

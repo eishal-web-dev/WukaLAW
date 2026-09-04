@@ -6,9 +6,9 @@
 import { ArrowUpRight, ArrowDownRight } from 'lucide-react'
 
 export const G = '#D4AF37' // gold
-export const B = '#4F8EF7' // blue
-export const S = '#161B22' // surface
-export const C = '#1E2530' // card
+export const B = '#60A5FA' // blue
+export const S = '#0F1521' // surface
+export const C = '#131C2E' // card
 
 export function Btn({
   children,
@@ -44,7 +44,7 @@ export function Btn({
       disabled={disabled}
       onClick={onClick}
       className={`${base} ${sizes[size]} ${variants[variant]} ${className}`}
-      style={variant === 'primary' ? { backgroundColor: G, color: '#0D1117' } : {}}
+      style={variant === 'primary' ? { backgroundColor: G, color: '#07090F' } : {}}
     >
       {icon}
       {children}
@@ -99,6 +99,7 @@ export function KPICard({
   changeDir,
   sub,
   color = G,
+  onClick,
 }: {
   icon: React.ReactNode
   label: string
@@ -107,9 +108,10 @@ export function KPICard({
   changeDir?: 'up' | 'down'
   sub?: string
   color?: string
+  onClick?: () => void
 }) {
   return (
-    <Card className="p-5">
+    <Card className={`p-5 ${onClick ? 'cursor-pointer' : ''}`} onClick={onClick}>
       <div className="flex items-start justify-between mb-3">
         <div className="p-2 rounded-lg" style={{ backgroundColor: `${color}1a` }}>
           <span style={{ color }}>{icon}</span>
@@ -176,7 +178,7 @@ export function Avatar({ name, size = 'md' }: { name: string; size?: 'sm' | 'md'
   const color = colors[(name.charCodeAt(0) || 0) % colors.length]
   return (
     <div
-      className={`${s[size]} rounded-full flex items-center justify-center font-semibold text-[#0D1117] flex-shrink-0`}
+      className={`${s[size]} rounded-full flex items-center justify-center font-semibold text-[#07090F] flex-shrink-0`}
       style={{ backgroundColor: color }}
     >
       {initials}
@@ -223,7 +225,7 @@ export const CustomTooltip = ({
   return (
     <div
       className="rounded-xl border border-white/10 p-3 shadow-2xl text-xs"
-      style={{ backgroundColor: '#161B22' }}
+      style={{ backgroundColor: C }}
     >
       <p className="text-[#B3B3B3] mb-2 font-medium">{label}</p>
       {payload.map((p) => (

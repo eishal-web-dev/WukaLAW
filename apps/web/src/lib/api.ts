@@ -1,13 +1,22 @@
 /**
  * WakuLaw API client.
  *
- * Base URL comes from VITE_API_BASE_URL and defaults to the local
- * FastAPI backend at http://localhost:8000/api/v1.
+ * Base URL comes from VITE_API_BASE_URL. In local development it defaults to
+ * /api/v1, which Vite proxies to FastAPI. Using a same-origin path avoids CORS
+ * failures when Vite selects a port other than 5173.
  */
 
+const configuredApiBase =
+  (import.meta.env.VITE_API_BASE_URL as string | undefined)?.trim()
+
 export const API_BASE_URL: string =
-  (import.meta.env.VITE_API_BASE_URL as string | undefined) ??
-  'http://localhost:8000/api/v1'
+  (configuredApiBase || '/api/v1').replace(/\/+$/, '')
+
+const API_ORIGIN = API_BASE_URL.endsWith('/api/v1')
+  ? API_BASE_URL.slice(0, -'/api/v1'.length)
+  : API_BASE_URL
+
+export const RAG_QUERY_URL = `${API_ORIGIN}/api/rag/query`
 
 // ---------------------------------------------------------------------------
 // Auth token storage
@@ -15,6 +24,13 @@ export const API_BASE_URL: string =
 
 const TOKEN_KEY = 'wakulaw_token'
 const USER_KEY = 'wakulaw_user'
+export const NOTIFICATIONS_CHANGED_EVENT = 'wakulaw:notifications-changed'
+
+export function notifyNotificationsChanged(): void {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event(NOTIFICATIONS_CHANGED_EVENT))
+  }
+}
 
 export function getStoredToken(): string | null {
   return localStorage.getItem(TOKEN_KEY)
@@ -157,6 +173,32 @@ export interface CaseListResponse {
   total: number
 }
 
+export type NotificationType = 'ai' | 'case' | 'system'
+
+export interface Notification {
+  id: number
+  type: NotificationType
+  title: string
+  body: string
+  action_url: string | null
+  read: boolean
+  created_at: string
+}
+
+export interface NotificationListResponse {
+  items: Notification[]
+  total: number
+  unread: number
+}
+
+export interface NotificationUnreadCount {
+  unread: number
+}
+
+export interface NotificationPreferences {
+  in_app_enabled: boolean
+}
+
 export interface CaseCreatePayload {
   title: string
   case_type: string
@@ -257,7 +299,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     })
   } catch {
     throw new ApiError(
-      'Could not reach the WakuLaw API. Make sure the backend is running.',
+      `Could not reach the WukaLAW API at ${API_BASE_URL}.`,
       0,
     )
   }
@@ -277,7 +319,12 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     throw new ApiError(message, res.status)
   }
 
-  return (await res.json()) as T
+  const data = (await res.json()) as T
+  const method = (init?.method ?? 'GET').toUpperCase()
+  if (!['GET', 'HEAD'].includes(method) && !path.startsWith('/notifications')) {
+    notifyNotificationsChanged()
+  }
+  return data
 }
 
 function postJson<T>(path: string, body: unknown): Promise<T> {
@@ -306,7 +353,7 @@ async function del(path: string): Promise<void> {
     })
   } catch {
     throw new ApiError(
-      'Could not reach the WakuLaw API. Make sure the backend is running.',
+      `Could not reach the WukaLAW API at ${API_BASE_URL}.`,
       0,
     )
   }
@@ -321,6 +368,7 @@ async function del(path: string): Promise<void> {
     }
     throw new ApiError(message, res.status)
   }
+  if (!path.startsWith('/notifications')) notifyNotificationsChanged()
 }
 
 // ---------------------------------------------------------------------------
@@ -354,6 +402,56 @@ export function getHealth(): Promise<HealthResponse> {
   return request<HealthResponse>('/health')
 }
 
+/** GET /notifications */
+export function listNotifications(options?: {
+  type?: NotificationType
+  unreadOnly?: boolean
+  limit?: number
+  offset?: number
+}): Promise<NotificationListResponse> {
+  const params = new URLSearchParams()
+  if (options?.type) params.set('type', options.type)
+  if (options?.unreadOnly) params.set('unread_only', 'true')
+  if (options?.limit !== undefined) params.set('limit', String(options.limit))
+  if (options?.offset !== undefined) params.set('offset', String(options.offset))
+  const query = params.toString()
+  return request<NotificationListResponse>(`/notifications${query ? `?${query}` : ''}`)
+}
+
+/** GET /notifications/unread-count */
+export function getNotificationUnreadCount(): Promise<NotificationUnreadCount> {
+  return request<NotificationUnreadCount>('/notifications/unread-count')
+}
+
+/** PATCH /notifications/{id}/read */
+export function markNotificationRead(id: number): Promise<Notification> {
+  return patchJson<Notification>(`/notifications/${id}/read`, {})
+}
+
+/** POST /notifications/read-all */
+export function markAllNotificationsRead(): Promise<NotificationUnreadCount> {
+  return request<NotificationUnreadCount>('/notifications/read-all', { method: 'POST' })
+}
+
+/** DELETE /notifications/{id} */
+export function deleteNotification(id: number): Promise<void> {
+  return del(`/notifications/${id}`)
+}
+
+/** GET /notifications/preferences */
+export function getNotificationPreferences(): Promise<NotificationPreferences> {
+  return request<NotificationPreferences>('/notifications/preferences')
+}
+
+/** PATCH /notifications/preferences */
+export function updateNotificationPreferences(
+  inAppEnabled: boolean,
+): Promise<NotificationPreferences> {
+  return patchJson<NotificationPreferences>('/notifications/preferences', {
+    in_app_enabled: inAppEnabled,
+  })
+}
+
 /** GET /documents */
 export function listDocuments(): Promise<DocumentListResponse> {
   return request<DocumentListResponse>('/documents')
@@ -384,20 +482,28 @@ export async function askQuestion(
   question: string,
   history: ChatTurnInput[] = [],
 ): Promise<AskResponse> {
-  const res = await fetch('http://127.0.0.1:8000/api/rag/query', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      question,
-      top_k: 10,
-      score_threshold: null,
-      filters: {},
-      use_legal_intelligence: false,
-      history,
-    }),
-  })
+  let res: Response
+  try {
+    res = await fetch(RAG_QUERY_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        question,
+        top_k: 10,
+        score_threshold: null,
+        filters: {},
+        use_legal_intelligence: false,
+        history,
+      }),
+    })
+  } catch {
+    throw new ApiError(
+      `Could not reach the WukaLAW API at ${RAG_QUERY_URL}.`,
+      0,
+    )
+  }
 
   if (!res.ok) {
     const errorBody = await res.text()
@@ -589,7 +695,7 @@ export function uploadDocument(
     xhr.onerror = () =>
       reject(
         new ApiError(
-          'Could not reach the WakuLaw API. Make sure the backend is running.',
+          `Could not reach the WukaLAW API at ${API_BASE_URL}.`,
           0,
         ),
       )

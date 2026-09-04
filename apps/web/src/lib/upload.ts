@@ -3,6 +3,7 @@ import {
   ApiError,
   clearAuthStorage,
   getStoredToken,
+  notifyNotificationsChanged,
 } from './api'
 import type { Document } from './api'
 
@@ -42,7 +43,7 @@ async function apiJson<T>(path: string, body: unknown): Promise<T> {
       body: JSON.stringify(body),
     })
   } catch {
-    throw new ApiError('Could not reach the WakuLaw API.', 0)
+    throw new ApiError(`Could not reach the WukaLAW API at ${API_BASE_URL}.`, 0)
   }
 
   if (response.status === 401) {
@@ -124,6 +125,7 @@ async function uploadDocumentS3(
     filename: file.name,
     case_id: caseId,
   })
+  notifyNotificationsChanged()
   onProgress?.(100)
   return document
 }
@@ -148,6 +150,7 @@ function uploadDocumentLocal(
 
     xhr.onload = () => {
       if (xhr.status >= 200 && xhr.status < 300) {
+        notifyNotificationsChanged()
         resolve(xhr.response as Document)
       } else if (xhr.status === 401) {
         clearAuthStorage()
@@ -159,7 +162,7 @@ function uploadDocumentLocal(
       }
     }
 
-    xhr.onerror = () => reject(new ApiError('Could not reach the WakuLaw API.', 0))
+    xhr.onerror = () => reject(new ApiError(`Could not reach the WukaLAW API at ${API_BASE_URL}.`, 0))
     xhr.onabort = () => reject(new ApiError('Upload was cancelled.', 0))
 
     const form = new FormData()

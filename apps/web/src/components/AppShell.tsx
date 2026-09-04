@@ -7,6 +7,7 @@ import {
   LogOut, Sun, Moon,
 } from 'lucide-react'
 import { useAuth } from '../lib/auth'
+import { useNotifications } from '../lib/notifications'
 import { useTheme } from '../lib/theme'
 import { Avatar, G } from './design'
 
@@ -47,7 +48,7 @@ const NAV_GROUPS: {
   {
     label: 'Account',
     items: [
-      { path: '/notifications', label: 'Notifications', icon: <Bell size={16} />, badge: 3 },
+      { path: '/notifications', label: 'Notifications', icon: <Bell size={16} /> },
       { path: '/profile', label: 'Profile', icon: <User size={16} /> },
       { path: '/settings', label: 'Settings', icon: <Settings size={16} /> },
     ],
@@ -87,7 +88,15 @@ function pageTitle(pathname: string): string {
   return match ? TITLES[match] : 'WukaLAW'
 }
 
-function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void }) {
+function Sidebar({
+  collapsed,
+  onToggle,
+  unreadCount,
+}: {
+  collapsed: boolean
+  onToggle: () => void
+  unreadCount: number
+}) {
   const navigate = useNavigate()
   const { pathname } = useLocation()
   const { user, logout } = useAuth()
@@ -137,6 +146,7 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
             <div className="space-y-0.5">
               {group.items.map((item) => {
                 const active = pathname === item.path || pathname.startsWith(`${item.path}/`)
+                const badge = item.path === '/notifications' ? unreadCount : item.badge
                 return (
                   <button
                     key={item.path}
@@ -146,12 +156,12 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
                   >
                     <span style={active ? { color: G } : {}}>{item.icon}</span>
                     {!collapsed && <span className="truncate">{item.label}</span>}
-                    {!collapsed && item.badge ? (
+                    {!collapsed && badge ? (
                       <span
-                        className="ml-auto text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center text-[#0D1117]"
+                        className="ml-auto text-[10px] font-bold rounded-full min-w-4 h-4 px-1 flex items-center justify-center text-[#0D1117]"
                         style={{ backgroundColor: G }}
                       >
-                        {item.badge}
+                        {badge > 99 ? '99+' : badge}
                       </span>
                     ) : null}
                     {collapsed && active && (
@@ -212,6 +222,7 @@ function Topbar() {
   const { pathname } = useLocation()
   const { user } = useAuth()
   const { dark, toggleDark } = useTheme()
+  const { unreadCount } = useNotifications()
 
   return (
     <div className="h-14 flex items-center justify-between px-6 border-b border-border bg-background flex-shrink-0">
@@ -236,10 +247,18 @@ function Topbar() {
         </button>
         <button
           onClick={() => navigate('/notifications')}
+          aria-label={`${unreadCount} unread notification${unreadCount === 1 ? '' : 's'}`}
           className="relative p-2 rounded-lg hover:bg-muted/50 text-muted-foreground hover:text-foreground transition-colors"
         >
           <Bell size={16} />
-          <span className="absolute top-1 right-1 w-2 h-2 rounded-full" style={{ backgroundColor: G }} />
+          {unreadCount > 0 && (
+            <span
+              className="absolute -top-1 -right-1 min-w-4 h-4 px-1 rounded-full text-[9px] font-bold flex items-center justify-center text-[#0D1117]"
+              style={{ backgroundColor: G }}
+            >
+              {unreadCount > 99 ? '99+' : unreadCount}
+            </span>
+          )}
         </button>
         <button onClick={() => navigate('/profile')}>
           <Avatar name={user?.name || 'WukaLAW User'} size="sm" />
@@ -251,9 +270,14 @@ function Topbar() {
 
 export default function AppShell() {
   const [collapsed, setCollapsed] = useState(false)
+  const { unreadCount } = useNotifications()
   return (
     <div className="flex h-screen overflow-hidden bg-background" style={{ fontFamily: 'Inter, sans-serif' }}>
-      <Sidebar collapsed={collapsed} onToggle={() => setCollapsed((c) => !c)} />
+      <Sidebar
+        collapsed={collapsed}
+        onToggle={() => setCollapsed((c) => !c)}
+        unreadCount={unreadCount}
+      />
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
         <Topbar />
         <main className="flex-1 overflow-hidden bg-background">

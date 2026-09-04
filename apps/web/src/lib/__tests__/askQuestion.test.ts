@@ -26,6 +26,7 @@ describe('askQuestion — conversation memory', () => {
     ]
     await askQuestion('it was an accident', history)
 
+    expect(fetchMock).toHaveBeenCalledWith('/api/rag/query', expect.any(Object))
     const body = JSON.parse((fetchMock.mock.calls[0][1] as RequestInit).body as string)
     expect(body.question).toBe('it was an accident')
     expect(body.history).toEqual(history)
