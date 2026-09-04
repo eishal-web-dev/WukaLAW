@@ -51,8 +51,8 @@ export default function Analytics() {
 
       {/* First two KPIs are real, live counts. The other two have no backend behind them yet (no revenue/win-tracking model) — kept as clearly-labeled sample metrics rather than removed, matching this page's existing preview convention. */}
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
-        <KPICard icon={<Briefcase size={18} />} label="Total Cases" value={loading ? '…' : String(cases.length)} sub={`${activeCases} active`} color={G} />
-        <KPICard icon={<CheckCircle2 size={18} />} label="Cases Closed" value={loading ? '…' : String(closedCases)} sub="Real count" color="#10B981" />
+        <KPICard icon={<Briefcase size={18} />} label="Total Cases" value={loading ? '…' : error ? '—' : String(cases.length)} sub={loading ? 'Loading…' : error ? 'Count unavailable' : `${activeCases} active`} color={G} />
+        <KPICard icon={<CheckCircle2 size={18} />} label="Cases Closed" value={loading ? '…' : error ? '—' : String(closedCases)} sub={error ? 'Count unavailable' : 'Real count'} color="#10B981" />
         <KPICard icon={<TrendingUp size={18} />} label="Win Rate" value="78.4%" sub="Sample metric (preview)" color="#3B82F6" />
         <KPICard icon={<DollarSign size={18} />} label="Avg. Case Value" value="$847K" sub="Sample metric (preview)" color="#8B5CF6" />
       </div>
@@ -95,7 +95,7 @@ export default function Analytics() {
         <Card className="p-5">
           <SectionHeader title="Case Type Distribution" />
           {typeDistribution.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-8 text-center">{loading ? 'Loading…' : 'No cases yet.'}</p>
+            <p className="text-sm text-muted-foreground py-8 text-center">{loading ? 'Loading…' : error ? 'Case distribution unavailable.' : 'No cases yet.'}</p>
           ) : (
             <>
               <ResponsiveContainer width="100%" height={160}>

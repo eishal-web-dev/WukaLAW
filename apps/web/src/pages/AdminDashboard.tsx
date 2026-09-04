@@ -47,7 +47,7 @@ export default function AdminDashboard() {
         <div className="py-16 flex justify-center">
           <Spinner label="Loading platform data…" />
         </div>
-      ) : (
+      ) : stats && !error ? (
         <>
           <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
             <KPICard icon={<Users size={18} />} label="Total Users" value={String(stats?.total_users ?? 0)} color="#D4AF37" />
@@ -91,7 +91,7 @@ export default function AdminDashboard() {
             )}
           </Card>
         </>
-      )}
+      ) : null}
     </div>
   )
 }

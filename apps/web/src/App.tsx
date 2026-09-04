@@ -1,7 +1,7 @@
 import { lazy, Suspense } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import AppShell from './components/FigmaAppShell'
-import { ProtectedRoute, GuestRoute } from './components/RouteGuards'
+import { ProtectedRoute, GuestRoute, AdminRoute } from './components/RouteGuards'
 
 // Auth
 import Login from './pages/Login'
@@ -18,6 +18,7 @@ import AIChat from './pages/AIChat'
 import SimilarCases from './pages/SimilarCases'
 import Profile from './pages/Profile'
 import Notifications from './pages/Notifications'
+import AdminDashboard from './pages/AdminDashboard'
 
 // App screens (preview — sample data)
 import Workspace from './pages/Workspace'
@@ -113,26 +114,28 @@ export default function App() {
           <Route path="/client/explainable" element={<FigmaPortalRoute page="cp-explainable" />} />
           <Route path="/client/report-generator" element={<FigmaPortalRoute page="cp-report-gen" />} />
           <Route path="/client/downloads" element={<FigmaPortalRoute page="cp-downloads" />} />
-          {/* Complete Figma Make admin portal */}
-          <Route path="/admin" element={<FigmaPortalRoute page="ap-dashboard" />} />
-          <Route path="/admin/users" element={<FigmaPortalRoute page="ap-users" />} />
-          <Route path="/admin/lawyers" element={<FigmaPortalRoute page="ap-lawyers" />} />
-          <Route path="/admin/clients" element={<FigmaPortalRoute page="ap-clients" />} />
-          <Route path="/admin/roles" element={<FigmaPortalRoute page="ap-roles" />} />
-          <Route path="/admin/ai-models" element={<FigmaPortalRoute page="ap-ai-model" />} />
-          <Route path="/admin/datasets" element={<FigmaPortalRoute page="ap-datasets" />} />
-          <Route path="/admin/knowledge" element={<FigmaPortalRoute page="ap-knowledge" />} />
-          <Route path="/admin/analytics" element={<FigmaPortalRoute page="ap-analytics" />} />
-          <Route path="/admin/audit" element={<FigmaPortalRoute page="ap-audit" />} />
-          <Route path="/admin/security" element={<FigmaPortalRoute page="ap-security" />} />
-          <Route path="/admin/api" element={<FigmaPortalRoute page="ap-api" />} />
-          <Route path="/admin/billing" element={<FigmaPortalRoute page="ap-billing" />} />
-          <Route path="/admin/support" element={<FigmaPortalRoute page="ap-support" />} />
-          <Route path="/admin/cms" element={<FigmaPortalRoute page="ap-cms" />} />
-          <Route path="/admin/settings" element={<FigmaPortalRoute page="ap-settings" />} />
-          <Route path="/admin/backup" element={<FigmaPortalRoute page="ap-backup" />} />
-          <Route path="/admin/health" element={<FigmaPortalRoute page="ap-health" />} />
-          <Route path="/admin/reports" element={<FigmaPortalRoute page="ap-reports" />} />
+          {/* Admin routes require the server-assigned role. */}
+          <Route element={<AdminRoute />}>
+            <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/admin/users" element={<AdminDashboard />} />
+            <Route path="/admin/lawyers" element={<FigmaPortalRoute page="ap-lawyers" />} />
+            <Route path="/admin/clients" element={<FigmaPortalRoute page="ap-clients" />} />
+            <Route path="/admin/roles" element={<FigmaPortalRoute page="ap-roles" />} />
+            <Route path="/admin/ai-models" element={<FigmaPortalRoute page="ap-ai-model" />} />
+            <Route path="/admin/datasets" element={<FigmaPortalRoute page="ap-datasets" />} />
+            <Route path="/admin/knowledge" element={<FigmaPortalRoute page="ap-knowledge" />} />
+            <Route path="/admin/analytics" element={<FigmaPortalRoute page="ap-analytics" />} />
+            <Route path="/admin/audit" element={<FigmaPortalRoute page="ap-audit" />} />
+            <Route path="/admin/security" element={<FigmaPortalRoute page="ap-security" />} />
+            <Route path="/admin/api" element={<FigmaPortalRoute page="ap-api" />} />
+            <Route path="/admin/billing" element={<FigmaPortalRoute page="ap-billing" />} />
+            <Route path="/admin/support" element={<FigmaPortalRoute page="ap-support" />} />
+            <Route path="/admin/cms" element={<FigmaPortalRoute page="ap-cms" />} />
+            <Route path="/admin/settings" element={<FigmaPortalRoute page="ap-settings" />} />
+            <Route path="/admin/backup" element={<FigmaPortalRoute page="ap-backup" />} />
+            <Route path="/admin/health" element={<FigmaPortalRoute page="ap-health" />} />
+            <Route path="/admin/reports" element={<FigmaPortalRoute page="ap-reports" />} />
+          </Route>
           {/* Preview screens */}
           <Route path="/workspace" element={<Workspace />} />
           <Route path="/prediction" element={<Prediction />} />
