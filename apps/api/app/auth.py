@@ -51,3 +51,12 @@ def get_current_user(
     if user is None:
         raise HTTPException(status_code=401, detail="User no longer exists.")
     return user
+
+
+def require_admin(current_user: User = Depends(get_current_user)) -> User:
+    """Gate for platform-admin-only endpoints. Raises 403 for any user
+    whose role isn't 'admin' -- there is no self-service way to become an
+    admin; it's set directly in the database (see admin.py router docstring)."""
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required.")
+    return current_user

@@ -13,7 +13,7 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 def _auth_response(user: User) -> dict:
     return {
         "token": create_token(user.id),
-        "user": {"id": user.id, "email": user.email, "name": user.name},
+        "user": {"id": user.id, "email": user.email, "name": user.name, "role": user.role},
     }
 
 
@@ -39,4 +39,4 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
 
 @router.get("/me", response_model=UserOut)
 def me(current_user: User = Depends(get_current_user)):
-    return {"id": current_user.id, "email": current_user.email, "name": current_user.name}
+    return {"id": current_user.id, "email": current_user.email, "name": current_user.name, "role": current_user.role}

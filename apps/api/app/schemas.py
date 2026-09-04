@@ -18,6 +18,7 @@ class UserOut(BaseModel):
     id: int
     email: str
     name: str
+    role: str = "lawyer"
 
 
 class AuthResponse(BaseModel):
@@ -166,3 +167,20 @@ class ContradictionsResponse(BaseModel):
     pairs: list[ContradictionPair]
     documents_analyzed: int
     disclaimer: str
+
+
+class AdminStatsOut(BaseModel):
+    total_users: int
+    total_cases: int
+    total_documents: int
+    active_cases: int
+
+
+class AdminUserOut(BaseModel):
+    id: int
+    email: str
+    name: str
+    role: str
+    created_at: str
+    case_count: int
+    document_count: int

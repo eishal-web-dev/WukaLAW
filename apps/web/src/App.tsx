@@ -1,6 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import AppShell from './components/AppShell'
-import { ProtectedRoute, GuestRoute } from './components/RouteGuards'
+import { ProtectedRoute, GuestRoute, AdminRoute } from './components/RouteGuards'
 
 // Public marketing pages
 import Landing from './pages/Landing'
@@ -45,7 +45,7 @@ import Reports from './pages/Reports'
 import Analytics from './pages/Analytics'
 import Notifications from './pages/Notifications'
 import Settings from './pages/Settings'
-import Admin from './pages/Admin'
+import AdminDashboard from './pages/AdminDashboard'
 
 export default function App() {
   return (
@@ -95,7 +95,9 @@ export default function App() {
           <Route path="/analytics" element={<Analytics />} />
           <Route path="/notifications" element={<Notifications />} />
           <Route path="/settings" element={<Settings />} />
-          <Route path="/admin" element={<Admin />} />
+          <Route element={<AdminRoute />}>
+            <Route path="/admin" element={<AdminDashboard />} />
+          </Route>
         </Route>
       </Route>
 
