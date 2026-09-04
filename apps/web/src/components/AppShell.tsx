@@ -51,10 +51,15 @@ const NAV_GROUPS: {
       { path: '/notifications', label: 'Notifications', icon: <Bell size={16} /> },
       { path: '/profile', label: 'Profile', icon: <User size={16} /> },
       { path: '/settings', label: 'Settings', icon: <Settings size={16} /> },
-      { path: '/admin', label: 'Admin', icon: <Shield size={16} /> },
     ],
   },
 ]
+
+const ADMIN_NAV_ITEM: { path: string; label: string; icon: React.ReactNode; badge?: number } = {
+  path: '/admin',
+  label: 'Admin',
+  icon: <Shield size={16} />,
+}
 
 const TITLES: Record<string, string> = {
   '/dashboard': 'Dashboard',
@@ -97,6 +102,15 @@ function Sidebar({
   const { user, logout } = useAuth()
   const displayName = user?.name || 'WukaLAW User'
 
+  // Admin link only shows for admins -- there's no self-service way to
+  // become one, so showing it to everyone would just be a dead end for
+  // non-admins (AdminRoute redirects them straight back to /dashboard).
+  const groups = user?.role === 'admin'
+    ? NAV_GROUPS.map((group) =>
+        group.label === 'Account' ? { ...group, items: [...group.items, ADMIN_NAV_ITEM] } : group,
+      )
+    : NAV_GROUPS
+
   return (
     <div
       className={`flex flex-col h-full transition-all duration-300 border-r border-sidebar-border bg-sidebar flex-shrink-0 ${collapsed ? 'w-[60px]' : 'w-[220px]'}`}
@@ -122,7 +136,7 @@ function Sidebar({
       </button>
 
       <nav className="flex-1 overflow-y-auto py-4 px-2 space-y-5">
-        {NAV_GROUPS.map((group) => (
+        {groups.map((group) => (
           <div key={group.label}>
             {!collapsed && (
               <div className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50 px-2 mb-2">

@@ -167,7 +167,7 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
       {!collapsed && (
         <div className="px-2.5 pt-2.5 pb-1">
           <div className="flex rounded-lg overflow-hidden border border-sidebar-border">
-            {(['lawyer', 'client', 'admin'] as Portal[]).map((item) => (
+            {(['lawyer', 'client', 'admin'] as Portal[]).filter((item) => item !== 'admin' || user?.role === 'admin').map((item) => (
               <button type="button" key={item} onClick={() => navigate(item === 'lawyer' ? '/dashboard' : item === 'client' ? '/client' : '/admin')} className="flex-1 py-1.5 text-[9px] font-bold uppercase tracking-wider transition-all" style={portal === item ? { background: PORTAL_COLOR[item], color: '#07090F' } : { color: 'var(--muted-foreground)' }}>
                 {item === 'lawyer' ? 'Law' : item === 'client' ? 'Client' : 'Admin'}
               </button>
@@ -181,7 +181,7 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
           <div key={group.label}>
             {!collapsed && <div className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground/40 px-2 mb-1.5 mt-1">{group.label}</div>}
             <div className="space-y-px">
-              {group.items.map((item) => {
+              {group.items.filter((item) => !item.path.startsWith('/admin') || user?.role === 'admin').map((item) => {
                 const Icon = item.icon
                 const active = pathname === item.path || (!['/client', '/admin'].includes(item.path) && pathname.startsWith(`${item.path}/`))
                 const badge = item.notificationBadge ? unreadCount : 0

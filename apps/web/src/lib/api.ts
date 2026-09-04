@@ -80,6 +80,7 @@ export interface User {
   id: number
   email: string
   name: string
+  role: string
 }
 
 export interface AuthResponse {
@@ -562,6 +563,37 @@ export function createCase(payload: CaseCreatePayload): Promise<Case> {
 /** GET /cases */
 export function listCases(): Promise<CaseListResponse> {
   return request<CaseListResponse>('/cases')
+}
+
+// ---------------------------------------------------------------------------
+// Admin (requires role === 'admin' on the backend; returns 403 otherwise)
+// ---------------------------------------------------------------------------
+
+export interface AdminStats {
+  total_users: number
+  total_cases: number
+  total_documents: number
+  active_cases: number
+}
+
+export interface AdminUser {
+  id: number
+  email: string
+  name: string
+  role: string
+  created_at: string
+  case_count: number
+  document_count: number
+}
+
+/** GET /admin/stats */
+export function adminGetStats(): Promise<AdminStats> {
+  return request<AdminStats>('/admin/stats')
+}
+
+/** GET /admin/users */
+export function adminListUsers(): Promise<AdminUser[]> {
+  return request<AdminUser[]>('/admin/users')
 }
 
 /** GET /cases/{id} */
