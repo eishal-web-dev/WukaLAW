@@ -14,8 +14,9 @@ import { useNotifications } from '../lib/notifications'
 import { useTheme } from '../lib/theme'
 import { wukaIcon } from '../figma/assets'
 import { Avatar, G } from './design'
+import { portalForRole, portalHome, PORTAL_LABELS } from '../lib/portals'
+import type { Portal } from '../lib/portals'
 
-type Portal = 'lawyer' | 'client' | 'admin'
 type NavItem = { path: string; label: string; icon: LucideIcon; notificationBadge?: boolean }
 type NavGroup = { label: string; items: NavItem[] }
 
@@ -56,7 +57,6 @@ const LAWYER_NAV: NavGroup[] = [
     { path: '/billing', label: 'Billing', icon: CreditCard },
     { path: '/profile', label: 'Profile', icon: User },
     { path: '/settings', label: 'Settings', icon: Settings },
-    { path: '/admin', label: 'Admin Panel', icon: ShieldCheck },
   ] },
 ]
 
@@ -130,12 +130,6 @@ const ADMIN_NAV: NavGroup[] = [
 
 const PORTAL_COLOR: Record<Portal, string> = { lawyer: G, client: '#60A5FA', admin: '#7C3AED' }
 
-function portalFor(pathname: string): Portal {
-  if (pathname === '/client' || pathname.startsWith('/client/')) return 'client'
-  if (pathname === '/admin' || pathname.startsWith('/admin/')) return 'admin'
-  return 'lawyer'
-}
-
 function groupsFor(portal: Portal): NavGroup[] {
   return portal === 'client' ? CLIENT_NAV : portal === 'admin' ? ADMIN_NAV : LAWYER_NAV
 }
@@ -153,26 +147,20 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
   const { pathname } = useLocation()
   const { user, logout } = useAuth()
   const { unreadCount } = useNotifications()
-  const portal = portalFor(pathname)
+  const portal = portalForRole(user?.role)
   const accent = PORTAL_COLOR[portal]
   const displayName = user?.name || 'WukaLAW User'
 
   return (
     <aside className={`flex flex-col h-full transition-all duration-300 border-r border-sidebar-border bg-sidebar flex-shrink-0 ${collapsed ? 'w-[60px]' : 'w-[230px]'}`}>
-      <button type="button" onClick={() => navigate(portal === 'client' ? '/client' : portal === 'admin' ? '/admin' : '/dashboard')} className="flex items-center gap-2.5 px-3 py-3.5 border-b border-sidebar-border text-left">
+      <button type="button" onClick={() => navigate(portalHome(portal))} className="flex items-center gap-2.5 px-3 py-3.5 border-b border-sidebar-border text-left">
         <img src={wukaIcon} alt="WukaLAW" className="flex-shrink-0" style={{ width: 46, height: 46, objectFit: 'contain' }} />
         {!collapsed && <div className="min-w-0"><div className="text-sm font-bold text-foreground tracking-tight leading-tight">WukaLAW</div><div className="text-[9px] font-semibold uppercase tracking-widest leading-tight" style={{ color: accent }}>AI Legal Intelligence</div></div>}
       </button>
 
       {!collapsed && (
-        <div className="px-2.5 pt-2.5 pb-1">
-          <div className="flex rounded-lg overflow-hidden border border-sidebar-border">
-            {(['lawyer', 'client', 'admin'] as Portal[]).filter((item) => item !== 'admin' || user?.role === 'admin').map((item) => (
-              <button type="button" key={item} onClick={() => navigate(item === 'lawyer' ? '/dashboard' : item === 'client' ? '/client' : '/admin')} className="flex-1 py-1.5 text-[9px] font-bold uppercase tracking-wider transition-all" style={portal === item ? { background: PORTAL_COLOR[item], color: '#07090F' } : { color: 'var(--muted-foreground)' }}>
-                {item === 'lawyer' ? 'Law' : item === 'client' ? 'Client' : 'Admin'}
-              </button>
-            ))}
-          </div>
+        <div className="px-4 pt-4 pb-1 text-xs font-semibold" style={{ color: accent }}>
+          {PORTAL_LABELS[portal]} portal
         </div>
       )}
 
@@ -181,7 +169,7 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
           <div key={group.label}>
             {!collapsed && <div className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground/40 px-2 mb-1.5 mt-1">{group.label}</div>}
             <div className="space-y-px">
-              {group.items.filter((item) => !item.path.startsWith('/admin') || user?.role === 'admin').map((item) => {
+              {group.items.map((item) => {
                 const Icon = item.icon
                 const active = pathname === item.path || (!['/client', '/admin'].includes(item.path) && pathname.startsWith(`${item.path}/`))
                 const badge = item.notificationBadge ? unreadCount : 0

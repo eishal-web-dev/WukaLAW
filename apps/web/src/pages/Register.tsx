@@ -1,15 +1,20 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Scale, User, Mail, Lock, Sun, Moon } from 'lucide-react'
 import { useAuth } from '../lib/auth'
 import { errorMessage } from '../lib/api'
 import { usePublicTokens } from '../components/PublicShell'
 import { Btn, Input } from '../components/design'
 import ErrorAlert from '../components/ErrorAlert'
+import PortalSelector from '../components/PortalSelector'
+import { portalHome } from '../lib/portals'
+import type { SignupRole } from '../lib/portals'
 
 export default function Register() {
   const navigate = useNavigate()
   const { register } = useAuth()
+  const [searchParams] = useSearchParams()
+  const [role, setRole] = useState<SignupRole>(() => searchParams.get('portal') === 'client' ? 'client' : 'lawyer')
   const { dark, toggleDark, BG, CARDBG, TX, TX2, GA, BD } = usePublicTokens()
   const [form, setForm] = useState({ name: '', email: '', password: '' })
   const [error, setError] = useState<string | null>(null)
@@ -29,8 +34,8 @@ export default function Register() {
     }
     setSubmitting(true)
     try {
-      await register(form.email.trim(), form.name.trim(), form.password)
-      navigate('/dashboard', { replace: true })
+      const user = await register(form.email.trim(), form.name.trim(), form.password, role)
+      navigate(portalHome(user.role), { replace: true })
     } catch (err) {
       setError(errorMessage(err))
     } finally {
@@ -61,18 +66,19 @@ export default function Register() {
           <h2 style={{ fontSize: 20, fontWeight: 700, color: TX, marginBottom: 4 }}>Create your account</h2>
           <p style={{ color: TX2, fontSize: 14, marginBottom: 24 }}>Start using WukaLAW's explainable AI legal intelligence.</p>
           <div className="space-y-4">
+            <PortalSelector value={role} onChange={(value) => { if (value !== 'admin') setRole(value) }} includeAdmin={false} disabled={submitting} />
             {error && <ErrorAlert message={error} />}
             <div>
-              <label style={{ fontSize: 12, fontWeight: 500, color: TX2, display: 'block', marginBottom: 6 }}>Full name</label>
-              <Input placeholder="Alexandra Weiss" value={form.name} onChange={set('name')} icon={<User size={14} />} required />
+              <label htmlFor="register-name" style={{ fontSize: 12, fontWeight: 500, color: TX2, display: 'block', marginBottom: 6 }}>Full name</label>
+              <Input id="register-name" autoComplete="name" placeholder="Alexandra Weiss" value={form.name} onChange={set('name')} icon={<User size={14} />} required />
             </div>
             <div>
-              <label style={{ fontSize: 12, fontWeight: 500, color: TX2, display: 'block', marginBottom: 6 }}>Work email</label>
-              <Input placeholder="you@lawfirm.com" value={form.email} onChange={set('email')} type="email" icon={<Mail size={14} />} required />
+              <label htmlFor="register-email" style={{ fontSize: 12, fontWeight: 500, color: TX2, display: 'block', marginBottom: 6 }}>Email address</label>
+              <Input id="register-email" autoComplete="email" placeholder="you@lawfirm.com" value={form.email} onChange={set('email')} type="email" icon={<Mail size={14} />} required />
             </div>
             <div>
-              <label style={{ fontSize: 12, fontWeight: 500, color: TX2, display: 'block', marginBottom: 6 }}>Password</label>
-              <Input placeholder="At least 8 characters" value={form.password} onChange={set('password')} type="password" icon={<Lock size={14} />} required />
+              <label htmlFor="register-password" style={{ fontSize: 12, fontWeight: 500, color: TX2, display: 'block', marginBottom: 6 }}>Password</label>
+              <Input id="register-password" autoComplete="new-password" placeholder="At least 8 characters" value={form.password} onChange={set('password')} type="password" icon={<Lock size={14} />} required />
             </div>
           </div>
           <Btn type="submit" className="w-full justify-center mt-6" size="lg" disabled={submitting}>
@@ -80,7 +86,7 @@ export default function Register() {
           </Btn>
           <p style={{ textAlign: 'center', fontSize: 14, color: TX2, marginTop: 20 }}>
             Already have an account?{' '}
-            <button type="button" onClick={() => navigate('/login')} style={{ fontWeight: 500, color: GA, background: 'none', border: 'none', cursor: 'pointer' }}>
+            <button type="button" onClick={() => navigate(`/login?portal=${role}`)} style={{ fontWeight: 500, color: GA, background: 'none', border: 'none', cursor: 'pointer' }}>
               Sign in
             </button>
           </p>

@@ -184,11 +184,25 @@ const DESTINATIONS: Record<string, string> = {
   'ap-reports': '/admin/reports',
 }
 
+const CLIENT_DESTINATIONS: Record<string, string> = {
+  dashboard: '/client',
+  cases: '/client/cases',
+  workspace: '/client/workspace',
+  evidence: '/client/evidence',
+  prediction: '/client/predictions',
+  'similar-cases': '/client/similar-cases',
+  explainable: '/client/explainable',
+  reports: '/client/downloads',
+}
+
 export default function FigmaPortalPage({ page }: { page: string }) {
   const navigate = useNavigate()
   const Page = PAGES[page] ?? LPDashboardV2
   const navigateFromFigma = (destination: string) => {
-    navigate(DESTINATIONS[destination] ?? `/${destination}`)
+    const portalDestination = page.startsWith('cp-')
+      ? CLIENT_DESTINATIONS[destination]
+      : page.startsWith('ap-') && destination === 'dashboard' ? '/admin' : undefined
+    navigate(portalDestination ?? DESTINATIONS[destination] ?? `/${destination}`)
   }
 
   return <Page navigate={navigateFromFigma} current={page} />

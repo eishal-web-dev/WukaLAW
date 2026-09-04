@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -7,11 +8,13 @@ class RegisterRequest(BaseModel):
     email: str = Field(min_length=5, max_length=255, pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
     name: str = Field(min_length=2, max_length=100)
     password: str = Field(min_length=8, max_length=128)
+    role: Literal["client", "lawyer"] = "lawyer"
 
 
 class LoginRequest(BaseModel):
     email: str
     password: str
+    portal: Literal["client", "lawyer", "admin"] | None = None
 
 
 class UserOut(BaseModel):

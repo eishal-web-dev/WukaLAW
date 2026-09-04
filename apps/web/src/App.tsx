@@ -1,7 +1,7 @@
 import { lazy, Suspense } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import AppShell from './components/FigmaAppShell'
-import { ProtectedRoute, GuestRoute, AdminRoute } from './components/RouteGuards'
+import { ProtectedRoute, GuestRoute, AdminRoute, PortalRoute } from './components/RouteGuards'
 
 // Auth
 import Login from './pages/Login'
@@ -68,7 +68,7 @@ export default function App() {
       <Route path="/privacy" element={<FigmaPublicRoute page="privacy" />} />
       <Route path="/terms" element={<FigmaPublicRoute page="terms" />} />
 
-      {/* Auth (redirect to /dashboard when already signed in) */}
+      {/* Signed-in users return to their own portal. */}
       <Route element={<GuestRoute />}>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
@@ -78,7 +78,6 @@ export default function App() {
       {/* Authenticated app */}
       <Route element={<ProtectedRoute />}>
         <Route element={<AppShell />}>
-          <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/cases" element={<Cases />} />
           <Route path="/cases/:id" element={<CaseDetail />} />
           <Route path="/documents" element={<Documents />} />
@@ -88,32 +87,42 @@ export default function App() {
           <Route path="/similar-cases" element={<SimilarCases />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/notifications" element={<Notifications />} />
-          {/* Complete Figma Make lawyer portal */}
-          <Route path="/clients" element={<FigmaPortalRoute page="lp-clients" />} />
-          <Route path="/clients/detail" element={<FigmaPortalRoute page="lp-client-detail" />} />
-          <Route path="/hearings" element={<FigmaPortalRoute page="lp-hearings" />} />
-          <Route path="/calendar" element={<FigmaPortalRoute page="lp-calendar" />} />
-          <Route path="/tasks" element={<FigmaPortalRoute page="lp-tasks" />} />
-          <Route path="/ai-strategy" element={<FigmaPortalRoute page="lp-ai-strategy" />} />
-          <Route path="/research" element={<FigmaPortalRoute page="lp-research" />} />
-          <Route path="/strategy" element={<FigmaPortalRoute page="lp-strategy" />} />
-          <Route path="/report-generator" element={<FigmaPortalRoute page="lp-report-gen" />} />
-          <Route path="/messages" element={<FigmaPortalRoute page="lp-messages" />} />
-          <Route path="/team" element={<FigmaPortalRoute page="lp-team" />} />
           <Route path="/billing" element={<FigmaPortalRoute page="lp-billing" />} />
-          {/* Complete Figma Make client portal */}
-          <Route path="/client" element={<FigmaPortalRoute page="cp-dashboard" />} />
-          <Route path="/client/cases" element={<FigmaPortalRoute page="cp-cases" />} />
-          <Route path="/client/search" element={<FigmaPortalRoute page="cp-search" />} />
-          <Route path="/client/workspace" element={<FigmaPortalRoute page="cp-workspace" />} />
-          <Route path="/client/upload" element={<FigmaPortalRoute page="cp-upload" />} />
-          <Route path="/client/evidence" element={<FigmaPortalRoute page="cp-evidence" />} />
-          <Route path="/client/ai-summary" element={<FigmaPortalRoute page="cp-ai-summary" />} />
-          <Route path="/client/similar-cases" element={<FigmaPortalRoute page="cp-similar" />} />
-          <Route path="/client/predictions" element={<FigmaPortalRoute page="cp-predictions" />} />
-          <Route path="/client/explainable" element={<FigmaPortalRoute page="cp-explainable" />} />
-          <Route path="/client/report-generator" element={<FigmaPortalRoute page="cp-report-gen" />} />
-          <Route path="/client/downloads" element={<FigmaPortalRoute page="cp-downloads" />} />
+          {/* Lawyer-only screens */}
+          <Route element={<PortalRoute portal="lawyer" />}>
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/clients" element={<FigmaPortalRoute page="lp-clients" />} />
+            <Route path="/clients/detail" element={<FigmaPortalRoute page="lp-client-detail" />} />
+            <Route path="/hearings" element={<FigmaPortalRoute page="lp-hearings" />} />
+            <Route path="/calendar" element={<FigmaPortalRoute page="lp-calendar" />} />
+            <Route path="/tasks" element={<FigmaPortalRoute page="lp-tasks" />} />
+            <Route path="/ai-strategy" element={<FigmaPortalRoute page="lp-ai-strategy" />} />
+            <Route path="/research" element={<FigmaPortalRoute page="lp-research" />} />
+            <Route path="/strategy" element={<FigmaPortalRoute page="lp-strategy" />} />
+            <Route path="/report-generator" element={<FigmaPortalRoute page="lp-report-gen" />} />
+            <Route path="/messages" element={<FigmaPortalRoute page="lp-messages" />} />
+            <Route path="/team" element={<FigmaPortalRoute page="lp-team" />} />
+            <Route path="/workspace" element={<Workspace />} />
+            <Route path="/prediction" element={<Prediction />} />
+            <Route path="/explainable" element={<Explainable />} />
+            <Route path="/reports" element={<Reports />} />
+            <Route path="/analytics" element={<Analytics />} />
+          </Route>
+          {/* Client-only screens */}
+          <Route element={<PortalRoute portal="client" />}>
+            <Route path="/client" element={<FigmaPortalRoute page="cp-dashboard" />} />
+            <Route path="/client/cases" element={<FigmaPortalRoute page="cp-cases" />} />
+            <Route path="/client/search" element={<FigmaPortalRoute page="cp-search" />} />
+            <Route path="/client/workspace" element={<FigmaPortalRoute page="cp-workspace" />} />
+            <Route path="/client/upload" element={<FigmaPortalRoute page="cp-upload" />} />
+            <Route path="/client/evidence" element={<FigmaPortalRoute page="cp-evidence" />} />
+            <Route path="/client/ai-summary" element={<FigmaPortalRoute page="cp-ai-summary" />} />
+            <Route path="/client/similar-cases" element={<FigmaPortalRoute page="cp-similar" />} />
+            <Route path="/client/predictions" element={<FigmaPortalRoute page="cp-predictions" />} />
+            <Route path="/client/explainable" element={<FigmaPortalRoute page="cp-explainable" />} />
+            <Route path="/client/report-generator" element={<FigmaPortalRoute page="cp-report-gen" />} />
+            <Route path="/client/downloads" element={<FigmaPortalRoute page="cp-downloads" />} />
+          </Route>
           {/* Admin routes require the server-assigned role. */}
           <Route element={<AdminRoute />}>
             <Route path="/admin" element={<AdminDashboard />} />
@@ -136,13 +145,8 @@ export default function App() {
             <Route path="/admin/health" element={<FigmaPortalRoute page="ap-health" />} />
             <Route path="/admin/reports" element={<FigmaPortalRoute page="ap-reports" />} />
           </Route>
-          {/* Preview screens */}
-          <Route path="/workspace" element={<Workspace />} />
-          <Route path="/prediction" element={<Prediction />} />
-          <Route path="/explainable" element={<Explainable />} />
+          {/* Shared timeline and preferences keep the account portal shell. */}
           <Route path="/timeline" element={<Timeline />} />
-          <Route path="/reports" element={<Reports />} />
-          <Route path="/analytics" element={<Analytics />} />
           <Route path="/settings" element={<Settings />} />
         </Route>
       </Route>

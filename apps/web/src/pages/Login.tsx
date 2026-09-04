@@ -1,15 +1,23 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Scale, Star, Mail, Lock, Sun, Moon } from 'lucide-react'
 import { useAuth } from '../lib/auth'
 import { errorMessage } from '../lib/api'
 import { usePublicTokens } from '../components/PublicShell'
 import { Avatar, Btn, Input } from '../components/design'
 import ErrorAlert from '../components/ErrorAlert'
+import PortalSelector from '../components/PortalSelector'
+import { isPortal, portalHome, PORTAL_LABELS } from '../lib/portals'
+import type { Portal } from '../lib/portals'
 
 export default function Login() {
   const navigate = useNavigate()
   const { login } = useAuth()
+  const [searchParams] = useSearchParams()
+  const [portal, setPortal] = useState<Portal | null>(() => {
+    const value = searchParams.get('portal')
+    return isPortal(value) ? value : null
+  })
   const { dark, toggleDark, BG, SURF, TX, TX2, GA, BD } = usePublicTokens()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -19,14 +27,18 @@ export default function Login() {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
+    if (!portal) {
+      setError('Choose Client, Lawyer, or Admin to continue.')
+      return
+    }
     if (!email.trim() || !password) {
       setError('Please enter your email and password.')
       return
     }
     setSubmitting(true)
     try {
-      await login(email.trim(), password)
-      navigate('/dashboard', { replace: true })
+      const user = await login(email.trim(), password, portal)
+      navigate(portalHome(user.role), { replace: true })
     } catch (err) {
       setError(errorMessage(err))
     } finally {
@@ -82,29 +94,31 @@ export default function Login() {
             <span style={{ color: TX, fontWeight: 700, fontSize: 18 }}>WukaLAW</span>
           </div>
           <h2 style={{ fontSize: 24, fontWeight: 700, color: TX, marginBottom: 4 }}>Welcome back</h2>
-          <p style={{ color: TX2, fontSize: 14, marginBottom: 32 }}>Sign in to your WukaLAW account</p>
+          <p style={{ color: TX2, fontSize: 14, marginBottom: 32 }}>Choose your portal, then sign in to your account.</p>
 
           <form onSubmit={submit} className="space-y-4">
+            <PortalSelector value={portal} onChange={(value) => { setPortal(value); setError(null) }} disabled={submitting} />
+            {portal === 'admin' && <p className="text-xs" style={{ color: TX2 }}>Admin sign-in is for authorized administrators only.</p>}
             {error && <ErrorAlert message={error} />}
             <div>
-              <label style={{ fontSize: 12, fontWeight: 500, color: TX2, display: 'block', marginBottom: 6 }}>Email address</label>
-              <Input placeholder="you@lawfirm.com" value={email} onChange={setEmail} type="email" icon={<Mail size={14} />} required />
+              <label htmlFor="login-email" style={{ fontSize: 12, fontWeight: 500, color: TX2, display: 'block', marginBottom: 6 }}>Email address</label>
+              <Input id="login-email" autoComplete="username" placeholder="you@example.com" value={email} onChange={setEmail} type="email" icon={<Mail size={14} />} required />
             </div>
             <div>
-              <label style={{ fontSize: 12, fontWeight: 500, color: TX2, display: 'block', marginBottom: 6 }}>Password</label>
-              <Input placeholder="••••••••" value={password} onChange={setPassword} type="password" icon={<Lock size={14} />} required />
+              <label htmlFor="login-password" style={{ fontSize: 12, fontWeight: 500, color: TX2, display: 'block', marginBottom: 6 }}>Password</label>
+              <Input id="login-password" autoComplete="current-password" placeholder="••••••••" value={password} onChange={setPassword} type="password" icon={<Lock size={14} />} required />
             </div>
-            <Btn type="submit" className="w-full justify-center" size="lg" disabled={submitting}>
-              {submitting ? 'Signing in…' : 'Sign in to WukaLAW'}
+            <Btn type="submit" className="w-full justify-center" size="lg" disabled={submitting || !portal}>
+              {submitting ? 'Signing in…' : portal ? `Sign in as ${PORTAL_LABELS[portal]}` : 'Choose a portal to continue'}
             </Btn>
           </form>
 
-          <p style={{ textAlign: 'center', fontSize: 14, color: TX2, marginTop: 32 }}>
+          {portal !== 'admin' && <p style={{ textAlign: 'center', fontSize: 14, color: TX2, marginTop: 32 }}>
             No account?{' '}
-            <button onClick={() => navigate('/register')} style={{ fontWeight: 500, color: GA, background: 'none', border: 'none', cursor: 'pointer' }}>
+            <button onClick={() => navigate(portal ? `/register?portal=${portal}` : '/register')} style={{ fontWeight: 500, color: GA, background: 'none', border: 'none', cursor: 'pointer' }}>
               Create one
             </button>
-          </p>
+          </p>}
         </div>
       </div>
     </div>

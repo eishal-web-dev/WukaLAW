@@ -23,7 +23,7 @@ def register(request: RegisterRequest, db: Session = Depends(get_db)):
     email = request.email.lower().strip()
     if db.scalar(select(User).where(User.email == email)):
         raise HTTPException(status_code=409, detail="An account with this email already exists.")
-    user = User(email=email, name=request.name.strip(), password_hash=hash_password(request.password))
+    user = User(email=email, name=request.name.strip(), password_hash=hash_password(request.password), role=request.role)
     db.add(user)
     db.flush()
     create_notification(
@@ -32,7 +32,7 @@ def register(request: RegisterRequest, db: Session = Depends(get_db)):
         notification_type="system",
         title="Welcome to WukaLAW",
         body="Your secure legal workspace is ready. Create a case or upload a document to get started.",
-        action_url="/dashboard",
+        action_url="/client" if user.role == "client" else "/dashboard",
     )
     db.commit()
     db.refresh(user)
@@ -44,6 +44,8 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
     user = db.scalar(select(User).where(User.email == request.email.lower().strip()))
     if user is None or not verify_password(request.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Invalid email or password.")
+    if request.portal is not None and user.role != request.portal:
+        raise HTTPException(status_code=403, detail="This account does not have access to the selected portal. Choose your account's portal to sign in.")
     return _auth_response(user)
 
 

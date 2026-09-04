@@ -66,6 +66,10 @@ def test_registration_cannot_grant_admin_and_role_survives_login(client):
     response = client.post('/api/v1/auth/register', json={
         'email': 'role@example.com', 'name': 'Role Test', 'password': 'secret123', 'role': 'admin',
     })
+    assert response.status_code == 422, response.text
+    response = client.post('/api/v1/auth/register', json={
+        'email': 'role@example.com', 'name': 'Role Test', 'password': 'secret123', 'role': 'lawyer',
+    })
     assert response.status_code == 201, response.text
     assert response.json()['user']['role'] == 'lawyer'
     headers = {'Authorization': f"Bearer {response.json()['token']}"}

@@ -133,6 +133,8 @@ export function KPICard({
 }
 
 export function Input({
+  id,
+  autoComplete,
   placeholder,
   value,
   onChange,
@@ -141,6 +143,8 @@ export function Input({
   className = '',
   required,
 }: {
+  id?: string
+  autoComplete?: string
   placeholder?: string
   value?: string
   onChange?: (v: string) => void
@@ -155,6 +159,8 @@ export function Input({
         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">{icon}</span>
       )}
       <input
+        id={id}
+        autoComplete={autoComplete}
         type={type}
         placeholder={placeholder}
         value={value}
