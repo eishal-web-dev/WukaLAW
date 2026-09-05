@@ -11,6 +11,7 @@ import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
 import ClientDashboard from './pages/ClientDashboard'
 import ClientCases from './pages/ClientCases'
+import ClientWorkspace from './pages/ClientWorkspace'
 import Cases from './pages/Cases'
 import CaseDetail from './pages/CaseDetail'
 import Documents from './pages/Documents'
@@ -114,7 +115,7 @@ export default function App() {
           <Route element={<PortalRoute portal="client" />}>
             <Route path="/client" element={<ClientDashboard />} />
             <Route path="/client/cases" element={<ClientCases />} />
-            <Route path="/client/cases/:caseId/workspace" element={<FigmaPortalRoute page="cp-workspace" />} />
+            <Route path="/client/cases/:caseId/workspace" element={<ClientWorkspace />} />
             <Route path="/client/search" element={<FigmaPortalRoute page="cp-search" />} />
             <Route path="/client/workspace" element={<FigmaPortalRoute page="cp-workspace" />} />
             <Route path="/client/upload" element={<FigmaPortalRoute page="cp-upload" />} />

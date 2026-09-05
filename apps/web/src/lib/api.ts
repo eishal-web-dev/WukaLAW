@@ -543,6 +543,22 @@ export async function askQuestion(
   }
 }
 
+/**
+ * POST /ask — searches a user's OWN uploaded documents (Chunk/Document
+ * records), not the shared public legal corpus askQuestion() searches.
+ * This is the correct function for "ask AI about this specific case":
+ * it's authenticated (uses request(), which attaches the auth header)
+ * and, for a client-role user, requires caseId and is scoped to only
+ * that case's documents by the backend (see api/routers/qa.py).
+ */
+export function askCaseQuestion(question: string, caseId?: number): Promise<AskResponse> {
+  return request<AskResponse>('/ask', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ question, case_id: caseId ?? null }),
+  })
+}
+
 /** POST /similar-cases */
 export function findSimilarCases(
   query: string,
