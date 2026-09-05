@@ -14,6 +14,7 @@ vi.mock('../../lib/auth', () => ({ useAuth: () => auth }))
 vi.mock('../../lib/notifications', () => ({ useNotifications: () => ({ unreadCount: 0 }) }))
 vi.mock('../../lib/theme', () => ({ useTheme: () => ({ dark: true, toggleDark: vi.fn() }) }))
 vi.mock('../Dashboard', () => ({ default: () => <h1>Lawyer dashboard</h1> }))
+vi.mock('../ClientDashboard', () => ({ default: () => <h1>Client dashboard</h1> }))
 vi.mock('../../figma/FigmaPortalPage', () => ({ default: ({ page }: { page: string }) => <h1>{page}</h1> }))
 vi.mock('../Profile', () => ({ default: () => <h1>Shared profile</h1> }))
 vi.mock('../Login', () => ({ default: () => <h1>Sign in</h1> }))
@@ -81,7 +82,7 @@ describe('Separate account portals', () => {
   it.each(['/dashboard', '/clients', '/admin', '/admin/users'])('keeps clients out of %s', async (path) => {
     auth.user.role = 'client'
     open(path)
-    expect(await screen.findByRole('heading', { name: 'cp-dashboard' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Client dashboard' })).toBeInTheDocument()
     expect(screen.getByText('Client portal')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Admin' })).not.toBeInTheDocument()
     expect(api.adminGetStats).not.toHaveBeenCalled()
@@ -103,7 +104,7 @@ describe('Separate account portals', () => {
   })
 
   it.each([
-    ['client', 'cp-dashboard'], ['lawyer', 'Lawyer dashboard'], ['admin', 'Platform Admin'],
+    ['client', 'Client dashboard'], ['lawyer', 'Lawyer dashboard'], ['admin', 'Platform Admin'],
   ])('returns a signed-in %s to the right home from login', async (role, heading) => {
     auth.user.role = role
     open('/login')

@@ -25,6 +25,9 @@ const CASE: Case = {
   deadline: null,
   num_documents: 2,
   created_at: '2026-01-15T00:00:00Z',
+  client_id: null,
+  client_name: null,
+  lawyer_name: null,
 }
 
 const RESULT: ContradictionsResponse = {
