@@ -167,6 +167,9 @@ export interface Case {
   deadline: string | null
   num_documents: number
   created_at: string
+  client_id: number | null
+  client_name: string | null
+  lawyer_name: string | null
 }
 
 export interface CaseListResponse {

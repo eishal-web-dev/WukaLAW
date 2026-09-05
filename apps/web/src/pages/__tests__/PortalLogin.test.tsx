@@ -9,6 +9,7 @@ import { getStoredToken, getStoredUser } from '../../lib/api'
 vi.mock('../../components/FigmaAppShell', () => ({ default: () => <Outlet /> }))
 vi.mock('../Dashboard', () => ({ default: () => <h1>Lawyer home</h1> }))
 vi.mock('../AdminDashboard', () => ({ default: () => <h1>Admin home</h1> }))
+vi.mock('../ClientDashboard', () => ({ default: () => <h1>Client home</h1> }))
 vi.mock('../../figma/FigmaPortalPage', () => ({ default: () => <h1>Client home</h1> }))
 
 beforeEach(() => { localStorage.clear() })
