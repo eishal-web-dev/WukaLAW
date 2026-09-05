@@ -40,14 +40,24 @@ CASE_TYPE_HINTS = {
 
 
 def _get_owned_case(db: Session, case_id: int, user: User) -> Case:
+    """A case is accessible to the lawyer who owns it, or the client it is
+    assigned to. Any other caller (including a different client) gets a 404,
+    not a 403 -- this avoids leaking whether a given case ID even exists to
+    someone who has no business knowing that."""
     case = db.get(Case, case_id)
-    if case is None or case.owner_id != user.id:
+    if case is None:
         raise HTTPException(status_code=404, detail="Case not found.")
-    return case
+    if case.owner_id == user.id:
+        return case
+    if user.role == "client" and case.client_id == user.id:
+        return case
+    raise HTTPException(status_code=404, detail="Case not found.")
 
 
 def _case_out(db: Session, case: Case) -> dict:
     docs = db.scalar(select(func.count()).where(Document.case_id == case.id)) or 0
+    owner = db.get(User, case.owner_id)
+    client = db.get(User, case.client_id) if case.client_id else None
     return {
         "id": case.id,
         "case_number": case.case_number,
@@ -59,6 +69,9 @@ def _case_out(db: Session, case: Case) -> dict:
         "deadline": case.deadline,
         "num_documents": docs,
         "created_at": case.created_at,
+        "client_id": case.client_id,
+        "client_name": client.name if client else None,
+        "lawyer_name": owner.name if owner else None,
     }
 
 
@@ -168,7 +181,10 @@ def create_case(request: CaseCreate, db: Session = Depends(get_db), user: User =
 
 @router.get("", response_model=CaseList)
 def list_cases(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    cases = db.scalars(select(Case).where(Case.owner_id == user.id).order_by(Case.created_at.desc())).all()
+    if user.role == "client":
+        cases = db.scalars(select(Case).where(Case.client_id == user.id).order_by(Case.created_at.desc())).all()
+    else:
+        cases = db.scalars(select(Case).where(Case.owner_id == user.id).order_by(Case.created_at.desc())).all()
     return {"items": [_case_out(db, case) for case in cases], "total": len(cases)}
 
 
@@ -185,6 +201,8 @@ def update_case(
     user: User = Depends(get_current_user),
 ):
     case = _get_owned_case(db, case_id, user)
+    if user.role == "client":
+        raise HTTPException(status_code=403, detail="Clients cannot modify case details.")
     _validate(request.status, request.priority)
     changes: list[str] = []
     for field in ("title", "case_type", "status", "priority", "description", "deadline"):
@@ -193,6 +211,12 @@ def update_case(
             setattr(case, field, value)
             if field != "description":
                 changes.append(field.replace("_", " "))
+    if request.client_id is not None and request.client_id != case.client_id:
+        client = db.get(User, request.client_id)
+        if client is None or client.role != "client":
+            raise HTTPException(status_code=422, detail="client_id must reference an existing client account.")
+        case.client_id = request.client_id
+        changes.append("assigned client")
     if changes:
         create_notification(
             db,
@@ -202,6 +226,15 @@ def update_case(
             body=f"{case.case_number} · {case.title}: {', '.join(changes)} updated.",
             action_url=f"/cases/{case.id}",
         )
+        if case.client_id:
+            create_notification(
+                db,
+                user_id=case.client_id,
+                notification_type="case",
+                title="Your case was updated",
+                body=f"{case.case_number} · {case.title}: {', '.join(changes)} updated.",
+                action_url=f"/client/cases/{case.id}",
+            )
     db.commit()
     db.refresh(case)
     return _case_out(db, case)

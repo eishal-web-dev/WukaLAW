@@ -102,6 +102,7 @@ class CaseUpdate(BaseModel):
     priority: str | None = None
     description: str | None = Field(default=None, max_length=5000)
     deadline: str | None = Field(default=None, max_length=32)
+    client_id: int | None = None
 
 
 class CaseOut(BaseModel):
@@ -115,6 +116,9 @@ class CaseOut(BaseModel):
     deadline: str | None
     num_documents: int
     created_at: datetime
+    client_id: int | None = None
+    client_name: str | None = None
+    lawyer_name: str | None = None
 
 
 class CaseList(BaseModel):
@@ -129,6 +133,7 @@ class SummarizeResponse(BaseModel):
 
 class AskRequest(BaseModel):
     question: str = Field(min_length=3, max_length=2000)
+    case_id: int | None = None
 
 
 class Source(BaseModel):

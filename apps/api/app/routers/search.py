@@ -21,13 +21,32 @@ def chunks_to_sources(
     user: User,
     limit: int,
     min_score: float = 0.0,
+    allowed_document_ids: set[int] | None = None,
 ) -> list[Source]:
+    """Converts raw vector-search hits into citable sources, enforcing access.
+
+    Default behaviour (lawyers): a chunk is included only if its document's
+    owner_id matches the requesting user -- unchanged from before.
+
+    When allowed_document_ids is given (client requests, see qa.py): a chunk
+    is included only if its document_id is in that explicit set, regardless
+    of who technically owns the underlying Document row. This is how a
+    client can search within a lawyer-owned case's documents without ever
+    being able to see that lawyer's other, unrelated cases -- the vector
+    index itself is only ever queried scoped to the case's actual owner, and
+    this second filter narrows the results back down to just that one case.
+    """
     sources: list[Source] = []
     for chunk_id, score in hits:
         if score < min_score:
             continue
         chunk = db.get(Chunk, chunk_id)
-        if chunk is None or chunk.document.owner_id != user.id:
+        if chunk is None:
+            continue
+        if allowed_document_ids is not None:
+            if chunk.document_id not in allowed_document_ids:
+                continue
+        elif chunk.document.owner_id != user.id:
             continue
         sources.append(
             Source(
