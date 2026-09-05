@@ -10,6 +10,7 @@ import Register from './pages/Register'
 // App screens (live)
 import Dashboard from './pages/Dashboard'
 import ClientDashboard from './pages/ClientDashboard'
+import ClientCases from './pages/ClientCases'
 import Cases from './pages/Cases'
 import CaseDetail from './pages/CaseDetail'
 import Documents from './pages/Documents'
@@ -112,7 +113,8 @@ export default function App() {
           {/* Client-only screens */}
           <Route element={<PortalRoute portal="client" />}>
             <Route path="/client" element={<ClientDashboard />} />
-            <Route path="/client/cases" element={<FigmaPortalRoute page="cp-cases" />} />
+            <Route path="/client/cases" element={<ClientCases />} />
+            <Route path="/client/cases/:caseId/workspace" element={<FigmaPortalRoute page="cp-workspace" />} />
             <Route path="/client/search" element={<FigmaPortalRoute page="cp-search" />} />
             <Route path="/client/workspace" element={<FigmaPortalRoute page="cp-workspace" />} />
             <Route path="/client/upload" element={<FigmaPortalRoute page="cp-upload" />} />
