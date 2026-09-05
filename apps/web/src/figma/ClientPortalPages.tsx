@@ -19,6 +19,7 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import { useAuth } from "../lib/auth";
 
 const G  = "#D4AF37";
 const P  = "#7C3AED";
@@ -124,6 +125,9 @@ export function CPLayout({ nav, current, children, rightPanel, navigate }: {
 // ─── Client Dashboard ─────────────────────────────────────────────────────────
 
 export function CPDashboardPageV2({ navigate }: NavProps) {
+  const { user } = useAuth();
+  const displayName = user?.name?.trim() || "WukaLAW User";
+  const displayEmail = user?.email?.trim();
   const recentActivity = [
     { icon: <Brain size={13} color={P} />, text: "AI prediction updated: 85% win probability", time: "2m ago", bg: `${P}15` },
     { icon: <FileText size={13} color={G} />, text: "3 new documents added by Sarah Chen", time: "1h ago", bg: `${G}15` },
@@ -142,7 +146,8 @@ export function CPDashboardPageV2({ navigate }: NavProps) {
       <div className="flex items-center justify-between mb-8">
         <div>
           <div className="text-xs text-muted-foreground mb-1">Good morning</div>
-          <h1 className="text-2xl font-bold text-foreground tracking-tight">Ahmed Hassan <span className="text-muted-foreground font-normal">👋</span></h1>
+          <h1 className="text-2xl font-bold text-foreground tracking-tight">{displayName} <span className="text-muted-foreground font-normal">👋</span></h1>
+          {displayEmail && <div className="text-xs text-muted-foreground mt-1">{displayEmail}</div>}
           <p className="text-sm text-muted-foreground mt-1">You have <span className="text-foreground font-semibold">2 active cases</span> and <span style={{ color: G }} className="font-semibold">1 upcoming hearing</span> this week.</p>
         </div>
         <button onClick={() => navigate("cp-workspace")} className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white" style={{ background: `linear-gradient(135deg,${P},${P}CC)`, boxShadow: `0 6px 24px ${P}40` }}>
