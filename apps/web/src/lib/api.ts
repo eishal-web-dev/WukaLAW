@@ -5,6 +5,7 @@
  * /api/v1, which Vite proxies to FastAPI. Using a same-origin path avoids CORS
  * failures when Vite selects a port other than 5173.
  */
+import type { Portal, SignupRole } from './portals'
 
 const configuredApiBase =
   (import.meta.env.VITE_API_BASE_URL as string | undefined)?.trim()
@@ -380,16 +381,18 @@ export function registerAccount(
   email: string,
   name: string,
   password: string,
+  role: SignupRole = 'lawyer',
 ): Promise<AuthResponse> {
-  return postJson<AuthResponse>('/auth/register', { email, name, password })
+  return postJson<AuthResponse>('/auth/register', { email, name, password, role })
 }
 
 /** POST /auth/login */
 export function loginAccount(
   email: string,
   password: string,
+  portal: Portal,
 ): Promise<AuthResponse> {
-  return postJson<AuthResponse>('/auth/login', { email, password })
+  return postJson<AuthResponse>('/auth/login', { email, password, portal })
 }
 
 /** GET /auth/me */

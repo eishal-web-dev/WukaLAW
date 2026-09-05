@@ -72,8 +72,8 @@ redirects to `/login`.
 
 | Route              | Backend integration                                            |
 | ------------------ | -------------------------------------------------------------- |
-| `/login`           | `POST /auth/login`; redirects to `/dashboard` when authed      |
-| `/register`        | `POST /auth/register` (password ≥ 8 chars)                     |
+| `/login`           | `POST /auth/login` with Client/Lawyer/Admin portal selection      |
+| `/register`        | `POST /auth/register` for Client or Lawyer (password ≥ 8 chars)                     |
 | `/dashboard`       | Real case + document counts, recent cases, deadlines (activity chart is sample) |
 | `/cases`           | Full case CRUD — create / edit / delete / filter (`/cases` endpoints) |
 | `/cases/:id`       | Case detail, per-case document list, upload-into-case          |
@@ -85,8 +85,26 @@ redirects to `/login`.
 | `/profile`         | `GET /auth/me` + sign out                                       |
 | `/notifications`   | Persisted alerts, live unread badges, filters, read/delete actions, and saved in-app preference |
 
-All app routes require authentication (redirect to `/login`); `/login` and
-`/register` redirect to `/dashboard` when already signed in. AI outputs always
+All app routes require authentication. Login and registration redirect to the
+account's portal: Client → `/client`, Lawyer → `/dashboard`, Admin → `/admin`.
+The sidebar follows the account role on shared pages, and portal-specific routes
+redirect other roles to their own home. Users must sign out to use another account;
+there is no in-app portal switcher.
+
+Login sends `portal` alongside credentials. The backend verifies the selected
+portal against the stored role before issuing a token. The optional portal field
+keeps older API clients compatible; it never assigns a role. Registration accepts
+only `role: "client"` or `role: "lawyer"` (default for older clients: lawyer).
+Public admin registration is rejected. `admin@gmail.com` is the only admin
+identity accepted by the backend. It is created or synchronized at server
+startup when the private `ADMIN_BOOTSTRAP_PASSWORD` environment variable is set;
+the password itself is never shipped in frontend code or committed to Git.
+Existing accounts keep their roles. Client and other preview pages retain their
+existing sample-data behavior; shared document/case APIs remain owner-scoped.
+
+Direct links `/login?portal=client`, `/login?portal=lawyer`, and
+`/login?portal=admin` preselect a portal. Registration links accept Client or Lawyer.
+ AI outputs always
 carry the permanent disclaimer: *"Decision-support only — not legal advice."*
 
 ### Preview (sample data, amber "Preview" banner)

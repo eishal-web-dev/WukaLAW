@@ -44,6 +44,7 @@ class Settings(BaseSettings):
     # auth — override SECRET_KEY in .env for anything beyond local development
     secret_key: str = "dev-only-change-me"
     token_expire_hours: int = 24 * 7
+    admin_bootstrap_password: str = ""
 
     # Explicit values are retained for backwards-compatible experiments; normal
     # uploads use the adaptive chunker without forcing these values.

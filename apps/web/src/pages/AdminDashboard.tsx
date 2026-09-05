@@ -6,6 +6,7 @@ import { Card, KPICard, Badge } from '../components/design'
 import { formatDate } from '../lib/format'
 import ErrorAlert from '../components/ErrorAlert'
 import Spinner from '../components/Spinner'
+import { PORTAL_LABELS, portalForRole } from '../lib/portals'
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState<AdminStats | null>(null)
@@ -78,7 +79,7 @@ export default function AdminDashboard() {
                         <td className="px-5 py-3 text-foreground font-medium">{u.name}</td>
                         <td className="px-5 py-3 text-muted-foreground">{u.email}</td>
                         <td className="px-5 py-3">
-                          <Badge label={u.role === 'admin' ? 'Admin' : 'Lawyer'} variant={u.role === 'admin' ? 'Active' : undefined} />
+                          <Badge label={PORTAL_LABELS[portalForRole(u.role)]} variant={u.role === 'admin' ? 'Active' : undefined} />
                         </td>
                         <td className="px-5 py-3 text-muted-foreground">{u.case_count}</td>
                         <td className="px-5 py-3 text-muted-foreground">{u.document_count}</td>

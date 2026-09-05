@@ -1,17 +1,8 @@
 """Platform admin endpoints. Every route here requires role == 'admin'.
 
-There is no self-service way to become an admin -- by design, matching
-the same principle used elsewhere in this codebase for anything
-security-sensitive. To make a user an admin, run this directly against
-the database (adjust the email):
-
-    python -c "
-    import sqlite3
-    conn = sqlite3.connect('wakulaw.db')
-    conn.execute(\"UPDATE users SET role = 'admin' WHERE email = ?\", ('you@example.com',))
-    conn.commit()
-    print('Done')
-    "
+Only ``admin@gmail.com`` can pass this gate. The account is provisioned from
+the private ``ADMIN_BOOTSTRAP_PASSWORD`` server environment variable; there
+is no public or self-service admin registration.
 """
 
 from fastapi import APIRouter, Depends

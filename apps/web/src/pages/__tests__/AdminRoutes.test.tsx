@@ -14,6 +14,8 @@ vi.mock('../../lib/auth', () => ({ useAuth: () => auth }))
 vi.mock('../../lib/notifications', () => ({ useNotifications: () => ({ unreadCount: 0 }) }))
 vi.mock('../../lib/theme', () => ({ useTheme: () => ({ dark: true, toggleDark: vi.fn() }) }))
 vi.mock('../Dashboard', () => ({ default: () => <h1>Lawyer dashboard</h1> }))
+vi.mock('../../figma/FigmaPortalPage', () => ({ default: ({ page }: { page: string }) => <h1>{page}</h1> }))
+vi.mock('../Profile', () => ({ default: () => <h1>Shared profile</h1> }))
 vi.mock('../Login', () => ({ default: () => <h1>Sign in</h1> }))
 vi.mock('../../lib/api', async (importOriginal) => ({
   ...await importOriginal<typeof import('../../lib/api')>(),
@@ -59,7 +61,7 @@ describe('Admin route integration', () => {
     open(path)
     expect(await screen.findByText('live@example.com')).toBeInTheDocument()
     expect(screen.getByText('All Users (1)')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Admin' })).toBeInTheDocument()
+    expect(screen.getByText('Admin portal')).toBeInTheDocument()
     expect(api.adminGetStats).toHaveBeenCalledOnce()
     expect(api.adminListUsers).toHaveBeenCalledOnce()
   })
@@ -71,5 +73,41 @@ describe('Admin route integration', () => {
     await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('Admin request failed'))
     expect(screen.queryByText('Total Users')).not.toBeInTheDocument()
     expect(screen.queryByText('No users yet.')).not.toBeInTheDocument()
+  })
+})
+
+
+describe('Separate account portals', () => {
+  it.each(['/dashboard', '/clients', '/admin', '/admin/users'])('keeps clients out of %s', async (path) => {
+    auth.user.role = 'client'
+    open(path)
+    expect(await screen.findByRole('heading', { name: 'cp-dashboard' })).toBeInTheDocument()
+    expect(screen.getByText('Client portal')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Admin' })).not.toBeInTheDocument()
+    expect(api.adminGetStats).not.toHaveBeenCalled()
+  })
+
+  it('keeps lawyers out of the client portal', async () => {
+    open('/client/cases')
+    expect(await screen.findByRole('heading', { name: 'Lawyer dashboard' })).toBeInTheDocument()
+    expect(screen.getByText('Lawyer portal')).toBeInTheDocument()
+  })
+
+  it.each(['client', 'lawyer', 'admin'])('keeps the %s sidebar on shared pages', async (role) => {
+    auth.user.role = role
+    open('/profile')
+    expect(await screen.findByRole('heading', { name: 'Shared profile' })).toBeInTheDocument()
+    expect(screen.getByText(`${role[0].toUpperCase()}${role.slice(1)} portal`)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Client' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Admin' })).not.toBeInTheDocument()
+  })
+
+  it.each([
+    ['client', 'cp-dashboard'], ['lawyer', 'Lawyer dashboard'], ['admin', 'Platform Admin'],
+  ])('returns a signed-in %s to the right home from login', async (role, heading) => {
+    auth.user.role = role
+    open('/login')
+    expect(await screen.findByRole('heading', { name: heading })).toBeInTheDocument()
+    if (role === 'admin') await screen.findByText('live@example.com')
   })
 })

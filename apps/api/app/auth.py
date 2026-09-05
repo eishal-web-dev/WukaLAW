@@ -6,6 +6,7 @@ import bcrypt
 import jwt
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.config import settings
@@ -15,6 +16,7 @@ from app.models import User
 _bearer = HTTPBearer(auto_error=False)
 
 ALGORITHM = "HS256"
+ADMIN_EMAIL = "admin@gmail.com"
 
 
 def hash_password(password: str) -> str:
@@ -26,6 +28,27 @@ def verify_password(password: str, hashed: str) -> bool:
         return bcrypt.checkpw(password.encode(), hashed.encode())
     except ValueError:
         return False
+
+
+def sync_configured_admin(db: Session, password: str) -> User:
+    """Create or synchronize the only platform-admin identity."""
+    admin = db.scalar(select(User).where(func.lower(User.email) == ADMIN_EMAIL))
+    if admin is None:
+        admin = User(
+            email=ADMIN_EMAIL,
+            name="Platform Admin",
+            password_hash=hash_password(password),
+            role="admin",
+        )
+        db.add(admin)
+    else:
+        admin.email = ADMIN_EMAIL
+        admin.role = "admin"
+        if not verify_password(password, admin.password_hash):
+            admin.password_hash = hash_password(password)
+    db.commit()
+    db.refresh(admin)
+    return admin
 
 
 def create_token(user_id: int) -> str:
@@ -57,6 +80,6 @@ def require_admin(current_user: User = Depends(get_current_user)) -> User:
     """Gate for platform-admin-only endpoints. Raises 403 for any user
     whose role isn't 'admin' -- there is no self-service way to become an
     admin; it's set directly in the database (see admin.py router docstring)."""
-    if current_user.role != "admin":
+    if current_user.role != "admin" or current_user.email.lower() != ADMIN_EMAIL:
         raise HTTPException(status_code=403, detail="Admin access required.")
     return current_user

@@ -17,14 +17,15 @@ import {
   setAuthStorage,
 } from './api'
 import type { User } from './api'
+import type { Portal, SignupRole } from './portals'
 
 interface AuthContextValue {
   user: User | null
   token: string | null
   /** True while a stored token is being validated on app start. */
   loading: boolean
-  login: (email: string, password: string) => Promise<void>
-  register: (email: string, name: string, password: string) => Promise<void>
+  login: (email: string, password: string, portal: Portal) => Promise<User>
+  register: (email: string, name: string, password: string, role: SignupRole) => Promise<User>
   logout: () => void
 }
 
@@ -64,19 +65,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  const login = useCallback(async (email: string, password: string) => {
-    const res = await loginAccount(email, password)
+  const login = useCallback(async (email: string, password: string, portal: Portal) => {
+    const res = await loginAccount(email, password, portal)
     setAuthStorage(res.token, res.user)
     setToken(res.token)
     setUser(res.user)
+    return res.user
   }, [])
 
   const register = useCallback(
-    async (email: string, name: string, password: string) => {
-      const res = await registerAccount(email, name, password)
+    async (email: string, name: string, password: string, role: SignupRole) => {
+      const res = await registerAccount(email, name, password, role)
       setAuthStorage(res.token, res.user)
       setToken(res.token)
       setUser(res.user)
+      return res.user
     },
     [],
   )
