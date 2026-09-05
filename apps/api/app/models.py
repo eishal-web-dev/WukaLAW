@@ -47,6 +47,7 @@ class Case(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     owner_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    client_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True, index=True)
     case_number: Mapped[str] = mapped_column(String(32))
     title: Mapped[str] = mapped_column(String(255))
     case_type: Mapped[str] = mapped_column(String(100))

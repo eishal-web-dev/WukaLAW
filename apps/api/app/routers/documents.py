@@ -42,17 +42,34 @@ def _meta(document: Document, num_chunks: int) -> dict:
 
 
 def _get_owned_document(db: Session, document_id: int, user: User) -> Document:
+    """A document is accessible to the lawyer who owns it, or a client whose
+    assigned case the document is linked to. Clients never have a document
+    owner_id themselves -- access flows through Document.case_id -> Case.client_id
+    rather than duplicating ownership on Document, to avoid two fields that
+    could drift out of sync."""
     document = db.get(Document, document_id)
-    if document is None or document.owner_id != user.id:
+    if document is None:
         raise HTTPException(status_code=404, detail="Document not found.")
-    return document
+    if document.owner_id == user.id:
+        return document
+    if user.role == "client" and document.case_id is not None:
+        from app.models import Case
+
+        case = db.get(Case, document.case_id)
+        if case is not None and case.client_id == user.id:
+            return document
+    raise HTTPException(status_code=404, detail="Document not found.")
 
 
 def _attach_to_case(db: Session, document: Document, case_id: int, user: User) -> None:
     from app.models import Case
 
     case = db.get(Case, case_id)
-    if case is None or case.owner_id != user.id:
+    if case is None:
+        raise HTTPException(status_code=404, detail="Case not found.")
+    is_owner = case.owner_id == user.id
+    is_assigned_client = user.role == "client" and case.client_id == user.id
+    if not is_owner and not is_assigned_client:
         raise HTTPException(status_code=404, detail="Case not found.")
     document.case_id = case_id
     db.commit()
@@ -203,9 +220,28 @@ def update_document(
 
 @router.get("", response_model=DocumentList)
 def list_documents(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    documents = db.scalars(
-        select(Document).where(Document.owner_id == user.id).order_by(Document.created_at.desc())
-    ).all()
+    from app.models import Case
+
+    if user.role == "client":
+        documents = db.scalars(
+            select(Document)
+            .join(Case, Case.id == Document.case_id)
+            .where(Case.client_id == user.id)
+            .order_by(Document.created_at.desc())
+        ).all()
+    else:
+        # A lawyer sees documents they uploaded, plus anything a client has
+        # uploaded into a case the lawyer owns (e.g. evidence a client adds
+        # to their own case) -- not just documents where owner_id matches.
+        owned_case_ids = select(Case.id).where(Case.owner_id == user.id)
+        documents = db.scalars(
+            select(Document)
+            .where(
+                (Document.owner_id == user.id)
+                | (Document.case_id.in_(owned_case_ids))
+            )
+            .order_by(Document.created_at.desc())
+        ).all()
     counts = dict(
         db.execute(select(Chunk.document_id, func.count()).group_by(Chunk.document_id)).all()
     )

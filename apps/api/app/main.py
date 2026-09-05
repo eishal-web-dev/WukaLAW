@@ -69,6 +69,11 @@ with engine.connect() as connection:
     )
     connection.commit()
 
+    case_columns = [row[1] for row in connection.execute(text("PRAGMA table_info(cases)"))]
+    if case_columns and "client_id" not in case_columns:
+        connection.execute(text("ALTER TABLE cases ADD COLUMN client_id INTEGER"))
+    connection.commit()
+
 if settings.admin_bootstrap_password:
     with SessionLocal() as admin_db:
         sync_configured_admin(admin_db, settings.admin_bootstrap_password)
