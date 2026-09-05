@@ -4,6 +4,8 @@ import pytest
 from sqlalchemy import text
 
 from app.db import engine
+from app.auth import ADMIN_EMAIL, sync_configured_admin, verify_password
+from app.db import SessionLocal
 from tests.conftest import SAMPLE_JUDGMENT, register_user
 
 
@@ -24,11 +26,12 @@ def test_signup_persists_the_selected_account_role(client, role):
 @pytest.mark.parametrize('role', ['client', 'lawyer', 'admin'])
 @pytest.mark.parametrize('portal', ['client', 'lawyer', 'admin'])
 def test_login_requires_matching_account_role_without_changing_it(client, role, portal):
-    headers = register_user(client, email='portal@example.com')
+    email = ADMIN_EMAIL if role == 'admin' else 'portal@example.com'
+    headers = register_user(client, email=email)
     with engine.begin() as connection:
         connection.execute(text('UPDATE users SET role = :role'), {'role': role})
     response = client.post('/api/v1/auth/login', json={
-        'email': 'portal@example.com', 'password': 'secret123', 'portal': portal,
+        'email': email, 'password': 'secret123', 'portal': portal,
     })
     if role == portal:
         assert response.status_code == 200, response.text
@@ -54,6 +57,31 @@ def test_unknown_portal_is_rejected(client):
         'email': 'tester@example.com', 'password': 'secret123', 'portal': 'superadmin',
     })
     assert response.status_code == 422
+
+
+def test_private_password_bootstraps_the_single_admin_account(client):
+    with SessionLocal() as db:
+        admin = sync_configured_admin(db, 'admin')
+        assert admin.email == ADMIN_EMAIL
+        assert admin.role == 'admin'
+        assert verify_password('admin', admin.password_hash)
+
+    response = client.post('/api/v1/auth/login', json={
+        'email': ADMIN_EMAIL, 'password': 'admin', 'portal': 'admin',
+    })
+    assert response.status_code == 200, response.text
+    headers = {'Authorization': f"Bearer {response.json()['token']}"}
+    assert client.get('/api/v1/admin/stats', headers=headers).status_code == 200
+
+
+def test_noncanonical_admin_email_is_denied_even_with_admin_role(client):
+    register_user(client, email='other-admin@example.com')
+    with engine.begin() as connection:
+        connection.execute(text("UPDATE users SET role = 'admin'"))
+    response = client.post('/api/v1/auth/login', json={
+        'email': 'other-admin@example.com', 'password': 'secret123', 'portal': 'admin',
+    })
+    assert response.status_code == 403
 
 
 def test_client_documents_remain_private_from_lawyer_accounts(client):

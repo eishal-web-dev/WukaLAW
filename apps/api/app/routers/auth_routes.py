@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.auth import create_token, get_current_user, hash_password, verify_password
+from app.auth import ADMIN_EMAIL, create_token, get_current_user, hash_password, verify_password
 from app.db import get_db
 from app.models import User
 from app.schemas import AuthResponse, LoginRequest, RegisterRequest, UserOut
@@ -44,6 +44,8 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
     user = db.scalar(select(User).where(User.email == request.email.lower().strip()))
     if user is None or not verify_password(request.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Invalid email or password.")
+    if user.role == "admin" and user.email.lower() != ADMIN_EMAIL:
+        raise HTTPException(status_code=403, detail="This account is not authorized for platform administration.")
     if request.portal is not None and user.role != request.portal:
         raise HTTPException(status_code=403, detail="This account does not have access to the selected portal. Choose your account's portal to sign in.")
     return _auth_response(user)

@@ -20,8 +20,8 @@ def test_non_admin_gets_403(client):
 
 
 def test_admin_can_see_stats(client):
-    headers = register_user(client, email="boss@example.com")
-    _make_admin("boss@example.com")
+    headers = register_user(client, email="admin@gmail.com")
+    _make_admin("admin@gmail.com")
 
     response = client.get("/api/v1/admin/stats", headers=headers)
     assert response.status_code == 200
@@ -32,8 +32,8 @@ def test_admin_can_see_stats(client):
 
 
 def test_admin_can_list_users_with_real_counts(client):
-    admin_headers = register_user(client, email="boss2@example.com")
-    _make_admin("boss2@example.com")
+    admin_headers = register_user(client, email="admin@gmail.com")
+    _make_admin("admin@gmail.com")
     register_user(client, email="employee@example.com")
 
     response = client.post(
@@ -48,7 +48,7 @@ def test_admin_can_list_users_with_real_counts(client):
     users = response.json()
     assert len(users) == 2
 
-    boss = next(u for u in users if u["email"] == "boss2@example.com")
+    boss = next(u for u in users if u["email"] == "admin@gmail.com")
     assert boss["role"] == "admin"
     assert boss["case_count"] == 1
 
@@ -81,8 +81,7 @@ def test_registration_cannot_grant_admin_and_role_survives_login(client):
     _make_admin('role@example.com')
     assert client.get('/api/v1/auth/me', headers=headers).json()['role'] == 'admin'
     login = client.post('/api/v1/auth/login', json={'email': 'role@example.com', 'password': 'secret123'})
-    assert login.status_code == 200, login.text
-    assert login.json()['user']['role'] == 'admin'
+    assert login.status_code == 403, login.text
 
     from sqlalchemy import text
     from app.db import engine

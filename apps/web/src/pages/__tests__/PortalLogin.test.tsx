@@ -43,7 +43,7 @@ describe('Portal sign-in', () => {
     fireEvent.click(screen.getByRole('button', { name: `Sign in as ${label}` }))
     expect(await screen.findByRole('heading', { name: `${label} home` })).toBeInTheDocument()
     const body = JSON.parse(fetch.mock.calls[0][1]?.body as string)
-    expect(body).toEqual({ email: 'test@example.com', password: 'secret123', portal: role })
+    expect(body).toEqual({ email: role === 'admin' ? 'admin@gmail.com' : 'test@example.com', password: 'secret123', portal: role })
     expect(getStoredUser()?.role).toBe(role)
   })
 
@@ -51,6 +51,8 @@ describe('Portal sign-in', () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify({ detail: 'Wrong portal for this account.' }), { status: 403 }))
     open('/login?portal=admin')
     expect(screen.getByRole('radio', { name: 'Admin' })).toBeChecked()
+    expect(screen.getByLabelText('Email address')).toHaveValue('admin@gmail.com')
+    expect(screen.getByLabelText('Email address')).toHaveAttribute('readonly')
     expect(screen.queryByRole('button', { name: 'Create one' })).not.toBeInTheDocument()
     fillLogin()
     fireEvent.click(screen.getByRole('button', { name: 'Sign in as Admin' }))

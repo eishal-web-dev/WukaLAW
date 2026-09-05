@@ -10,6 +10,8 @@ import PortalSelector from '../components/PortalSelector'
 import { isPortal, portalHome, PORTAL_LABELS } from '../lib/portals'
 import type { Portal } from '../lib/portals'
 
+const ADMIN_EMAIL = 'admin@gmail.com'
+
 export default function Login() {
   const navigate = useNavigate()
   const { login } = useAuth()
@@ -19,7 +21,7 @@ export default function Login() {
     return isPortal(value) ? value : null
   })
   const { dark, toggleDark, BG, SURF, TX, TX2, GA, BD } = usePublicTokens()
-  const [email, setEmail] = useState('')
+  const [email, setEmail] = useState(() => portal === 'admin' ? ADMIN_EMAIL : '')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
@@ -97,12 +99,16 @@ export default function Login() {
           <p style={{ color: TX2, fontSize: 14, marginBottom: 32 }}>Choose your portal, then sign in to your account.</p>
 
           <form onSubmit={submit} className="space-y-4">
-            <PortalSelector value={portal} onChange={(value) => { setPortal(value); setError(null) }} disabled={submitting} />
-            {portal === 'admin' && <p className="text-xs" style={{ color: TX2 }}>Admin sign-in is for authorized administrators only.</p>}
+            <PortalSelector value={portal} onChange={(value) => {
+              setPortal(value)
+              setEmail((current) => value === 'admin' ? ADMIN_EMAIL : current === ADMIN_EMAIL ? '' : current)
+              setError(null)
+            }} disabled={submitting} />
+            {portal === 'admin' && <p className="text-xs" style={{ color: TX2 }}>Only admin@gmail.com is authorized for the Admin portal.</p>}
             {error && <ErrorAlert message={error} />}
             <div>
               <label htmlFor="login-email" style={{ fontSize: 12, fontWeight: 500, color: TX2, display: 'block', marginBottom: 6 }}>Email address</label>
-              <Input id="login-email" autoComplete="username" placeholder="you@example.com" value={email} onChange={setEmail} type="email" icon={<Mail size={14} />} required />
+              <Input id="login-email" autoComplete="username" placeholder="you@example.com" value={email} onChange={setEmail} type="email" icon={<Mail size={14} />} required readOnly={portal === 'admin'} />
             </div>
             <div>
               <label htmlFor="login-password" style={{ fontSize: 12, fontWeight: 500, color: TX2, display: 'block', marginBottom: 6 }}>Password</label>

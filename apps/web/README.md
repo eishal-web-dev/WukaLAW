@@ -95,7 +95,10 @@ Login sends `portal` alongside credentials. The backend verifies the selected
 portal against the stored role before issuing a token. The optional portal field
 keeps older API clients compatible; it never assigns a role. Registration accepts
 only `role: "client"` or `role: "lawyer"` (default for older clients: lawyer).
-Public admin registration is rejected; existing admin provisioning remains unchanged.
+Public admin registration is rejected. `admin@gmail.com` is the only admin
+identity accepted by the backend. It is created or synchronized at server
+startup when the private `ADMIN_BOOTSTRAP_PASSWORD` environment variable is set;
+the password itself is never shipped in frontend code or committed to Git.
 Existing accounts keep their roles. Client and other preview pages retain their
 existing sample-data behavior; shared document/case APIs remain owner-scoped.
 

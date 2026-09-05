@@ -14,7 +14,9 @@ sys.path.insert(1, _API_ROOT)
 from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.db import Base, engine
+from app.auth import ADMIN_EMAIL, sync_configured_admin
+from app.config import settings
+from app.db import Base, SessionLocal, engine
 from app.routers import admin, auth_routes, case_custom_search, case_pathway, cases, documents, legal_intelligence, notifications, precedent_briefs, qa, rag, search, similar_cases
 
 app = FastAPI(
@@ -61,7 +63,15 @@ with engine.connect() as connection:
     if user_columns and "role" not in user_columns:
         connection.execute(text("ALTER TABLE users ADD COLUMN role VARCHAR(50) NOT NULL DEFAULT 'lawyer'"))
     connection.execute(text("UPDATE users SET role = 'lawyer' WHERE role IS NULL"))
+    connection.execute(
+        text("UPDATE users SET role = 'lawyer' WHERE role = 'admin' AND lower(email) != :admin_email"),
+        {"admin_email": ADMIN_EMAIL},
+    )
     connection.commit()
+
+if settings.admin_bootstrap_password:
+    with SessionLocal() as admin_db:
+        sync_configured_admin(admin_db, settings.admin_bootstrap_password)
 
 api = APIRouter(prefix="/api/v1")
 

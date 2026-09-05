@@ -142,6 +142,7 @@ export function Input({
   icon,
   className = '',
   required,
+  readOnly,
 }: {
   id?: string
   autoComplete?: string
@@ -152,6 +153,7 @@ export function Input({
   icon?: React.ReactNode
   className?: string
   required?: boolean
+  readOnly?: boolean
 }) {
   return (
     <div className={`relative ${className}`}>
@@ -165,7 +167,8 @@ export function Input({
         placeholder={placeholder}
         value={value}
         required={required}
-        onChange={(e) => onChange?.(e.target.value)}
+        readOnly={readOnly}
+        onChange={(e) => { if (!readOnly) onChange?.(e.target.value) }}
         className={`w-full rounded-xl border border-border bg-muted/40 text-foreground placeholder-muted-foreground text-sm focus:outline-none focus:border-primary/50 transition-colors ${icon ? 'pl-9 pr-4 py-2.5' : 'px-4 py-2.5'}`}
       />
     </div>
