@@ -12,6 +12,7 @@ import Dashboard from './pages/Dashboard'
 import ClientDashboard from './pages/ClientDashboard'
 import ClientCases from './pages/ClientCases'
 import ClientWorkspace from './pages/ClientWorkspace'
+import ClientUpload from './pages/ClientUpload'
 import Cases from './pages/Cases'
 import CaseDetail from './pages/CaseDetail'
 import Documents from './pages/Documents'
@@ -118,7 +119,7 @@ export default function App() {
             <Route path="/client/cases/:caseId/workspace" element={<ClientWorkspace />} />
             <Route path="/client/search" element={<FigmaPortalRoute page="cp-search" />} />
             <Route path="/client/workspace" element={<FigmaPortalRoute page="cp-workspace" />} />
-            <Route path="/client/upload" element={<FigmaPortalRoute page="cp-upload" />} />
+            <Route path="/client/upload" element={<ClientUpload />} />
             <Route path="/client/evidence" element={<FigmaPortalRoute page="cp-evidence" />} />
             <Route path="/client/ai-summary" element={<FigmaPortalRoute page="cp-ai-summary" />} />
             <Route path="/client/similar-cases" element={<FigmaPortalRoute page="cp-similar" />} />
