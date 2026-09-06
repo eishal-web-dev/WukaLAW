@@ -67,12 +67,10 @@ const CLIENT_NAV: NavGroup[] = [
     { path: '/client/search', label: 'Search', icon: Search },
   ] },
   { label: 'Case', items: [
-    { path: '/client/workspace', label: 'Case Workspace', icon: Layers },
-    { path: '/client/cases', label: 'Case Details', icon: FileSearch },
     { path: '/client/upload', label: 'Upload Documents', icon: Upload },
     { path: '/documents', label: 'My Documents', icon: FileText },
     { path: '/client/evidence', label: 'Evidence', icon: FileSearch },
-    { path: '/timeline', label: 'Timeline', icon: Clock },
+    { path: '/client/timeline', label: 'Timeline', icon: Clock },
   ] },
   { label: 'AI Intelligence', items: [
     { path: '/ai-chat', label: 'AI Assistant', icon: MessageSquare },
