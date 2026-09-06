@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import {
   Sparkles, Brain, Send, RefreshCw, FileText, ChevronDown, ChevronRight,
 } from 'lucide-react'
-import { askQuestion, errorMessage } from '../lib/api'
-import type { AskResponse, Confidence, Source } from '../lib/api'
+import { askQuestion, askCaseQuestion, listCases, errorMessage } from '../lib/api'
+import type { AskResponse, Confidence, Source, Case } from '../lib/api'
 import { groupSources, passageSummary } from '../lib/sources'
 import { formatScore, excerpt } from '../lib/format'
 import { useAuth } from '../lib/auth'
@@ -87,6 +87,7 @@ function ConfidenceLine({ confidence, model }: { confidence: Confidence; model?:
 
 export default function AIChat() {
   const { user } = useAuth()
+  const isClient = user?.role === 'client'
   const navigate = useNavigate()
   const [input, setInput] = useState('')
   const [messages, setMessages] = useState<ChatMessage[]>([])
@@ -95,8 +96,32 @@ export default function AIChat() {
   const bottomRef = useRef<HTMLDivElement>(null)
   const nextId = useRef(1)
 
+  const [cases, setCases] = useState<Case[]>([])
+  const [casesLoading, setCasesLoading] = useState(isClient)
+  const [selectedCaseId, setSelectedCaseId] = useState<number | null>(null)
+
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    if (!isClient) return
+    let cancelled = false
+    listCases()
+      .then((res) => {
+        if (cancelled) return
+        setCases(res.items)
+        if (res.items.length > 0) setSelectedCaseId(res.items[0].id)
+      })
+      .catch((err) => {
+        if (!cancelled) setError(errorMessage(err))
+      })
+      .finally(() => {
+        if (!cancelled) setCasesLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [isClient])
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView?.({ behavior: 'smooth' })
   }, [messages, busy])
 
   const now = () => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
@@ -104,13 +129,20 @@ export default function AIChat() {
   const send = async () => {
     const question = input.trim()
     if (!question || busy) return
+    if (isClient && !selectedCaseId) return
     setError(null)
     setInput('')
     const history = messages.map((m) => ({ role: m.role, content: m.text }))
     setMessages((prev) => [...prev, { id: nextId.current++, role: 'user', text: question, time: now() }])
     setBusy(true)
     try {
-      const res: AskResponse = await askQuestion(question, history)
+      // Clients must ask within one of their own cases -- this searches
+      // only that case's documents (see api/routers/qa.py), never the
+      // shared public legal-research corpus askQuestion() uses, and never
+      // another client's case. Lawyers keep the existing broader search.
+      const res: AskResponse = isClient
+        ? await askCaseQuestion(question, selectedCaseId!)
+        : await askQuestion(question, history)
       setMessages((prev) => [
         ...prev,
         {
@@ -130,29 +162,53 @@ export default function AIChat() {
     }
   }
 
-  const quickPrompts = [
-    'What is the main issue in my uploaded documents?',
-    'Summarize the key facts across my case files',
-    'What legal points appear in my documents?',
-    'What was the outcome described in my documents?',
-  ]
+  const quickPrompts = isClient
+    ? [
+        'What is my case about?',
+        'What documents have been added to my case?',
+        'What happens next in my case?',
+        'Are there any upcoming deadlines?',
+      ]
+    : [
+        'What is the main issue in my uploaded documents?',
+        'Summarize the key facts across my case files',
+        'What legal points appear in my documents?',
+        'What was the outcome described in my documents?',
+      ]
 
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="px-6 py-4 border-b border-white/[0.06] flex items-center justify-between flex-shrink-0">
+      <div className="px-6 py-4 border-b border-white/[0.06] flex items-center justify-between flex-shrink-0 flex-wrap gap-3">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ backgroundColor: `${G}20` }}>
             <Sparkles size={16} style={{ color: G }} />
           </div>
           <div>
-            <div className="text-sm font-semibold text-foreground">WakuLaw AI Assistant</div>
+            <div className="text-sm font-semibold text-foreground">WukaLAW AI Assistant</div>
             <div className="text-xs text-emerald-400 flex items-center gap-1">
-              <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" /> Answers from your document library
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+              {isClient ? 'Answers from your case documents only' : 'Answers from your document library'}
             </div>
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          {isClient && cases.length > 0 && (
+            <select
+              value={selectedCaseId ?? ''}
+              onChange={(e) => {
+                setSelectedCaseId(Number(e.target.value))
+                setMessages([])
+              }}
+              className="text-xs px-3 py-2 rounded-xl border border-white/10 bg-white/[0.04] text-foreground outline-none focus:border-[#D4AF37]/50"
+            >
+              {cases.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.case_number} — {c.title}
+                </option>
+              ))}
+            </select>
+          )}
           <Btn variant="ghost" size="sm" icon={<RefreshCw size={13} />} onClick={() => setMessages([])}>
             New Chat
           </Btn>
@@ -164,7 +220,23 @@ export default function AIChat() {
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-6 space-y-5">
-        {messages.length === 0 && (
+        {isClient && casesLoading && (
+          <div className="text-center py-8 text-sm text-muted-foreground">Loading your cases…</div>
+        )}
+
+        {isClient && !casesLoading && cases.length === 0 && (
+          <div className="text-center py-8">
+            <div className="w-14 h-14 rounded-2xl mx-auto mb-4 flex items-center justify-center" style={{ backgroundColor: `${G}20` }}>
+              <Brain size={24} style={{ color: G }} />
+            </div>
+            <div className="text-foreground font-semibold mb-2">No cases assigned yet</div>
+            <div className="text-muted-foreground text-sm">
+              The AI Assistant answers questions about your own case documents. Once a case is assigned to your account, you can ask about it here.
+            </div>
+          </div>
+        )}
+
+        {(!isClient || (!casesLoading && cases.length > 0)) && messages.length === 0 && (
           <div className="text-center py-8">
             <div className="w-14 h-14 rounded-2xl mx-auto mb-4 flex items-center justify-center" style={{ backgroundColor: `${G}20` }}>
               <Brain size={24} style={{ color: G }} />
@@ -215,8 +287,22 @@ export default function AIChat() {
             <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: `${G}20` }}>
               <Sparkles size={14} style={{ color: G }} />
             </div>
-            <div className="rounded-2xl px-4 py-3 text-sm text-muted-foreground" style={{ backgroundColor: C, border: '1px solid rgba(255,255,255,0.06)' }}>
-              Analyzing your documents… <span style={{ color: G }}>●●●</span>
+            <div className="rounded-2xl px-4 py-3 text-sm text-muted-foreground flex items-center gap-1" style={{ backgroundColor: C, border: '1px solid rgba(255,255,255,0.06)' }}>
+              {isClient ? 'Reading your case documents' : 'Analyzing your documents'}
+              <span className="inline-flex ml-1">
+                {[0, 1, 2].map((i) => (
+                  <span
+                    key={i}
+                    style={{
+                      color: G,
+                      animation: 'wk-chat-dot 1.1s ease-in-out infinite',
+                      animationDelay: `${i * 0.15}s`,
+                    }}
+                  >
+                    ●
+                  </span>
+                ))}
+              </span>
             </div>
           </div>
         )}
@@ -224,6 +310,13 @@ export default function AIChat() {
         {error && <ErrorAlert message={error} />}
         <div ref={bottomRef} />
       </div>
+
+      <style>{`
+        @keyframes wk-chat-dot {
+          0%, 80%, 100% { opacity: 0.25; transform: translateY(0); }
+          40% { opacity: 1; transform: translateY(-2px); }
+        }
+      `}</style>
 
       {/* Input */}
       <div className="border-t border-white/[0.06] p-4 flex-shrink-0">
@@ -235,13 +328,18 @@ export default function AIChat() {
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) void send()
               }}
-              placeholder="Ask about your uploaded documents..."
-              className="w-full px-4 py-3 rounded-xl border border-white/10 bg-white/[0.04] text-sm text-foreground placeholder-muted-foreground focus:outline-none focus:border-[#D4AF37]/50 pr-12"
+              disabled={isClient && (casesLoading || cases.length === 0)}
+              placeholder={
+                isClient && cases.length === 0 && !casesLoading
+                  ? 'No cases assigned yet…'
+                  : 'Ask about your uploaded documents...'
+              }
+              className="w-full px-4 py-3 rounded-xl border border-white/10 bg-white/[0.04] text-sm text-foreground placeholder-muted-foreground focus:outline-none focus:border-[#D4AF37]/50 pr-12 disabled:opacity-50"
             />
           </div>
           <button
             onClick={() => void send()}
-            disabled={busy}
+            disabled={busy || (isClient && (casesLoading || cases.length === 0 || !selectedCaseId))}
             className="px-4 py-2.5 rounded-xl flex items-center gap-2 text-sm font-medium text-[#0D1117] transition-colors hover:opacity-90 disabled:opacity-50"
             style={{ backgroundColor: G }}
           >
