@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { FileText, Search, Sparkles, ScanText, Database, Grid as GridIcon, List as ListIcon, Eye } from 'lucide-react'
+import { FileText, Search, Sparkles, ScanText, Database, Grid as GridIcon, List as ListIcon, Eye, Upload } from 'lucide-react'
 import { listDocuments, errorMessage } from '../lib/api'
 import type { DocumentMeta } from '../lib/api'
 import { formatBytes, formatDate } from '../lib/format'
+import { useAuth } from '../lib/auth'
 import { Card, Badge, Input, KPICard, G } from '../components/design'
 import UploadZone from '../components/UploadZone'
 import ErrorAlert from '../components/ErrorAlert'
@@ -11,6 +12,8 @@ import Spinner from '../components/Spinner'
 
 export default function Documents() {
   const navigate = useNavigate()
+  const { user } = useAuth()
+  const isClient = user?.role === 'client'
   const [docs, setDocs] = useState<DocumentMeta[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -74,7 +77,16 @@ export default function Documents() {
 
       {error && <ErrorAlert message={error} />}
 
-      <UploadZone onUploaded={() => void refresh()} />
+      {isClient ? (
+        <button
+          onClick={() => navigate('/client/upload')}
+          className="w-full flex items-center justify-center gap-2 p-5 rounded-2xl border-2 border-dashed border-border hover:border-primary/30 transition-all text-sm font-semibold text-muted-foreground hover:text-foreground"
+        >
+          <Upload size={16} /> Upload a document to one of your cases
+        </button>
+      ) : (
+        <UploadZone onUploaded={() => void refresh()} />
+      )}
 
       {/* KPI row — every value computed live from your real document library */}
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
