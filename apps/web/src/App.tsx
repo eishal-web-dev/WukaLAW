@@ -15,6 +15,7 @@ import ClientWorkspace from './pages/ClientWorkspace'
 import ClientUpload from './pages/ClientUpload'
 import ClientEvidence from './pages/ClientEvidence'
 import ClientTimeline from './pages/ClientTimeline'
+import ClientAISummary from './pages/ClientAISummary'
 import Cases from './pages/Cases'
 import CaseDetail from './pages/CaseDetail'
 import Documents from './pages/Documents'
@@ -124,7 +125,7 @@ export default function App() {
             <Route path="/client/upload" element={<ClientUpload />} />
             <Route path="/client/evidence" element={<ClientEvidence />} />
             <Route path="/client/timeline" element={<ClientTimeline />} />
-            <Route path="/client/ai-summary" element={<FigmaPortalRoute page="cp-ai-summary" />} />
+            <Route path="/client/ai-summary" element={<ClientAISummary />} />
             <Route path="/client/similar-cases" element={<FigmaPortalRoute page="cp-similar" />} />
             <Route path="/client/predictions" element={<FigmaPortalRoute page="cp-predictions" />} />
             <Route path="/client/explainable" element={<FigmaPortalRoute page="cp-explainable" />} />
