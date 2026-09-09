@@ -95,6 +95,15 @@ class CaseCreate(BaseModel):
     deadline: str | None = Field(default=None, max_length=32)
 
 
+class CaseRequestCreate(BaseModel):
+    """What a client submits to request a new case. Deliberately smaller
+    than CaseCreate -- a client doesn't set status/priority/deadline,
+    those are a lawyer's call once the request is reviewed and claimed."""
+    title: str = Field(min_length=3, max_length=255)
+    case_type: str = Field(min_length=2, max_length=100)
+    description: str = Field(min_length=10, max_length=5000)
+
+
 class CaseUpdate(BaseModel):
     title: str | None = Field(default=None, min_length=3, max_length=255)
     case_type: str | None = Field(default=None, min_length=2, max_length=100)

@@ -74,6 +74,42 @@ with engine.connect() as connection:
         connection.execute(text("ALTER TABLE cases ADD COLUMN client_id INTEGER"))
     connection.commit()
 
+    # SQLite can't ALTER COLUMN to drop a NOT NULL constraint directly --
+    # needed here because client-submitted case requests have no lawyer
+    # yet (owner_id is null until a lawyer claims the request). This does
+    # the standard SQLite rebuild: new table with the relaxed constraint,
+    # copy the data across, swap it in. Only runs once -- if owner_id is
+    # already nullable, PRAGMA reports notnull=0 and this is skipped.
+    case_info = connection.execute(text("PRAGMA table_info(cases)")).fetchall()
+    owner_id_row = next((row for row in case_info if row[1] == "owner_id"), None)
+    if owner_id_row is not None and owner_id_row[3] == 1:  # notnull column
+        connection.execute(text("""
+            CREATE TABLE cases_new (
+                id INTEGER PRIMARY KEY,
+                owner_id INTEGER,
+                client_id INTEGER,
+                case_number VARCHAR(32),
+                title VARCHAR(255),
+                case_type VARCHAR(100),
+                status VARCHAR(32),
+                priority VARCHAR(32),
+                description TEXT,
+                deadline VARCHAR(32),
+                created_at DATETIME,
+                FOREIGN KEY(owner_id) REFERENCES users(id),
+                FOREIGN KEY(client_id) REFERENCES users(id)
+            )
+        """))
+        connection.execute(text("""
+            INSERT INTO cases_new (id, owner_id, client_id, case_number, title, case_type, status, priority, description, deadline, created_at)
+            SELECT id, owner_id, client_id, case_number, title, case_type, status, priority, description, deadline, created_at FROM cases
+        """))
+        connection.execute(text("DROP TABLE cases"))
+        connection.execute(text("ALTER TABLE cases_new RENAME TO cases"))
+        connection.execute(text("CREATE INDEX IF NOT EXISTS ix_cases_owner_id ON cases (owner_id)"))
+        connection.execute(text("CREATE INDEX IF NOT EXISTS ix_cases_client_id ON cases (client_id)"))
+    connection.commit()
+
 if settings.admin_bootstrap_password:
     with SessionLocal() as admin_db:
         sync_configured_admin(admin_db, settings.admin_bootstrap_password)

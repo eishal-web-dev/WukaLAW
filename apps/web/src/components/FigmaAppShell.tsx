@@ -4,7 +4,7 @@ import type { LucideIcon } from 'lucide-react'
 import {
   Activity, BarChart2, Bell, BookOpen, Brain, Briefcase, Calendar,
   ChevronLeft, ChevronRight, Clock, Code, CreditCard, Database, Download,
-  FileSearch, FileText, Gavel, GitBranch, HardDrive, Key, Layers,
+  FilePlus2, FileSearch, FileText, Gavel, GitBranch, HardDrive, Key, Layers,
   LayoutDashboard, LogOut, MessageCircle, MessageSquare, Moon, Newspaper,
   Search, Settings, ShieldCheck, Sparkles, Sun, Target, TrendingUp, Upload,
   User, UserCheck, Users, UsersRound,
@@ -64,6 +64,7 @@ const CLIENT_NAV: NavGroup[] = [
   { label: 'Overview', items: [
     { path: '/client', label: 'Dashboard', icon: LayoutDashboard },
     { path: '/client/cases', label: 'My Cases', icon: Briefcase },
+    { path: '/client/request-case', label: 'Request a Case', icon: FilePlus2 },
     { path: '/client/search', label: 'Search', icon: Search },
   ] },
   { label: 'Case', items: [

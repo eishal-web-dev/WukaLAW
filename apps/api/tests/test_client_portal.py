@@ -162,3 +162,82 @@ def test_client_ai_question_cannot_use_another_clients_case(client):
         headers=other_client_headers,
     )
     assert response.status_code == 404
+
+
+def test_client_can_request_a_new_case(client):
+    client_headers = register_user(client, email="requester@example.com")
+    _make_client("requester@example.com")
+
+    response = client.post(
+        "/api/v1/cases/request",
+        json={
+            "title": "Landlord won't return my deposit",
+            "case_type": "Civil",
+            "description": "My landlord has not returned my security deposit after I moved out three months ago.",
+        },
+        headers=client_headers,
+    )
+    assert response.status_code == 201, response.text
+    data = response.json()
+    assert data["status"] == "Review"
+    assert data["lawyer_name"] is None  # unclaimed -- no lawyer assigned yet
+
+    # It should belong to the requesting client.
+    my_cases = client.get("/api/v1/cases", headers=client_headers).json()["items"]
+    assert any(c["id"] == data["id"] for c in my_cases)
+
+
+def test_lawyer_can_see_and_claim_an_unassigned_case_request(client):
+    client_headers = register_user(client, email="requester2@example.com")
+    _make_client("requester2@example.com")
+    lawyer_headers = register_user(client, email="claimer@example.com")
+
+    r = client.post(
+        "/api/v1/cases/request",
+        json={"title": "Need help with a contract", "case_type": "Corporate", "description": "A supplier breached our contract and I need advice."},
+        headers=client_headers,
+    )
+    case_id = r.json()["id"]
+
+    # Any lawyer should see it in their list before claiming it.
+    lawyer_cases = client.get("/api/v1/cases", headers=lawyer_headers).json()["items"]
+    assert any(c["id"] == case_id for c in lawyer_cases)
+
+    response = client.post(f"/api/v1/cases/{case_id}/claim", headers=lawyer_headers)
+    assert response.status_code == 200
+    assert response.json()["lawyer_name"] is not None
+
+
+def test_a_case_cannot_be_claimed_twice(client):
+    client_headers = register_user(client, email="requester3@example.com")
+    _make_client("requester3@example.com")
+    lawyer1 = register_user(client, email="firstclaimer@example.com")
+    lawyer2 = register_user(client, email="secondclaimer@example.com")
+
+    r = client.post(
+        "/api/v1/cases/request",
+        json={"title": "Employment dispute", "case_type": "Labour", "description": "I was terminated without notice or severance pay."},
+        headers=client_headers,
+    )
+    case_id = r.json()["id"]
+
+    first = client.post(f"/api/v1/cases/{case_id}/claim", headers=lawyer1)
+    assert first.status_code == 200
+
+    second = client.post(f"/api/v1/cases/{case_id}/claim", headers=lawyer2)
+    assert second.status_code == 409
+
+
+def test_client_cannot_claim_a_case(client):
+    client_headers = register_user(client, email="requester4@example.com")
+    _make_client("requester4@example.com")
+
+    r = client.post(
+        "/api/v1/cases/request",
+        json={"title": "Some issue", "case_type": "Civil", "description": "A description long enough to pass validation here."},
+        headers=client_headers,
+    )
+    case_id = r.json()["id"]
+
+    response = client.post(f"/api/v1/cases/{case_id}/claim", headers=client_headers)
+    assert response.status_code == 403

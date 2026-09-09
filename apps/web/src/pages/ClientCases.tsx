@@ -82,9 +82,17 @@ export default function ClientCases() {
         <Card className="p-10 text-center">
           <Briefcase size={28} className="mx-auto mb-3 text-muted-foreground" />
           <h2 className="text-base font-semibold text-foreground mb-1">No cases assigned yet</h2>
-          <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-            Once your lawyer assigns a case to your account, it will appear here.
+          <p className="text-sm text-muted-foreground max-w-sm mx-auto mb-4">
+            Once your lawyer assigns a case to your account, it will appear here — or submit a request
+            yourself and a lawyer will take it on.
           </p>
+          <button
+            onClick={() => navigate('/client/request-case')}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white"
+            style={{ background: G }}
+          >
+            Request a Case
+          </button>
         </Card>
       ) : (
         <>

@@ -12,6 +12,7 @@ from app.schemas import (
     CaseCreate,
     CaseList,
     CaseOut,
+    CaseRequestCreate,
     CaseUpdate,
     ContradictionsResponse,
     DocumentList,
@@ -40,9 +41,11 @@ CASE_TYPE_HINTS = {
 
 
 def _get_owned_case(db: Session, case_id: int, user: User) -> Case:
-    """A case is accessible to the lawyer who owns it, or the client it is
-    assigned to. Any other caller (including a different client) gets a 404,
-    not a 403 -- this avoids leaking whether a given case ID even exists to
+    """A case is accessible to the lawyer who owns it, the client it is
+    assigned to, or -- for a still-unclaimed client case request -- any
+    lawyer, so they can review it before deciding whether to claim it.
+    Any other caller (including a different client) gets a 404, not a
+    403 -- this avoids leaking whether a given case ID even exists to
     someone who has no business knowing that."""
     case = db.get(Case, case_id)
     if case is None:
@@ -51,12 +54,14 @@ def _get_owned_case(db: Session, case_id: int, user: User) -> Case:
         return case
     if user.role == "client" and case.client_id == user.id:
         return case
+    if user.role != "client" and case.owner_id is None:
+        return case
     raise HTTPException(status_code=404, detail="Case not found.")
 
 
 def _case_out(db: Session, case: Case) -> dict:
     docs = db.scalar(select(func.count()).where(Document.case_id == case.id)) or 0
-    owner = db.get(User, case.owner_id)
+    owner = db.get(User, case.owner_id) if case.owner_id is not None else None
     client = db.get(User, case.client_id) if case.client_id else None
     return {
         "id": case.id,
@@ -184,8 +189,74 @@ def list_cases(db: Session = Depends(get_db), user: User = Depends(get_current_u
     if user.role == "client":
         cases = db.scalars(select(Case).where(Case.client_id == user.id).order_by(Case.created_at.desc())).all()
     else:
-        cases = db.scalars(select(Case).where(Case.owner_id == user.id).order_by(Case.created_at.desc())).all()
+        # A lawyer sees cases they own, plus any still-unclaimed client case
+        # requests -- these show up so any lawyer can review and claim one,
+        # same idea as a shared intake queue.
+        cases = db.scalars(
+            select(Case)
+            .where((Case.owner_id == user.id) | (Case.owner_id.is_(None)))
+            .order_by(Case.created_at.desc())
+        ).all()
     return {"items": [_case_out(db, case) for case in cases], "total": len(cases)}
+
+
+@router.post("/request", response_model=CaseOut, status_code=201)
+def request_case(
+    request: CaseRequestCreate,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """A client submits a request for a new case. It's created with no
+    lawyer assigned yet (owner_id=None) and status 'Review' -- any lawyer
+    can see it in their case list and claim it (POST /cases/{id}/claim),
+    at which point they become its owner and can edit it normally."""
+    if user.role != "client":
+        raise HTTPException(status_code=403, detail="Only clients can request a new case.")
+    year = __import__("datetime").date.today().year
+    count = db.scalar(select(func.count()).where(Case.client_id == user.id)) or 0
+    case = Case(
+        owner_id=None,
+        client_id=user.id,
+        case_number=f"WL-{year}-{count + 1:03d}",
+        title=request.title.strip(),
+        case_type=request.case_type.strip(),
+        status="Review",
+        priority="Medium",
+        description=request.description.strip(),
+    )
+    db.add(case)
+    db.commit()
+    db.refresh(case)
+    return _case_out(db, case)
+
+
+@router.post("/{case_id}/claim", response_model=CaseOut)
+def claim_case(case_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    """A lawyer claims an unassigned client case request, becoming its
+    owner. Fails if it's already claimed by someone else -- first to
+    claim wins, avoiding two lawyers both thinking they own the same
+    request."""
+    if user.role == "client":
+        raise HTTPException(status_code=403, detail="Clients cannot claim cases.")
+    case = db.get(Case, case_id)
+    if case is None:
+        raise HTTPException(status_code=404, detail="Case not found.")
+    if case.owner_id is not None:
+        raise HTTPException(status_code=409, detail="This case has already been claimed by another lawyer.")
+    case.owner_id = user.id
+    db.commit()
+    db.refresh(case)
+    if case.client_id:
+        create_notification(
+            db,
+            user_id=case.client_id,
+            notification_type="case",
+            title="A lawyer has taken your case",
+            body=f"{case.case_number} · {case.title} has been assigned to a lawyer.",
+            action_url=f"/client/cases/{case.id}",
+        )
+        db.commit()
+    return _case_out(db, case)
 
 
 @router.get("/{case_id}", response_model=CaseOut)

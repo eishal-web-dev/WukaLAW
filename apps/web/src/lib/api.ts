@@ -582,6 +582,22 @@ export function createCase(payload: CaseCreatePayload): Promise<Case> {
   return postJson<Case>('/cases', payload)
 }
 
+export interface CaseRequestPayload {
+  title: string
+  case_type: string
+  description: string
+}
+
+/** POST /cases/request -- client-only, creates an unassigned case for a lawyer to claim. */
+export function requestCase(payload: CaseRequestPayload): Promise<Case> {
+  return postJson<Case>('/cases/request', payload)
+}
+
+/** POST /cases/{id}/claim -- lawyer-only, claims an unassigned client case request. */
+export function claimCase(id: number | string): Promise<Case> {
+  return postJson<Case>(`/cases/${id}/claim`, {})
+}
+
 /** GET /cases */
 export function listCases(): Promise<CaseListResponse> {
   return request<CaseListResponse>('/cases')

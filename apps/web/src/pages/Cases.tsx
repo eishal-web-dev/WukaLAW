@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Search, Edit2, Trash2, Eye, X, Grid as GridIcon, List as ListIcon, FileText, Briefcase } from 'lucide-react'
+import { Plus, Search, Edit2, Trash2, Eye, X, Grid as GridIcon, List as ListIcon, FileText, Briefcase, UserCheck } from 'lucide-react'
 import {
-  listCases, createCase, updateCase, deleteCase, errorMessage,
+  listCases, createCase, updateCase, deleteCase, claimCase, errorMessage,
 } from '../lib/api'
 import type { Case, CaseCreatePayload, CaseStatus, CasePriority } from '../lib/api'
 import { formatDate } from '../lib/format'
@@ -142,6 +142,7 @@ export default function Cases() {
   const [editing, setEditing] = useState<Case | null>(null)
   const [deleting, setDeleting] = useState<Case | null>(null)
   const [deleteBusy, setDeleteBusy] = useState(false)
+  const [claimingId, setClaimingId] = useState<number | null>(null)
 
   const refresh = useCallback(async () => {
     try {
@@ -199,6 +200,18 @@ export default function Cases() {
       setDeleting(null)
     } finally {
       setDeleteBusy(false)
+    }
+  }
+
+  const handleClaim = async (id: number) => {
+    setClaimingId(id)
+    try {
+      await claimCase(id)
+      await refresh()
+    } catch (err) {
+      setError(errorMessage(err))
+    } finally {
+      setClaimingId(null)
     }
   }
 
@@ -328,7 +341,17 @@ export default function Cases() {
                   >
                     <td className="px-4 py-3.5 text-xs font-mono" style={{ color: G }}>{c.case_number}</td>
                     <td className="px-4 py-3.5">
-                      <div className="text-foreground text-xs font-medium">{c.title}</div>
+                      <div className="text-foreground text-xs font-medium flex items-center gap-1.5">
+                        {c.title}
+                        {c.lawyer_name === null && (
+                          <span
+                            className="px-1.5 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-wide"
+                            style={{ background: `${G}22`, color: G }}
+                          >
+                            New Request
+                          </span>
+                        )}
+                      </div>
                       {c.description && (
                         <div className="text-[10px] text-muted-foreground mt-0.5 truncate max-w-[240px]">{c.description}</div>
                       )}
@@ -341,27 +364,41 @@ export default function Cases() {
                     <td className="px-4 py-3.5 text-xs text-muted-foreground">{formatDate(c.created_at)}</td>
                     <td className="px-4 py-3.5">
                       <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
-                        <button
-                          title="Open"
-                          onClick={() => navigate(`/cases/${c.id}`)}
-                          className="p-1.5 rounded-lg hover:bg-white/[0.08] text-muted-foreground hover:text-foreground transition-colors"
-                        >
-                          <Eye size={13} />
-                        </button>
-                        <button
-                          title="Edit"
-                          onClick={() => setEditing(c)}
-                          className="p-1.5 rounded-lg hover:bg-white/[0.08] text-muted-foreground hover:text-foreground transition-colors"
-                        >
-                          <Edit2 size={13} />
-                        </button>
-                        <button
-                          title="Delete"
-                          onClick={() => setDeleting(c)}
-                          className="p-1.5 rounded-lg hover:bg-red-500/10 text-muted-foreground hover:text-red-400 transition-colors"
-                        >
-                          <Trash2 size={13} />
-                        </button>
+                        {c.lawyer_name === null ? (
+                          <button
+                            title="Claim this case"
+                            onClick={() => void handleClaim(c.id)}
+                            disabled={claimingId === c.id}
+                            className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-semibold disabled:opacity-50"
+                            style={{ background: G, color: '#0D1117' }}
+                          >
+                            <UserCheck size={12} /> {claimingId === c.id ? 'Claiming…' : 'Claim'}
+                          </button>
+                        ) : (
+                          <>
+                            <button
+                              title="Open"
+                              onClick={() => navigate(`/cases/${c.id}`)}
+                              className="p-1.5 rounded-lg hover:bg-white/[0.08] text-muted-foreground hover:text-foreground transition-colors"
+                            >
+                              <Eye size={13} />
+                            </button>
+                            <button
+                              title="Edit"
+                              onClick={() => setEditing(c)}
+                              className="p-1.5 rounded-lg hover:bg-white/[0.08] text-muted-foreground hover:text-foreground transition-colors"
+                            >
+                              <Edit2 size={13} />
+                            </button>
+                            <button
+                              title="Delete"
+                              onClick={() => setDeleting(c)}
+                              className="p-1.5 rounded-lg hover:bg-red-500/10 text-muted-foreground hover:text-red-400 transition-colors"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </>
+                        )}
                       </div>
                     </td>
                   </tr>
