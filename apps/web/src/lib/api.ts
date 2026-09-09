@@ -696,6 +696,43 @@ export function getCasePrediction(id: number | string): Promise<CasePrediction> 
   return request<CasePrediction>(`/cases/${id}/prediction`)
 }
 
+export interface ReportSummary {
+  id: number
+  case_id: number
+  case_number: string
+  report_type: string
+  title: string
+  created_at: string
+}
+
+export interface ReportDetail extends ReportSummary {
+  content: string
+}
+
+/** POST /cases/{id}/reports -- generates a real report from real case data. */
+export function generateReport(caseId: number | string, reportType = 'case_summary'): Promise<ReportDetail> {
+  return request<ReportDetail>(`/cases/${caseId}/reports`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ report_type: reportType }),
+  })
+}
+
+/** GET /cases/{id}/reports -- previously generated reports for one case. */
+export function listCaseReports(caseId: number | string): Promise<ReportSummary[]> {
+  return request<ReportSummary[]>(`/cases/${caseId}/reports`)
+}
+
+/** GET /reports -- every report the current user has generated, across all their cases. */
+export function listMyReports(): Promise<ReportSummary[]> {
+  return request<ReportSummary[]>('/reports')
+}
+
+/** GET /reports/{id} -- full report content, ownership-enforced. */
+export function getReport(id: number | string): Promise<ReportDetail> {
+  return request<ReportDetail>(`/reports/${id}`)
+}
+
 /** GET /documents/{id}/citations — legal citations detected in a document. */
 export function getDocumentCitations(
   id: number | string,

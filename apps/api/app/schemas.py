@@ -229,3 +229,20 @@ class AdminUserOut(BaseModel):
     created_at: str
     case_count: int
     document_count: int
+
+
+class ReportGenerateRequest(BaseModel):
+    report_type: str = Field(default="case_summary")
+
+
+class ReportOut(BaseModel):
+    id: int
+    case_id: int
+    case_number: str
+    report_type: str
+    title: str
+    created_at: datetime
+
+
+class ReportDetailOut(ReportOut):
+    content: str

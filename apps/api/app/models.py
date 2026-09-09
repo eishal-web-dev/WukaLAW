@@ -87,3 +87,21 @@ class Chunk(Base):
     text: Mapped[str] = mapped_column(Text)
 
     document: Mapped[Document] = relationship(back_populates="chunks")
+
+
+class GeneratedReport(Base):
+    """A real, generated-on-demand report bundling a case's actual data
+    (details, documents, summaries) into readable text. Deliberately
+    plain-text, not PDF -- no PDF-generation library exists in this
+    backend's dependencies, and a genuine text report beats a fake
+    'PDF, 12 pages' claim with nothing behind it."""
+
+    __tablename__ = "generated_reports"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    case_id: Mapped[int] = mapped_column(ForeignKey("cases.id"), index=True)
+    requested_by_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    report_type: Mapped[str] = mapped_column(String(50))
+    title: Mapped[str] = mapped_column(String(255))
+    content: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
