@@ -20,6 +20,7 @@ import ClientRequestCase from './pages/ClientRequestCase'
 import ClientCourtPrediction from './pages/ClientCourtPrediction'
 import ClientExplainableAI from './pages/ClientExplainableAI'
 import ClientReportGenerator from './pages/ClientReportGenerator'
+import ClientDownloads from './pages/ClientDownloads'
 import Cases from './pages/Cases'
 import CaseDetail from './pages/CaseDetail'
 import Documents from './pages/Documents'
@@ -135,7 +136,7 @@ export default function App() {
             <Route path="/client/predictions" element={<ClientCourtPrediction />} />
             <Route path="/client/explainable" element={<ClientExplainableAI />} />
             <Route path="/client/report-generator" element={<ClientReportGenerator />} />
-            <Route path="/client/downloads" element={<FigmaPortalRoute page="cp-downloads" />} />
+            <Route path="/client/downloads" element={<ClientDownloads />} />
           </Route>
           {/* Admin routes require the server-assigned role. */}
           <Route element={<AdminRoute />}>
