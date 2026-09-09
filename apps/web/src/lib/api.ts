@@ -676,6 +676,26 @@ export function getCaseTimeline(
   return request<TimelineResponse>(`/cases/${id}/timeline`)
 }
 
+export interface CasePredictionFactor {
+  label: string
+  contribution: number
+}
+
+export interface CasePrediction {
+  available: boolean
+  generated_at: string | null
+  probability: number | null
+  factors: CasePredictionFactor[]
+  disclaimer: string
+}
+
+/** GET /cases/{id}/prediction -- real contract; no prediction engine exists
+ * yet, so `available` is always false right now. Never render a fake
+ * percentage when available is false. */
+export function getCasePrediction(id: number | string): Promise<CasePrediction> {
+  return request<CasePrediction>(`/cases/${id}/prediction`)
+}
+
 /** GET /documents/{id}/citations — legal citations detected in a document. */
 export function getDocumentCitations(
   id: number | string,

@@ -409,3 +409,31 @@ def case_documents(case_id: int, db: Session = Depends(get_db), user: User = Dep
         "items": [_meta(document, counts.get(document.id, 0)) for document in documents],
         "total": len(documents),
     }
+
+
+@router.get("/{case_id}/prediction")
+def case_prediction(case_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    """Court-outcome prediction contract for a case.
+
+    There is no prediction engine implemented anywhere in this codebase --
+    no model, no training data, no scoring logic. This endpoint exists so
+    the frontend has a real, honest contract to call rather than showing a
+    fabricated percentage: available is always false right now, and the
+    frontend must render that as 'Not generated', never a fake number.
+    When a real prediction engine is built, this is the endpoint it should
+    populate -- the shape (available, generated_at, probability, factors,
+    disclaimer) is what a real result would look like.
+    """
+    _get_owned_case(db, case_id, user)  # enforces the same ownership/visibility rules
+    return {
+        "available": False,
+        "generated_at": None,
+        "probability": None,
+        "factors": [],
+        "disclaimer": (
+            "Court outcome prediction has not been generated for this case. "
+            "This feature estimates a rough likelihood based on case documents "
+            "and is not legal advice -- when available, always treat it as one "
+            "input among many, not a determination of how your case will go."
+        ),
+    }

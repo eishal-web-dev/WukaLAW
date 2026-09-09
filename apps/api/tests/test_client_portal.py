@@ -241,3 +241,39 @@ def test_client_cannot_claim_a_case(client):
 
     response = client.post(f"/api/v1/cases/{case_id}/claim", headers=client_headers)
     assert response.status_code == 403
+
+
+def test_case_prediction_honestly_reports_unavailable(client):
+    lawyer = register_user(client, email="lawyer8@example.com")
+
+    r = client.post(
+        "/api/v1/cases",
+        json={"title": "Some Case", "case_type": "Civil", "status": "Active", "priority": "Medium"},
+        headers=lawyer,
+    )
+    case_id = r.json()["id"]
+
+    response = client.get(f"/api/v1/cases/{case_id}/prediction", headers=lawyer)
+    assert response.status_code == 200
+    data = response.json()
+    assert data["available"] is False
+    assert data["probability"] is None
+    assert data["factors"] == []
+    assert "not been generated" in data["disclaimer"].lower()
+
+
+def test_case_prediction_enforces_the_same_ownership_rules(client):
+    lawyer = register_user(client, email="lawyer9@example.com")
+    other_client_headers = register_user(client, email="client9@example.com")
+    _make_client("client9@example.com")
+
+    r = client.post(
+        "/api/v1/cases",
+        json={"title": "Someone Else's Case", "case_type": "Civil", "status": "Active", "priority": "Medium"},
+        headers=lawyer,
+    )
+    case_id = r.json()["id"]
+    # Not assigned to client9.
+
+    response = client.get(f"/api/v1/cases/{case_id}/prediction", headers=other_client_headers)
+    assert response.status_code == 404
