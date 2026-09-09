@@ -13,8 +13,8 @@ vi.mock('../../lib/api', () => ({
 
 beforeEach(() => {
   vi.clearAllMocks()
-  global.URL.createObjectURL = vi.fn(() => 'blob:mock')
-  global.URL.revokeObjectURL = vi.fn()
+  globalThis.URL.createObjectURL = vi.fn(() => 'blob:mock')
+  globalThis.URL.revokeObjectURL = vi.fn()
 })
 
 function renderPage() {
