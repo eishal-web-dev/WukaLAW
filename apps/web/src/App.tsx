@@ -18,6 +18,7 @@ import ClientTimeline from './pages/ClientTimeline'
 import ClientAISummary from './pages/ClientAISummary'
 import ClientRequestCase from './pages/ClientRequestCase'
 import ClientCourtPrediction from './pages/ClientCourtPrediction'
+import ClientExplainableAI from './pages/ClientExplainableAI'
 import Cases from './pages/Cases'
 import CaseDetail from './pages/CaseDetail'
 import Documents from './pages/Documents'
@@ -131,7 +132,7 @@ export default function App() {
             <Route path="/client/request-case" element={<ClientRequestCase />} />
             <Route path="/client/similar-cases" element={<FigmaPortalRoute page="cp-similar" />} />
             <Route path="/client/predictions" element={<ClientCourtPrediction />} />
-            <Route path="/client/explainable" element={<FigmaPortalRoute page="cp-explainable" />} />
+            <Route path="/client/explainable" element={<ClientExplainableAI />} />
             <Route path="/client/report-generator" element={<FigmaPortalRoute page="cp-report-gen" />} />
             <Route path="/client/downloads" element={<FigmaPortalRoute page="cp-downloads" />} />
           </Route>
