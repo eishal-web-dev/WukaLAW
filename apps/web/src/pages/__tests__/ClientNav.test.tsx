@@ -16,6 +16,7 @@ vi.mock('../ClientDashboard', () => ({ default: () => <h1>Client dashboard conte
 vi.mock('../Dashboard', () => ({ default: () => <h1>Lawyer dashboard content</h1> }))
 vi.mock('../ClientCases', () => ({ default: () => <h1>Client cases content</h1> }))
 vi.mock('../Cases', () => ({ default: () => <h1>Lawyer cases content</h1> }))
+vi.mock('../ClientBilling', () => ({ default: () => <h1>Client billing content</h1> }))
 
 afterEach(cleanup)
 beforeAll(() => {
@@ -68,5 +69,13 @@ describe('Client sidebar navigation (spec: never send clients to Lawyer pages)',
     expect(await screen.findByRole('heading', { name: 'Lawyer dashboard content' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Case Management' })).toBeInTheDocument()
     expect(screen.queryByText('My Cases')).not.toBeInTheDocument()
+  })
+
+  it('clicking "Billing" for a client goes to their own real billing page, not the shared lawyer /billing route', async () => {
+    open('/client')
+    await screen.findByRole('heading', { name: 'Client dashboard content' })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Billing' }))
+    expect(await screen.findByRole('heading', { name: 'Client billing content' })).toBeInTheDocument()
   })
 })

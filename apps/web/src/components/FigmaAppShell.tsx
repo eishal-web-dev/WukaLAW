@@ -85,7 +85,7 @@ const CLIENT_NAV: NavGroup[] = [
     { path: '/client/downloads', label: 'Downloads', icon: Download },
   ] },
   { label: 'Account', items: [
-    { path: '/billing', label: 'Billing', icon: CreditCard },
+    { path: '/client/billing', label: 'Billing', icon: CreditCard },
     { path: '/notifications', label: 'Notifications', icon: Bell, notificationBadge: true },
     { path: '/profile', label: 'Profile', icon: User },
     { path: '/settings', label: 'Settings', icon: Settings },
