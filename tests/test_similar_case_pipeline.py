@@ -11,7 +11,10 @@ def test_natural_search_judgment_only_dedup_outcome():
  assert len(out.results)==1 and out.results[0].explicit_outcome_phrase=="appeal allowed"
  assert retriever.queries[0].document_types==["judgment"] and out.results[0].matching_factors
 def test_document_search_excludes_source_and_exact_duplicate():
- source=hit("source","s1",.9,payload={"duplicate_hash":"same"});duplicate=hit("copy","copy",.95,payload={"duplicate_hash":"same"});other=hit("other","o",.7,payload={"duplicate_hash":"other"})
+ # other is a clearly-relevant judgment (high score) so this test verifies the
+ # dedup logic — source and its exact duplicate are excluded, other survives —
+ # rather than sitting on the relevance-threshold boundary.
+ source=hit("source","s1",.9,payload={"duplicate_hash":"same"});duplicate=hit("copy","copy",.95,payload={"duplicate_hash":"same"});other=hit("other","o",.95,sections=["302"],payload={"duplicate_hash":"other"})
  out=SimilarCasePipeline(FakeRetriever([duplicate,other],source=[source]),intelligence_analyzer=intel).run(SimilarCaseRequest(document_id="source"))
  assert [x.document_id for x in out.results]==["other"]
 def test_missing_outcome_and_no_results():
