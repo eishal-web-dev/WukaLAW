@@ -7,6 +7,15 @@ the same approach as ``apps/api/tests``. Set here so both a bare
 ``pytest tests/`` and CI behave identically without extra flags.
 """
 import os
+import sys
+from pathlib import Path
+
+# Put the repository root on sys.path so `import ai` resolves under a bare
+# `pytest tests/` invocation (as CI runs it), not only `python -m pytest`,
+# which adds the current directory automatically.
+_REPO_ROOT = str(Path(__file__).resolve().parent.parent)
+if _REPO_ROOT not in sys.path:
+    sys.path.insert(0, _REPO_ROOT)
 
 os.environ.setdefault("FAKE_EMBEDDINGS", "1")
 os.environ.setdefault("FAKE_NLI", "1")
