@@ -277,3 +277,42 @@ def test_case_prediction_enforces_the_same_ownership_rules(client):
 
     response = client.get(f"/api/v1/cases/{case_id}/prediction", headers=other_client_headers)
     assert response.status_code == 404
+
+
+def test_client_can_access_pathway_intelligence_for_their_own_case(client):
+    """Regression test: pathway_intelligence had its own local ownership
+    check that only ever allowed case.owner_id == user.id, meaning a
+    client could never view this for their own assigned case at all."""
+    lawyer = register_user(client, email="lawyer10@example.com")
+    client_headers = register_user(client, email="client10@example.com")
+    _make_client("client10@example.com")
+
+    r = client.post(
+        "/api/v1/cases",
+        json={"title": "Pathway Test Case", "case_type": "Civil", "status": "Active", "priority": "Medium", "description": "A dispute over unpaid wages."},
+        headers=lawyer,
+    )
+    case_id = r.json()["id"]
+    me = client.get("/api/v1/auth/me", headers=client_headers).json()
+    client.patch(f"/api/v1/cases/{case_id}", json={"client_id": me["id"]}, headers=lawyer)
+
+    response = client.get(f"/api/v1/cases/{case_id}/pathway-intelligence", headers=client_headers)
+    assert response.status_code == 200
+    assert response.json()["source_case"]["id"] == case_id
+
+
+def test_pathway_intelligence_still_enforces_ownership_for_unrelated_clients(client):
+    lawyer = register_user(client, email="lawyer11@example.com")
+    other_client_headers = register_user(client, email="client11@example.com")
+    _make_client("client11@example.com")
+
+    r = client.post(
+        "/api/v1/cases",
+        json={"title": "Not Yours", "case_type": "Civil", "status": "Active", "priority": "Medium"},
+        headers=lawyer,
+    )
+    case_id = r.json()["id"]
+    # Not assigned to client11.
+
+    response = client.get(f"/api/v1/cases/{case_id}/pathway-intelligence", headers=other_client_headers)
+    assert response.status_code == 404
