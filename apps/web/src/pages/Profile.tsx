@@ -4,6 +4,7 @@ import { Mail, LogOut, Hash, RefreshCw } from 'lucide-react'
 import { getMe, listCases, listDocuments, errorMessage } from '../lib/api'
 import type { User } from '../lib/api'
 import { useAuth } from '../lib/auth'
+import { formatDate } from '../lib/format'
 import { Btn, Card, Badge, SectionHeader, G } from '../components/design'
 import ErrorAlert from '../components/ErrorAlert'
 
@@ -69,7 +70,7 @@ export default function Profile() {
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-1">
               <h2 className="text-xl font-bold text-foreground">{name}</h2>
-              <Badge label="Member" variant="Active" />
+              <Badge label={user?.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : 'Member'} variant="Active" />
             </div>
             <div className="text-muted-foreground text-sm mb-3">WakuLaw · AI Legal Intelligence</div>
             <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
@@ -104,6 +105,8 @@ export default function Profile() {
               ['Name', name],
               ['Email', user?.email ?? '—'],
               ['User ID', user?.id !== undefined ? String(user.id) : '—'],
+              ['Role', user?.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : '—'],
+              ['Member Since', user?.created_at ? formatDate(user.created_at) : '—'],
             ].map(([k, v]) => (
               <div key={k} className="flex justify-between text-xs">
                 <span className="text-muted-foreground">{k}</span>

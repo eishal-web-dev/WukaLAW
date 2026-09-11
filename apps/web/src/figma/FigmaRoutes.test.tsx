@@ -39,7 +39,7 @@ function roleForPage(page: string): 'client' | 'lawyer' | 'admin' {
 }
 
 function testUserFor(role: 'client' | 'lawyer' | 'admin') {
-  return { id: 17, name: 'Test User', email: 'test-user@example.com', role }
+  return { id: 17, name: 'Test User', email: 'test-user@example.com', role, created_at: '2026-01-01T00:00:00Z' }
 }
 
 function renderPortal(page: string) {

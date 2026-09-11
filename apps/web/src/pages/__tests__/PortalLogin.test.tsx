@@ -90,7 +90,7 @@ describe('Portal sign-in', () => {
   it('returns a restored client session to its portal', async () => {
     // Seed a real stored session, then let AuthProvider validate it through /me.
     const { setAuthStorage } = await import('../../lib/api')
-    const user = { id: 1, name: 'Client User', email: 'test@example.com', role: 'client' }
+    const user = { id: 1, name: 'Client User', email: 'test@example.com', role: 'client', created_at: '2026-01-01T00:00:00Z' }
     setAuthStorage('test-token', user)
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify(user), { status: 200 }))
     open('/login')

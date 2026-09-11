@@ -22,6 +22,7 @@ class UserOut(BaseModel):
     email: str
     name: str
     role: str = "lawyer"
+    created_at: datetime
 
 
 class AuthResponse(BaseModel):

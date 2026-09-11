@@ -17,12 +17,14 @@ describe('Client dashboard identity', () => {
       name: 'Eishal Khan',
       email: 'eishal@example.com',
       role: 'client',
+      created_at: '2026-01-01T00:00:00Z',
     })
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify({
       id: 17,
       name: 'Eishal Khan',
       email: 'eishal@example.com',
       role: 'client',
+      created_at: '2026-01-01T00:00:00Z',
     }), { status: 200 }))
 
     render(
