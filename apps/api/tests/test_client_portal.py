@@ -316,3 +316,106 @@ def test_pathway_intelligence_still_enforces_ownership_for_unrelated_clients(cli
 
     response = client.get(f"/api/v1/cases/{case_id}/pathway-intelligence", headers=other_client_headers)
     assert response.status_code == 404
+
+
+def test_client_can_create_and_list_timeline_entries_for_their_case(client):
+    lawyer = register_user(client, email="tl_lawyer1@example.com")
+    client_headers = register_user(client, email="tl_client1@example.com")
+    _make_client("tl_client1@example.com")
+
+    r = client.post(
+        "/api/v1/cases",
+        json={"title": "Divorce Case", "case_type": "Family", "status": "Active", "priority": "Medium"},
+        headers=lawyer,
+    )
+    case_id = r.json()["id"]
+    me = client.get("/api/v1/auth/me", headers=client_headers).json()
+    client.patch(f"/api/v1/cases/{case_id}", json={"client_id": me["id"]}, headers=lawyer)
+
+    response = client.post(
+        f"/api/v1/cases/{case_id}/timeline-entries",
+        json={"date": "2018-06-15", "title": "Got married", "source": "guided"},
+        headers=client_headers,
+    )
+    assert response.status_code == 201, response.text
+    entry_id = response.json()["id"]
+    assert response.json()["source"] == "guided"
+
+    listed = client.get(f"/api/v1/cases/{case_id}/timeline-entries", headers=client_headers)
+    assert listed.status_code == 200
+    assert len(listed.json()) == 1
+    assert listed.json()[0]["id"] == entry_id
+
+
+def test_timeline_entry_can_be_edited_and_deleted(client):
+    lawyer = register_user(client, email="tl_lawyer2@example.com")
+
+    r = client.post(
+        "/api/v1/cases",
+        json={"title": "Edit Test Case", "case_type": "Family", "status": "Active", "priority": "Medium"},
+        headers=lawyer,
+    )
+    case_id = r.json()["id"]
+    created = client.post(
+        f"/api/v1/cases/{case_id}/timeline-entries",
+        json={"date": "2020-01-01", "title": "Original title", "source": "custom"},
+        headers=lawyer,
+    )
+    entry_id = created.json()["id"]
+
+    edited = client.patch(
+        f"/api/v1/cases/{case_id}/timeline-entries/{entry_id}",
+        json={"title": "Corrected title"},
+        headers=lawyer,
+    )
+    assert edited.status_code == 200
+    assert edited.json()["title"] == "Corrected title"
+    assert edited.json()["date"] == "2020-01-01"  # unchanged field preserved
+
+    deleted = client.delete(f"/api/v1/cases/{case_id}/timeline-entries/{entry_id}", headers=lawyer)
+    assert deleted.status_code == 204
+
+    listed = client.get(f"/api/v1/cases/{case_id}/timeline-entries", headers=lawyer)
+    assert listed.json() == []
+
+
+def test_timeline_entries_enforce_case_ownership(client):
+    lawyer = register_user(client, email="tl_lawyer3@example.com")
+    other_client_headers = register_user(client, email="tl_client3@example.com")
+    _make_client("tl_client3@example.com")
+
+    r = client.post(
+        "/api/v1/cases",
+        json={"title": "Private Timeline Case", "case_type": "Family", "status": "Active", "priority": "Medium"},
+        headers=lawyer,
+    )
+    case_id = r.json()["id"]
+    # Not assigned to this client.
+
+    response = client.get(f"/api/v1/cases/{case_id}/timeline-entries", headers=other_client_headers)
+    assert response.status_code == 404
+
+    response = client.post(
+        f"/api/v1/cases/{case_id}/timeline-entries",
+        json={"date": "2020-01-01", "title": "Sneaky entry", "source": "custom"},
+        headers=other_client_headers,
+    )
+    assert response.status_code == 404
+
+
+def test_timeline_entry_rejects_an_invalid_source(client):
+    lawyer = register_user(client, email="tl_lawyer4@example.com")
+
+    r = client.post(
+        "/api/v1/cases",
+        json={"title": "Source Test Case", "case_type": "Family", "status": "Active", "priority": "Medium"},
+        headers=lawyer,
+    )
+    case_id = r.json()["id"]
+
+    response = client.post(
+        f"/api/v1/cases/{case_id}/timeline-entries",
+        json={"date": "2020-01-01", "title": "Bad source", "source": "nonsense"},
+        headers=lawyer,
+    )
+    assert response.status_code == 422

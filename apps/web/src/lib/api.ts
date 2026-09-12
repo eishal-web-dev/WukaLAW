@@ -677,6 +677,47 @@ export function getCaseTimeline(
   return request<TimelineResponse>(`/cases/${id}/timeline`)
 }
 
+export interface CaseTimelineEntry {
+  id: number
+  case_id: number
+  date: string
+  title: string
+  source: 'custom' | 'guided'
+  created_at: string
+}
+
+/** GET /cases/{id}/timeline-entries -- real, persisted, editable entries (distinct from extracted events). */
+export function listTimelineEntries(caseId: number | string): Promise<CaseTimelineEntry[]> {
+  return request<CaseTimelineEntry[]>(`/cases/${caseId}/timeline-entries`)
+}
+
+export function createTimelineEntry(
+  caseId: number | string,
+  payload: { date: string; title: string; source?: 'custom' | 'guided' },
+): Promise<CaseTimelineEntry> {
+  return request<CaseTimelineEntry>(`/cases/${caseId}/timeline-entries`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ source: 'custom', ...payload }),
+  })
+}
+
+export function updateTimelineEntry(
+  caseId: number | string,
+  entryId: number,
+  payload: { date?: string; title?: string },
+): Promise<CaseTimelineEntry> {
+  return request<CaseTimelineEntry>(`/cases/${caseId}/timeline-entries/${entryId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+}
+
+export function deleteTimelineEntry(caseId: number | string, entryId: number): Promise<void> {
+  return del(`/cases/${caseId}/timeline-entries/${entryId}`)
+}
+
 export interface CasePredictionFactor {
   label: string
   contribution: number

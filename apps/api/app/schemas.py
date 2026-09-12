@@ -247,3 +247,23 @@ class ReportOut(BaseModel):
 
 class ReportDetailOut(ReportOut):
     content: str
+
+
+class TimelineEntryCreate(BaseModel):
+    date: str = Field(min_length=1, max_length=32)
+    title: str = Field(min_length=1, max_length=255)
+    source: str = "custom"
+
+
+class TimelineEntryUpdate(BaseModel):
+    date: str | None = Field(default=None, min_length=1, max_length=32)
+    title: str | None = Field(default=None, min_length=1, max_length=255)
+
+
+class TimelineEntryOut(BaseModel):
+    id: int
+    case_id: int
+    date: str
+    title: str
+    source: str
+    created_at: datetime

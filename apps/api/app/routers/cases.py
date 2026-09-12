@@ -7,7 +7,7 @@ from ai.similar_cases import SimilarCaseRequest
 from ai.timeline.extract import extract_events
 from app.auth import get_current_user
 from app.db import get_db
-from app.models import Case, Chunk, Document, User
+from app.models import Case, CaseTimelineEntry, Chunk, Document, User
 from app.schemas import (
     CaseCreate,
     CaseList,
@@ -16,6 +16,9 @@ from app.schemas import (
     CaseUpdate,
     ContradictionsResponse,
     DocumentList,
+    TimelineEntryCreate,
+    TimelineEntryOut,
+    TimelineEntryUpdate,
     TimelineResponse,
 )
 from app.services.notification_service import create_notification
@@ -339,6 +342,95 @@ def case_timeline(case_id: int, db: Session = Depends(get_db), user: User = Depe
             events.append({**event.__dict__, "document_id": document.id, "document_title": document.title})
     events.sort(key=lambda event: event["date"])
     return {"events": events}
+
+
+def _entry_out(entry: CaseTimelineEntry) -> dict:
+    return {
+        "id": entry.id,
+        "case_id": entry.case_id,
+        "date": entry.date,
+        "title": entry.title,
+        "source": entry.source,
+        "created_at": entry.created_at,
+    }
+
+
+@router.get("/{case_id}/timeline-entries", response_model=list[TimelineEntryOut])
+def list_timeline_entries(case_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    """Real, persisted timeline entries (custom or guided-question answers)
+    for a case -- distinct from the read-only events extracted live from
+    document text by GET /{case_id}/timeline. These are actual database
+    rows a user added or edited themselves."""
+    case = _get_owned_case(db, case_id, user)
+    entries = db.scalars(
+        select(CaseTimelineEntry).where(CaseTimelineEntry.case_id == case.id).order_by(CaseTimelineEntry.date)
+    ).all()
+    return [_entry_out(e) for e in entries]
+
+
+@router.post("/{case_id}/timeline-entries", response_model=TimelineEntryOut, status_code=201)
+def create_timeline_entry(
+    case_id: int,
+    request: TimelineEntryCreate,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    case = _get_owned_case(db, case_id, user)
+    if request.source not in ("custom", "guided"):
+        raise HTTPException(status_code=422, detail="source must be 'custom' or 'guided'.")
+    entry = CaseTimelineEntry(
+        case_id=case.id,
+        created_by_id=user.id,
+        date=request.date.strip(),
+        title=request.title.strip(),
+        source=request.source,
+    )
+    db.add(entry)
+    db.commit()
+    db.refresh(entry)
+    return _entry_out(entry)
+
+
+def _get_owned_entry(db: Session, case_id: int, entry_id: int, user: User) -> CaseTimelineEntry:
+    """A timeline entry is only editable/deletable within a case the
+    caller can already access -- reuses the same case-level ownership
+    check as everything else, rather than trusting entry_id alone."""
+    _get_owned_case(db, case_id, user)
+    entry = db.get(CaseTimelineEntry, entry_id)
+    if entry is None or entry.case_id != case_id:
+        raise HTTPException(status_code=404, detail="Timeline entry not found.")
+    return entry
+
+
+@router.patch("/{case_id}/timeline-entries/{entry_id}", response_model=TimelineEntryOut)
+def update_timeline_entry(
+    case_id: int,
+    entry_id: int,
+    request: TimelineEntryUpdate,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    entry = _get_owned_entry(db, case_id, entry_id, user)
+    if request.date is not None:
+        entry.date = request.date.strip()
+    if request.title is not None:
+        entry.title = request.title.strip()
+    db.commit()
+    db.refresh(entry)
+    return _entry_out(entry)
+
+
+@router.delete("/{case_id}/timeline-entries/{entry_id}", status_code=204)
+def delete_timeline_entry(
+    case_id: int,
+    entry_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    entry = _get_owned_entry(db, case_id, entry_id, user)
+    db.delete(entry)
+    db.commit()
+    return None
 
 
 @router.get("/{case_id}/similar")

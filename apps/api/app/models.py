@@ -105,3 +105,23 @@ class GeneratedReport(Base):
     title: Mapped[str] = mapped_column(String(255))
     content: Mapped[str] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class CaseTimelineEntry(Base):
+    """A real, persisted, editable timeline entry -- distinct from the
+    read-only events extracted live from document text (getCaseTimeline).
+    Created either from a guided question (e.g. 'When did you get
+    married?' for a Family/Divorce case) or added freely as a custom
+    entry. Unlike extracted events, these are real database rows a user
+    can edit or delete."""
+
+    __tablename__ = "case_timeline_entries"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    case_id: Mapped[int] = mapped_column(ForeignKey("cases.id"), index=True)
+    created_by_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    date: Mapped[str] = mapped_column(String(32))  # ISO date, or free text if imprecise
+    title: Mapped[str] = mapped_column(String(255))
+    source: Mapped[str] = mapped_column(String(20), default="custom")  # 'custom' | 'guided'
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
