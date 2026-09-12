@@ -381,3 +381,30 @@ def test_resolve_search_scope_never_includes_none_for_an_unclaimed_case():
     assert None not in owner_ids
     assert owner_ids == {42}  # only the client's own id -- no lawyer to search under yet
     assert document_ids == {1, 2, 3}
+
+
+def test_ask_never_returns_a_raw_500_on_an_unexpected_failure(client, monkeypatch):
+    """Directly verifies the safety net added around /ask: any exception
+    that isn't a deliberate HTTPException (a real infrastructure failure --
+    the embedding model down, Qdrant unreachable, anything unpredictable)
+    must come back as a clean 503 with a real message, never an opaque
+    raw 500. Forces a genuine unexpected exception via monkeypatch rather
+    than trying to actually break the real AI pipeline."""
+    import app.routers.qa as qa_module
+
+    lawyer_headers = register_user(client, email="safetynet@example.com")
+
+    def _boom(*args, **kwargs):
+        raise RuntimeError("simulated embedding model failure")
+
+    monkeypatch.setattr(qa_module.vector_index, "search", _boom)
+
+    response = client.post(
+        "/api/v1/ask",
+        json={"question": "What does this document say about the contract terms?"},
+        headers=lawyer_headers,
+    )
+    assert response.status_code == 503
+    assert "temporarily unavailable" in response.json()["detail"].lower()
+    # Never leaks the raw exception text to the client.
+    assert "simulated embedding model failure" not in response.text

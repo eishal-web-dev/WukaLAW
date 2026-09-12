@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import and_, select
 from sqlalchemy.orm import Session
@@ -12,6 +14,7 @@ from app.routers.search import OVERFETCH_FACTOR, chunks_to_sources
 from app.schemas import AskRequest, AskResponse
 
 router = APIRouter(tags=["qa"])
+logger = logging.getLogger(__name__)
 
 
 def _documents_containing_terms(
@@ -76,6 +79,33 @@ def ask(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
+    """Thin wrapper around _ask_impl that guarantees a client never sees a
+    raw, unhandled 500 with no explanation -- per the spec's explicit
+    requirement ('return safe, meaningful API errors instead of a raw
+    500... do not return raw exception details to the browser').
+
+    HTTPException (400/404/etc.) from _ask_impl is deliberate and passes
+    through unchanged -- those already carry a real, useful message.
+    Anything else is an infrastructure problem this code can't fully
+    predict (the embedding model or local LLM not running, Qdrant
+    unreachable, etc.) -- logged with the exception type and a short
+    message only (never the question text itself, which could contain
+    something the user considers private) so the *fact* of a failure is
+    diagnosable without exposing raw internals to the browser.
+    """
+    try:
+        return _ask_impl(request, db, user)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.exception("AI Assistant request failed: %s: %s", type(exc).__name__, exc)
+        raise HTTPException(
+            status_code=503,
+            detail="AI service is temporarily unavailable. Please try again later.",
+        ) from exc
+
+
+def _ask_impl(request: AskRequest, db: Session, user: User) -> dict:
     search_owner_ids, allowed_document_ids = _resolve_search_scope(db, user, request.case_id)
 
     if rag.is_library_question(request.question):
