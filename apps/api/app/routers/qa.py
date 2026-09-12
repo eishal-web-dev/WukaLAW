@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import and_, select
 from sqlalchemy.orm import Session
@@ -12,6 +14,7 @@ from app.routers.search import OVERFETCH_FACTOR, chunks_to_sources
 from app.schemas import AskRequest, AskResponse
 
 router = APIRouter(tags=["qa"])
+logger = logging.getLogger(__name__)
 
 
 def _documents_containing_terms(
@@ -34,22 +37,28 @@ def _documents_containing_terms(
     return list(rows)
 
 
-def _resolve_search_scope(db: Session, user: User, case_id: int | None) -> tuple[int, set[int] | None]:
-    """Returns (owner_id_to_search_as, allowed_document_ids).
+def _resolve_search_scope(db: Session, user: User, case_id: int | None) -> tuple[set[int], set[int] | None]:
+    """Returns (owner_ids_to_search_as, allowed_document_ids).
 
     Lawyers search their own indexed vectors directly with no extra
     filtering (allowed_document_ids=None means 'use the owner_id check').
 
-    Clients must specify a case_id -- there is no whole-library search for a
-    client, since their documents don't have their own indexed vectors (the
-    case's lawyer is who actually uploaded and indexed them). The vector
-    search runs scoped to that lawyer's index, then chunks_to_sources()
-    narrows the results down to only that one case's documents, so a client
-    can never see another case's material even though the underlying search
-    ran across the lawyer's full index.
+    Clients must specify a case_id. Documents on a case can be indexed
+    under EITHER owner_id: the case's lawyer (if they uploaded it) or the
+    client themselves (if they uploaded it via /client/upload -- clients
+    have been able to do this since the Upload Documents feature, but this
+    function originally assumed only a lawyer ever uploads, which was true
+    when it was first written and became wrong later without this being
+    updated). A still-unclaimed case (owner_id is None) has no lawyer
+    index to search at all -- only the client's own. Returns both
+    plausible owner_ids so the caller can search across whichever ones
+    actually indexed something for this case, then chunks_to_sources()
+    narrows the merged results down to only this one case's documents, so
+    a client can never see another case's material even though the
+    underlying search may run across a lawyer's full index.
     """
     if user.role != "client":
-        return user.id, None
+        return {user.id}, None
 
     if case_id is None:
         raise HTTPException(status_code=400, detail="case_id is required for client questions.")
@@ -58,7 +67,10 @@ def _resolve_search_scope(db: Session, user: User, case_id: int | None) -> tuple
 
     case = _get_owned_case(db, case_id, user)
     document_ids = set(db.scalars(select(Document.id).where(Document.case_id == case.id)).all())
-    return case.owner_id, document_ids
+    owner_ids = {user.id}
+    if case.owner_id is not None:
+        owner_ids.add(case.owner_id)
+    return owner_ids, document_ids
 
 
 @router.post("/ask", response_model=AskResponse)
@@ -67,7 +79,34 @@ def ask(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    search_owner_id, allowed_document_ids = _resolve_search_scope(db, user, request.case_id)
+    """Thin wrapper around _ask_impl that guarantees a client never sees a
+    raw, unhandled 500 with no explanation -- per the spec's explicit
+    requirement ('return safe, meaningful API errors instead of a raw
+    500... do not return raw exception details to the browser').
+
+    HTTPException (400/404/etc.) from _ask_impl is deliberate and passes
+    through unchanged -- those already carry a real, useful message.
+    Anything else is an infrastructure problem this code can't fully
+    predict (the embedding model or local LLM not running, Qdrant
+    unreachable, etc.) -- logged with the exception type and a short
+    message only (never the question text itself, which could contain
+    something the user considers private) so the *fact* of a failure is
+    diagnosable without exposing raw internals to the browser.
+    """
+    try:
+        return _ask_impl(request, db, user)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.exception("AI Assistant request failed: %s: %s", type(exc).__name__, exc)
+        raise HTTPException(
+            status_code=503,
+            detail="AI service is temporarily unavailable. Please try again later.",
+        ) from exc
+
+
+def _ask_impl(request: AskRequest, db: Session, user: User) -> dict:
+    search_owner_ids, allowed_document_ids = _resolve_search_scope(db, user, request.case_id)
 
     if rag.is_library_question(request.question):
         return _library_answer(db, user, allowed_document_ids)
@@ -85,16 +124,26 @@ def ask(
             "model": "none",
         }
 
-    hits = vector_index.search(
-        request.question,
-        settings.top_k * OVERFETCH_FACTOR,
-        owner_id=search_owner_id,
-    )
+    # A case's documents can be indexed under more than one owner_id (see
+    # _resolve_search_scope) -- search each one that's actually relevant
+    # and merge. Most of the time this is a single search (one lawyer, no
+    # client uploads yet), but never fewer than needed, and never crashes
+    # on an unclaimed case the way a bare owner_id=None search would.
+    hits: list[tuple[int, float]] = []
+    for owner_id in search_owner_ids:
+        hits.extend(
+            vector_index.search(
+                request.question,
+                settings.top_k * OVERFETCH_FACTOR,
+                owner_id=owner_id,
+            )
+        )
+    hits.sort(key=lambda item: item[1], reverse=True)
     sources = chunks_to_sources(db, hits, user, settings.top_k, allowed_document_ids=allowed_document_ids)
 
     if kind == "lookup":
         phrase = request.question.strip().strip("?.,")
-        documents = _documents_containing_terms(db, phrase, search_owner_id, allowed_document_ids)
+        documents = _documents_containing_terms(db, phrase, next(iter(search_owner_ids)), allowed_document_ids)
         if not documents:
             return {
                 "answer": (

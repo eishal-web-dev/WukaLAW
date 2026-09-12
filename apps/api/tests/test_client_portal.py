@@ -316,3 +316,95 @@ def test_pathway_intelligence_still_enforces_ownership_for_unrelated_clients(cli
 
     response = client.get(f"/api/v1/cases/{case_id}/pathway-intelligence", headers=other_client_headers)
     assert response.status_code == 404
+
+
+def test_client_ai_question_on_unclaimed_own_case_does_not_500(client):
+    """Integration-level smoke test: a client can ask the AI Assistant
+    about their own case before any lawyer has claimed it, and gets a
+    real 200 response end-to-end through the full /ask flow. Note this
+    test runs with FAKE_EMBEDDINGS=1 (set for all tests in conftest.py),
+    which does not exercise the exact code path where the original bug
+    lived (vector_index.search() only raises on owner_id=None in the
+    real, non-fake branch) -- see
+    test_resolve_search_scope_never_includes_none_for_an_unclaimed_case
+    below for a test that actually pins down the root-cause logic."""
+    client_headers = register_user(client, email="unclaimedasker@example.com")
+    _make_client("unclaimedasker@example.com")
+
+    r = client.post(
+        "/api/v1/cases/request",
+        json={
+            "title": "My unclaimed case",
+            "case_type": "Civil",
+            "description": "A dispute that no lawyer has picked up yet.",
+        },
+        headers=client_headers,
+    )
+    case_id = r.json()["id"]
+    assert r.json()["lawyer_name"] is None  # confirms it's genuinely unclaimed
+
+    response = client.post(
+        "/api/v1/ask",
+        json={"question": "What is my case about?", "case_id": case_id},
+        headers=client_headers,
+    )
+    assert response.status_code == 200, response.text
+    assert response.json()["answer"]
+
+
+def test_resolve_search_scope_never_includes_none_for_an_unclaimed_case():
+    """More targeted unit test for the actual broken logic, since the API
+    test above runs with FAKE_EMBEDDINGS=1 (set in conftest.py for all
+    tests) and can't reach the real Qdrant code path where the original
+    bug actually lived -- vector_index.search() raises ValueError when
+    passed owner_id=None, which only the real (non-fake) branch checks.
+    This directly tests _resolve_search_scope's return value instead,
+    confirming it can never hand back a set containing None regardless of
+    whether the case has been claimed."""
+    from unittest.mock import MagicMock
+
+    from app.routers.qa import _resolve_search_scope
+
+    fake_case = MagicMock(owner_id=None)
+    fake_user = MagicMock(role="client", id=42)
+    fake_db = MagicMock()
+    fake_db.scalars.return_value.all.return_value = [1, 2, 3]
+
+    import app.routers.cases as cases_module
+    original = cases_module._get_owned_case
+    cases_module._get_owned_case = lambda db, case_id, user: fake_case
+    try:
+        owner_ids, document_ids = _resolve_search_scope(fake_db, fake_user, case_id=7)
+    finally:
+        cases_module._get_owned_case = original
+
+    assert None not in owner_ids
+    assert owner_ids == {42}  # only the client's own id -- no lawyer to search under yet
+    assert document_ids == {1, 2, 3}
+
+
+def test_ask_never_returns_a_raw_500_on_an_unexpected_failure(client, monkeypatch):
+    """Directly verifies the safety net added around /ask: any exception
+    that isn't a deliberate HTTPException (a real infrastructure failure --
+    the embedding model down, Qdrant unreachable, anything unpredictable)
+    must come back as a clean 503 with a real message, never an opaque
+    raw 500. Forces a genuine unexpected exception via monkeypatch rather
+    than trying to actually break the real AI pipeline."""
+    import app.routers.qa as qa_module
+
+    lawyer_headers = register_user(client, email="safetynet@example.com")
+
+    def _boom(*args, **kwargs):
+        raise RuntimeError("simulated embedding model failure")
+
+    monkeypatch.setattr(qa_module.vector_index, "search", _boom)
+
+    response = client.post(
+        "/api/v1/ask",
+        json={"question": "What does this document say about the contract terms?"},
+        headers=lawyer_headers,
+    )
+    assert response.status_code == 503
+    assert "temporarily unavailable" in response.json()["detail"].lower()
+    # Never leaks the raw exception text to the client.
+    assert "simulated embedding model failure" not in response.text
