@@ -9,6 +9,7 @@ vi.mock('../../lib/api', () => ({
   getCase: vi.fn(),
   listCaseDocuments: vi.fn(),
   getCaseTimeline: vi.fn(),
+  listTimelineEntries: vi.fn(),
   askCaseQuestion: vi.fn(),
   errorMessage: (err: unknown) =>
     err instanceof Error ? err.message : 'Something went wrong.',
@@ -42,6 +43,7 @@ function renderWorkspace(caseId = '7') {
 
 beforeEach(() => {
   vi.clearAllMocks()
+  vi.mocked(api.listTimelineEntries).mockResolvedValue([])
 })
 
 describe('ClientWorkspace', () => {
@@ -97,6 +99,21 @@ describe('ClientWorkspace', () => {
     expect(screen.queryByText(/win probability/i)).not.toBeInTheDocument()
     expect(screen.queryByText(/Judge Wells/i)).not.toBeInTheDocument()
     expect(screen.queryByText(/Dr\. Morse/i)).not.toBeInTheDocument()
+  })
+
+  it('shows real persisted timeline entries alongside extracted document events, with a link to the full timeline', async () => {
+    vi.mocked(api.getCase).mockResolvedValue(CASE)
+    vi.mocked(api.listCaseDocuments).mockResolvedValue({ items: [], total: 0 })
+    vi.mocked(api.getCaseTimeline).mockResolvedValue({ events: [] })
+    vi.mocked(api.listTimelineEntries).mockResolvedValue([
+      { id: 1, case_id: 7, date: '2020-01-01', title: 'Signed the lease', source: 'custom', created_at: '2026-01-01T00:00:00Z' },
+    ])
+
+    renderWorkspace()
+    await waitFor(() => expect(screen.getByText('Rent Dispute')).toBeInTheDocument())
+
+    expect(screen.getByText('Signed the lease')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /View full timeline/i })).toHaveAttribute('href', '/client/timeline?case=7')
   })
 
   it('sends a real, case-scoped AI question and shows the real answer', async () => {

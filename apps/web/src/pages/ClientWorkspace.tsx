@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, Link } from 'react-router-dom'
 import {
   ArrowLeft, Calendar, FileText, User, Send, AlertCircle, RefreshCw, Sparkles, Clock,
 } from 'lucide-react'
 import {
-  getCase, listCaseDocuments, getCaseTimeline, askCaseQuestion, errorMessage,
+  getCase, listCaseDocuments, getCaseTimeline, listTimelineEntries, askCaseQuestion, errorMessage,
 } from '../lib/api'
-import type { Case, DocumentMeta, TimelineEvent, AskResponse } from '../lib/api'
+import type { Case, DocumentMeta, TimelineEvent, CaseTimelineEntry, AskResponse } from '../lib/api'
 import { formatDate, excerpt } from '../lib/format'
 import { Card, Badge, G } from '../components/design'
 import Spinner from '../components/Spinner'
@@ -20,12 +20,17 @@ interface ChatMessage {
   confidenceReason?: string
 }
 
+type TimelineItem =
+  | { kind: 'extracted'; date: string; dateText: string; text: string }
+  | { kind: 'entry'; date: string; dateText: string; text: string }
+
 export default function ClientWorkspace() {
   const { caseId } = useParams<{ caseId: string }>()
   const navigate = useNavigate()
   const [caseData, setCaseData] = useState<Case | null>(null)
   const [documents, setDocuments] = useState<DocumentMeta[]>([])
   const [events, setEvents] = useState<TimelineEvent[]>([])
+  const [entries, setEntries] = useState<CaseTimelineEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [notFound, setNotFound] = useState(false)
@@ -42,14 +47,16 @@ export default function ClientWorkspace() {
     setError(null)
     setNotFound(false)
     try {
-      const [c, docs, timeline] = await Promise.all([
+      const [c, docs, timeline, timelineEntries] = await Promise.all([
         getCase(caseId),
         listCaseDocuments(caseId).catch(() => ({ items: [], total: 0 })),
         getCaseTimeline(caseId).catch(() => ({ events: [] })),
+        listTimelineEntries(caseId).catch(() => []),
       ])
       setCaseData(c)
       setDocuments(docs.items)
       setEvents(timeline.events)
+      setEntries(timelineEntries)
     } catch (err) {
       const message = errorMessage(err)
       if (message.toLowerCase().includes('not found')) {
@@ -135,9 +142,14 @@ export default function ClientWorkspace() {
     )
   }
 
-  const latestEvent = [...events].sort((a, b) => (a.date < b.date ? 1 : -1))[0]
-  const upcoming = events.filter((e) => e.date >= new Date().toISOString().slice(0, 10))
-  const completed = events.filter((e) => e.date < new Date().toISOString().slice(0, 10))
+  const merged: TimelineItem[] = [
+    ...events.map((ev) => ({ kind: 'extracted' as const, date: ev.date, dateText: ev.date_text || formatDate(ev.date), text: ev.text })),
+    ...entries.map((e) => ({ kind: 'entry' as const, date: e.date, dateText: formatDate(e.date), text: e.title })),
+  ]
+  const latestEvent = [...merged].sort((a, b) => (a.date < b.date ? 1 : -1))[0]
+  const today = new Date().toISOString().slice(0, 10)
+  const upcoming = merged.filter((e) => e.date >= today)
+  const completed = merged.filter((e) => e.date < today)
 
   return (
     <div className="p-6 sm:p-8 max-w-4xl mx-auto space-y-6">
@@ -196,10 +208,15 @@ export default function ClientWorkspace() {
 
       {/* 5. Simple timeline */}
       <Card className="p-5">
-        <h2 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
-          <Clock size={15} style={{ color: G }} /> Case Timeline
-        </h2>
-        {events.length === 0 ? (
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-sm font-bold text-foreground flex items-center gap-2">
+            <Clock size={15} style={{ color: G }} /> Case Timeline
+          </h2>
+          <Link to={`/client/timeline?case=${caseId}`} className="text-xs font-semibold" style={{ color: G }}>
+            View full timeline
+          </Link>
+        </div>
+        {merged.length === 0 ? (
           <p className="text-sm text-muted-foreground">No dated events have been found in this case's documents yet.</p>
         ) : (
           <div className="relative pl-5">
@@ -212,7 +229,7 @@ export default function ClientWorkspace() {
                     className="absolute -left-3.5 top-1 w-2 h-2 rounded-full"
                     style={{ background: upcoming.includes(ev) ? G : 'var(--muted-foreground)' }}
                   />
-                  <div className="text-xs text-muted-foreground">{ev.date_text || formatDate(ev.date)}</div>
+                  <div className="text-xs text-muted-foreground">{ev.dateText}</div>
                   <div className="text-sm text-foreground">{excerpt(ev.text, 160)}</div>
                 </div>
               ))}
