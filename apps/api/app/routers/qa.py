@@ -34,22 +34,28 @@ def _documents_containing_terms(
     return list(rows)
 
 
-def _resolve_search_scope(db: Session, user: User, case_id: int | None) -> tuple[int, set[int] | None]:
-    """Returns (owner_id_to_search_as, allowed_document_ids).
+def _resolve_search_scope(db: Session, user: User, case_id: int | None) -> tuple[set[int], set[int] | None]:
+    """Returns (owner_ids_to_search_as, allowed_document_ids).
 
     Lawyers search their own indexed vectors directly with no extra
     filtering (allowed_document_ids=None means 'use the owner_id check').
 
-    Clients must specify a case_id -- there is no whole-library search for a
-    client, since their documents don't have their own indexed vectors (the
-    case's lawyer is who actually uploaded and indexed them). The vector
-    search runs scoped to that lawyer's index, then chunks_to_sources()
-    narrows the results down to only that one case's documents, so a client
-    can never see another case's material even though the underlying search
-    ran across the lawyer's full index.
+    Clients must specify a case_id. Documents on a case can be indexed
+    under EITHER owner_id: the case's lawyer (if they uploaded it) or the
+    client themselves (if they uploaded it via /client/upload -- clients
+    have been able to do this since the Upload Documents feature, but this
+    function originally assumed only a lawyer ever uploads, which was true
+    when it was first written and became wrong later without this being
+    updated). A still-unclaimed case (owner_id is None) has no lawyer
+    index to search at all -- only the client's own. Returns both
+    plausible owner_ids so the caller can search across whichever ones
+    actually indexed something for this case, then chunks_to_sources()
+    narrows the merged results down to only this one case's documents, so
+    a client can never see another case's material even though the
+    underlying search may run across a lawyer's full index.
     """
     if user.role != "client":
-        return user.id, None
+        return {user.id}, None
 
     if case_id is None:
         raise HTTPException(status_code=400, detail="case_id is required for client questions.")
@@ -58,7 +64,10 @@ def _resolve_search_scope(db: Session, user: User, case_id: int | None) -> tuple
 
     case = _get_owned_case(db, case_id, user)
     document_ids = set(db.scalars(select(Document.id).where(Document.case_id == case.id)).all())
-    return case.owner_id, document_ids
+    owner_ids = {user.id}
+    if case.owner_id is not None:
+        owner_ids.add(case.owner_id)
+    return owner_ids, document_ids
 
 
 @router.post("/ask", response_model=AskResponse)
@@ -67,7 +76,7 @@ def ask(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    search_owner_id, allowed_document_ids = _resolve_search_scope(db, user, request.case_id)
+    search_owner_ids, allowed_document_ids = _resolve_search_scope(db, user, request.case_id)
 
     if rag.is_library_question(request.question):
         return _library_answer(db, user, allowed_document_ids)
@@ -85,16 +94,26 @@ def ask(
             "model": "none",
         }
 
-    hits = vector_index.search(
-        request.question,
-        settings.top_k * OVERFETCH_FACTOR,
-        owner_id=search_owner_id,
-    )
+    # A case's documents can be indexed under more than one owner_id (see
+    # _resolve_search_scope) -- search each one that's actually relevant
+    # and merge. Most of the time this is a single search (one lawyer, no
+    # client uploads yet), but never fewer than needed, and never crashes
+    # on an unclaimed case the way a bare owner_id=None search would.
+    hits: list[tuple[int, float]] = []
+    for owner_id in search_owner_ids:
+        hits.extend(
+            vector_index.search(
+                request.question,
+                settings.top_k * OVERFETCH_FACTOR,
+                owner_id=owner_id,
+            )
+        )
+    hits.sort(key=lambda item: item[1], reverse=True)
     sources = chunks_to_sources(db, hits, user, settings.top_k, allowed_document_ids=allowed_document_ids)
 
     if kind == "lookup":
         phrase = request.question.strip().strip("?.,")
-        documents = _documents_containing_terms(db, phrase, search_owner_id, allowed_document_ids)
+        documents = _documents_containing_terms(db, phrase, next(iter(search_owner_ids)), allowed_document_ids)
         if not documents:
             return {
                 "answer": (
