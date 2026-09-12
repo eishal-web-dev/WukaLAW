@@ -102,4 +102,23 @@ describe('AIChat', () => {
     const dots = document.querySelectorAll('[style*="wk-chat-dot"]')
     expect(dots.length).toBe(3)
   })
+
+  it('provides a real retry action that resends the exact same failed question', async () => {
+    vi.mocked(api.askQuestion)
+      .mockRejectedValueOnce(new Error('Network error'))
+      .mockResolvedValueOnce({ answer: 'Recovered answer.', confidence: { level: 'high', reason: 'x' }, sources: [], model: 'ollama' })
+
+    renderChat()
+    fireEvent.change(screen.getByPlaceholderText(/Ask about your uploaded documents/i), { target: { value: 'What happened?' } })
+    fireEvent.click(screen.getByRole('button', { name: '' }))
+
+    await waitFor(() => expect(screen.getByText('Network error')).toBeInTheDocument())
+
+    fireEvent.click(screen.getByRole('button', { name: /Retry/i }))
+
+    await waitFor(() => expect(screen.getByText('Recovered answer.')).toBeInTheDocument())
+    expect(api.askQuestion).toHaveBeenNthCalledWith(2, 'What happened?', expect.any(Array))
+    // The user's question bubble should appear exactly once, not duplicated by the retry.
+    expect(screen.getAllByText('What happened?').length).toBe(1)
+  })
 })

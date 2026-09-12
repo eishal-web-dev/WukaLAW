@@ -23,6 +23,7 @@ import ClientReportGenerator from './pages/ClientReportGenerator'
 import ClientDownloads from './pages/ClientDownloads'
 import ClientBilling from './pages/ClientBilling'
 import ClientSimilarCases from './pages/ClientSimilarCases'
+import ClientSearch from './pages/ClientSearch'
 import Cases from './pages/Cases'
 import CaseDetail from './pages/CaseDetail'
 import Documents from './pages/Documents'
@@ -127,8 +128,8 @@ export default function App() {
             <Route path="/client" element={<ClientDashboard />} />
             <Route path="/client/cases" element={<ClientCases />} />
             <Route path="/client/cases/:caseId/workspace" element={<ClientWorkspace />} />
-            <Route path="/client/search" element={<FigmaPortalRoute page="cp-search" />} />
-            <Route path="/client/workspace" element={<FigmaPortalRoute page="cp-workspace" />} />
+            <Route path="/client/search" element={<ClientSearch />} />
+            <Route path="/client/workspace" element={<Navigate to="/client/cases" replace />} />
             <Route path="/client/upload" element={<ClientUpload />} />
             <Route path="/client/evidence" element={<ClientEvidence />} />
             <Route path="/client/timeline" element={<ClientTimeline />} />

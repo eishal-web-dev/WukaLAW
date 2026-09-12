@@ -126,14 +126,19 @@ export default function AIChat() {
 
   const now = () => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 
-  const send = async () => {
-    const question = input.trim()
+  const [lastFailedQuestion, setLastFailedQuestion] = useState<string | null>(null)
+
+  const send = async (retryQuestion?: string) => {
+    const question = retryQuestion ?? input.trim()
     if (!question || busy) return
     if (isClient && !selectedCaseId) return
     setError(null)
-    setInput('')
+    setLastFailedQuestion(null)
+    if (!retryQuestion) setInput('')
     const history = messages.map((m) => ({ role: m.role, content: m.text }))
-    setMessages((prev) => [...prev, { id: nextId.current++, role: 'user', text: question, time: now() }])
+    if (!retryQuestion) {
+      setMessages((prev) => [...prev, { id: nextId.current++, role: 'user', text: question, time: now() }])
+    }
     setBusy(true)
     try {
       // Clients must ask within one of their own cases -- this searches
@@ -157,6 +162,7 @@ export default function AIChat() {
       ])
     } catch (err) {
       setError(errorMessage(err))
+      setLastFailedQuestion(question)
     } finally {
       setBusy(false)
     }
@@ -307,7 +313,12 @@ export default function AIChat() {
           </div>
         )}
 
-        {error && <ErrorAlert message={error} />}
+        {error && (
+          <ErrorAlert
+            message={error}
+            onRetry={lastFailedQuestion ? () => void send(lastFailedQuestion) : undefined}
+          />
+        )}
         <div ref={bottomRef} />
       </div>
 
