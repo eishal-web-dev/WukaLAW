@@ -123,6 +123,6 @@ describe('ClientWorkspace', () => {
     })
 
     // Confirms the case-scoped function was called with this case's real ID, not the general public endpoint.
-    expect(api.askCaseQuestion).toHaveBeenCalledWith('How long until my deposit is returned?', 7)
+    expect(api.askCaseQuestion).toHaveBeenCalledWith('How long until my deposit is returned?', 7, [])
   })
 })
