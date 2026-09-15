@@ -92,6 +92,25 @@ def test_ask_returns_answer_with_sources(client):
     assert body["answer"]
 
 
+def test_ask_repairs_missing_vectors_for_existing_documents(client):
+    headers = register_user(client, email="repair@example.com")
+    _upload(client, headers)
+
+    # Simulate switching to a fresh embedded-Qdrant directory while retaining
+    # the existing SQLite documents and chunks.
+    from ai.retrieval import index as vector_index
+
+    vector_index.reset_for_tests()
+    response = client.post(
+        "/api/v1/ask", json={"question": "What happened to the appeal?"}, headers=headers
+    )
+
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["sources"], "the assistant should automatically re-index existing chunks"
+    assert "Not enough information" not in body["answer"]
+
+
 def test_ask_with_no_documents_says_not_enough_info(client):
     headers = register_user(client)
     response = client.post(
