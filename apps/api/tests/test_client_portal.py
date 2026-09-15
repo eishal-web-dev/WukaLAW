@@ -380,6 +380,8 @@ def test_client_ai_question_uses_selected_case_description_without_documents(cli
     body = response.json()
     assert "Not enough information" not in body["answer"]
     assert "security deposit" in body["answer"].lower()
+    assert "useful next steps" in body["answer"].lower()
+    assert "bank statements" in body["answer"].lower()
     assert body["confidence"]["level"] == "high"
     assert "case" in body["confidence"]["reason"].lower()
 
