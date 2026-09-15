@@ -13,12 +13,6 @@ const configuredApiBase =
 export const API_BASE_URL: string =
   (configuredApiBase || '/api/v1').replace(/\/+$/, '')
 
-const API_ORIGIN = API_BASE_URL.endsWith('/api/v1')
-  ? API_BASE_URL.slice(0, -'/api/v1'.length)
-  : API_BASE_URL
-
-export const RAG_QUERY_URL = `${API_ORIGIN}/api/rag/query`
-
 // ---------------------------------------------------------------------------
 // Auth token storage
 // ---------------------------------------------------------------------------
@@ -484,64 +478,23 @@ export interface ChatTurnInput {
   content: string
 }
 
-/** POST /ask */
+/**
+ * POST /ask — ask questions about the signed-in user's uploaded documents.
+ *
+ * Keep this on the authenticated v1 API.  The old implementation called the
+ * separate, unauthenticated `/api/rag/query` corpus endpoint, so the main AI
+ * Assistant could bypass the user's document library and fail independently
+ * from the rest of the portal.
+ */
 export async function askQuestion(
   question: string,
-  history: ChatTurnInput[] = [],
+  _history: ChatTurnInput[] = [],
 ): Promise<AskResponse> {
-  let res: Response
-  try {
-    res = await fetch(RAG_QUERY_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        question,
-        top_k: 10,
-        score_threshold: null,
-        filters: {},
-        use_legal_intelligence: false,
-        history,
-      }),
-    })
-  } catch {
-    throw new ApiError(
-      `Could not reach the WukaLAW API at ${RAG_QUERY_URL}.`,
-      0,
-    )
-  }
-
-  if (!res.ok) {
-    const errorBody = await res.text()
-    throw new Error(errorBody || `RAG request failed with status ${res.status}`)
-  }
-
-  const data = await res.json()
-
-  return {
-    answer: data.answer,
-    confidence: {
-      level:
-        data.confidence === 'high'
-          ? 'high'
-          : data.confidence === 'medium'
-            ? 'medium'
-            : 'low',
-      reason:
-        data.pipeline_warnings?.length > 0
-          ? data.pipeline_warnings.join(' ')
-          : `Validation: ${data.validation_status}`,
-    },
-    sources: (data.retrieved_chunks ?? []).map((chunk: any) => ({
-      chunk_id: chunk.canonical_chunk_id,
-      document_id: chunk.document_id,
-      document_title: chunk.title || 'Untitled legal source',
-      text: chunk.text_preview || '',
-      score: chunk.score,
-    })),
-    model: data.llm_provider || 'rag',
-  }
+  return request<AskResponse>('/ask', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ question }),
+  })
 }
 
 /**
