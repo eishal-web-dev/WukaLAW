@@ -17,6 +17,41 @@ router = APIRouter(tags=["qa"])
 logger = logging.getLogger(__name__)
 
 
+def _repair_missing_document_vectors(
+    db: Session,
+    user: User,
+    allowed_document_ids: set[int] | None,
+) -> bool:
+    """Re-index accessible SQL chunks when Qdrant has no matching vectors.
+
+    This commonly happens when an existing SQLite database is paired with a
+    fresh embedded-Qdrant directory.  The documents and chunks still exist,
+    but retrieval otherwise returns an empty result forever until every file
+    is uploaded again.  Rebuilding only the current user's accessible chunks
+    keeps the repair private and bounded.
+    """
+    query = select(Chunk, Document.owner_id).join(Document, Chunk.document_id == Document.id)
+    if allowed_document_ids is not None:
+        query = query.where(Document.id.in_(allowed_document_ids))
+    else:
+        query = query.where(Document.owner_id == user.id)
+    rows = db.execute(query.order_by(Chunk.id)).all()
+    if not rows:
+        return False
+
+    by_owner: dict[int, list[Chunk]] = {}
+    for chunk, owner_id in rows:
+        by_owner.setdefault(int(owner_id), []).append(chunk)
+    for owner_id, chunks in by_owner.items():
+        vector_index.add_chunks(
+            [chunk.id for chunk in chunks],
+            [chunk.text for chunk in chunks],
+            owner_id=owner_id,
+        )
+    logger.info("Re-indexed %d accessible document chunks for AI Assistant retrieval", len(rows))
+    return True
+
+
 def _documents_containing_terms(
     db: Session, phrase: str, search_owner_id: int, allowed_document_ids: set[int] | None
 ) -> list[str]:
@@ -140,6 +175,28 @@ def _ask_impl(request: AskRequest, db: Session, user: User) -> dict:
         )
     hits.sort(key=lambda item: item[1], reverse=True)
     sources = chunks_to_sources(db, hits, user, settings.top_k, allowed_document_ids=allowed_document_ids)
+
+    # A user can already have documents in SQLite while using a new/empty
+    # embedded Qdrant directory. Repair that stale state automatically instead
+    # of returning a misleading 0.00 "No retrieval" response.
+    if not sources and _repair_missing_document_vectors(db, user, allowed_document_ids):
+        hits = []
+        for owner_id in search_owner_ids:
+            hits.extend(
+                vector_index.search(
+                    request.question,
+                    settings.top_k * OVERFETCH_FACTOR,
+                    owner_id=owner_id,
+                )
+            )
+        hits.sort(key=lambda item: item[1], reverse=True)
+        sources = chunks_to_sources(
+            db,
+            hits,
+            user,
+            settings.top_k,
+            allowed_document_ids=allowed_document_ids,
+        )
 
     if kind == "lookup":
         phrase = request.question.strip().strip("?.,")
