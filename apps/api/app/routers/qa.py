@@ -9,12 +9,38 @@ from ai.retrieval import index as vector_index
 from app.auth import get_current_user
 from app.config import settings
 from app.db import get_db
-from app.models import Chunk, Document, User
+from app.models import Case, Chunk, Document, User
 from app.routers.search import OVERFETCH_FACTOR, chunks_to_sources
 from app.schemas import AskRequest, AskResponse
 
 router = APIRouter(tags=["qa"])
 logger = logging.getLogger(__name__)
+
+
+def _selected_case_context(db: Session, user: User, case_id: int | None) -> str | None:
+    """Build private AI context from the selected client's real case record."""
+    if user.role != "client" or case_id is None:
+        return None
+
+    from app.routers.cases import _get_owned_case
+
+    case: Case = _get_owned_case(db, case_id, user)
+    fields = [
+        f"case number: {case.case_number}",
+        f"case title: {case.title}",
+        f"case type: {case.case_type}",
+        f"current status: {case.status}",
+        f"priority: {case.priority}",
+    ]
+    if case.description and case.description.strip():
+        fields.append(f"case description: {case.description.strip().rstrip('.')}")
+    if case.deadline:
+        fields.append(f"next recorded deadline: {case.deadline}")
+    else:
+        fields.append("no upcoming deadline is recorded")
+    # Keep this as one compact passage so the extractive fallback cannot drop
+    # the description while selecting individual sentences.
+    return "Selected case record — " + "; ".join(fields) + "."
 
 
 def _repair_missing_document_vectors(
@@ -142,6 +168,7 @@ def ask(
 
 def _ask_impl(request: AskRequest, db: Session, user: User) -> dict:
     search_owner_ids, allowed_document_ids = _resolve_search_scope(db, user, request.case_id)
+    case_context = _selected_case_context(db, user, request.case_id)
 
     if rag.is_library_question(request.question):
         return _library_answer(db, user, allowed_document_ids)
@@ -223,9 +250,17 @@ def _ask_impl(request: AskRequest, db: Session, user: User) -> dict:
             "model": "lookup",
         }
 
-    answer_text, level, reason, model = rag.answer(
-        request.question, [(source.text, source.score) for source in sources]
-    )
+    answer_contexts = [(source.text, source.score) for source in sources]
+    if case_context:
+        # The selected case record is authoritative context even when the case
+        # has no uploaded documents yet. It prevents ordinary questions such
+        # as "What happens next in my case?" from incorrectly reporting that
+        # the system knows nothing about the selected case.
+        answer_contexts.insert(0, (case_context, 1.0))
+    answer_text, level, reason, model = rag.answer(request.question, answer_contexts)
+    if case_context and not sources:
+        reason = "Answered from the selected case's saved details and description."
+        model = "case-record" if model == "extractive-fallback" else model
     if answer_text == rag.NOT_ENOUGH:
         sources = []
     return {
