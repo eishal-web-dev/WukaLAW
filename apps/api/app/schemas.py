@@ -141,9 +141,15 @@ class SummarizeResponse(BaseModel):
     summary: SummaryOut
 
 
+class ChatTurnInput(BaseModel):
+    role: Literal["user", "ai", "assistant"]
+    content: str = Field(min_length=1, max_length=10000)
+
+
 class AskRequest(BaseModel):
     question: str = Field(min_length=3, max_length=2000)
     case_id: int | None = None
+    history: list[ChatTurnInput] = Field(default_factory=list, max_length=40)
 
 
 class Source(BaseModel):

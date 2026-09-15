@@ -488,12 +488,12 @@ export interface ChatTurnInput {
  */
 export async function askQuestion(
   question: string,
-  _history: ChatTurnInput[] = [],
+  history: ChatTurnInput[] = [],
 ): Promise<AskResponse> {
   return request<AskResponse>('/ask', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ question }),
+    body: JSON.stringify({ question, history }),
   })
 }
 
@@ -505,11 +505,15 @@ export async function askQuestion(
  * and, for a client-role user, requires caseId and is scoped to only
  * that case's documents by the backend (see api/routers/qa.py).
  */
-export function askCaseQuestion(question: string, caseId?: number): Promise<AskResponse> {
+export function askCaseQuestion(
+  question: string,
+  caseId?: number,
+  history: ChatTurnInput[] = [],
+): Promise<AskResponse> {
   return request<AskResponse>('/ask', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ question, case_id: caseId ?? null }),
+    body: JSON.stringify({ question, case_id: caseId ?? null, history }),
   })
 }
 

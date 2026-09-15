@@ -146,7 +146,7 @@ export default function AIChat() {
       // shared public legal-research corpus askQuestion() uses, and never
       // another client's case. Lawyers keep the existing broader search.
       const res: AskResponse = isClient
-        ? await askCaseQuestion(question, selectedCaseId!)
+        ? await askCaseQuestion(question, selectedCaseId!, history)
         : await askQuestion(question, history)
       setMessages((prev) => [
         ...prev,

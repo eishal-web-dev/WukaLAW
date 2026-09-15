@@ -352,6 +352,40 @@ def test_client_ai_question_on_unclaimed_own_case_does_not_500(client):
     assert response.json()["answer"]
 
 
+def test_client_ai_question_uses_selected_case_description_without_documents(client):
+    client_headers = register_user(client, email="casecontext@example.com")
+    _make_client("casecontext@example.com")
+
+    created = client.post(
+        "/api/v1/cases/request",
+        json={
+            "title": "Tenancy deposit dispute",
+            "case_type": "Civil",
+            "description": (
+                "The landlord retained the security deposit after the tenant returned "
+                "the keys and provided photographs showing no property damage."
+            ),
+        },
+        headers=client_headers,
+    )
+    case_id = created.json()["id"]
+
+    response = client.post(
+        "/api/v1/ask",
+        json={"question": "What happens next in my case?", "case_id": case_id},
+        headers=client_headers,
+    )
+
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert "Not enough information" not in body["answer"]
+    assert "security deposit" in body["answer"].lower()
+    assert "useful next steps" in body["answer"].lower()
+    assert "bank statements" in body["answer"].lower()
+    assert body["confidence"]["level"] == "high"
+    assert "case" in body["confidence"]["reason"].lower()
+
+
 def test_resolve_search_scope_never_includes_none_for_an_unclaimed_case():
     """More targeted unit test for the actual broken logic, since the API
     test above runs with FAKE_EMBEDDINGS=1 (set in conftest.py for all

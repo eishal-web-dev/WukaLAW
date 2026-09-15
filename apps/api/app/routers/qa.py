@@ -9,12 +9,76 @@ from ai.retrieval import index as vector_index
 from app.auth import get_current_user
 from app.config import settings
 from app.db import get_db
-from app.models import Chunk, Document, User
+from app.models import Case, Chunk, Document, User
 from app.routers.search import OVERFETCH_FACTOR, chunks_to_sources
 from app.schemas import AskRequest, AskResponse
 
 router = APIRouter(tags=["qa"])
 logger = logging.getLogger(__name__)
+
+
+def _selected_case(db: Session, user: User, case_id: int | None) -> Case | None:
+    """Return the selected client case after enforcing ownership."""
+    if user.role != "client" or case_id is None:
+        return None
+
+    from app.routers.cases import _get_owned_case
+
+    return _get_owned_case(db, case_id, user)
+
+
+def _selected_case_context(case: Case | None) -> str | None:
+    """Build private AI context from the selected client's real case record."""
+    if case is None:
+        return None
+    fields = [
+        f"case number: {case.case_number}",
+        f"case title: {case.title}",
+        f"case type: {case.case_type}",
+        f"current status: {case.status}",
+        f"priority: {case.priority}",
+    ]
+    if case.description and case.description.strip():
+        fields.append(f"case description: {case.description.strip().rstrip('.')}")
+    if case.deadline:
+        fields.append(f"next recorded deadline: {case.deadline}")
+    else:
+        fields.append("no upcoming deadline is recorded")
+    # Keep this as one compact passage so the extractive fallback cannot drop
+    # the description while selecting individual sentences.
+    return "Selected case record — " + "; ".join(fields) + "."
+
+
+def _friendly_case_guidance(case: Case, question: str) -> str:
+    """Useful, non-predictive guidance when only the case record is available."""
+    description = (case.description or "No case description has been added yet.").strip()
+    deadline = (
+        f"The next recorded deadline is {case.deadline}."
+        if case.deadline
+        else "No deadline is currently recorded, so confirm the next filing or hearing date with your lawyer."
+    )
+    clarification = ""
+    normalized = question.strip()
+    if normalized.casefold() not in {
+        "what is my case about?",
+        "what happens next in my case?",
+        "what happens next?",
+    }:
+        clarification = (
+            f"\n\nI understand your latest clarification as: “{normalized}” "
+            "This is your account of events and should be supported with evidence where possible."
+        )
+    return (
+        f"I understand your case is currently marked {case.status}. "
+        f"The issue recorded in your case is: {description}{clarification}\n\n"
+        "Useful next steps:\n"
+        "1. Write a dated timeline of what happened, including payments, property, conversations, and handovers.\n"
+        "2. Collect supporting evidence such as bank statements, receipts, messages, photographs, ownership records, and witness details.\n"
+        "3. Keep the original files unchanged and give copies to your lawyer.\n"
+        f"4. {deadline}\n"
+        "5. Ask your lawyer which reply, application, or evidence must be filed next; the saved case details alone do not show the court's next order.\n\n"
+        "I can also help you turn your facts into a clear timeline or evidence checklist."
+    )
 
 
 def _repair_missing_document_vectors(
@@ -142,6 +206,8 @@ def ask(
 
 def _ask_impl(request: AskRequest, db: Session, user: User) -> dict:
     search_owner_ids, allowed_document_ids = _resolve_search_scope(db, user, request.case_id)
+    selected_case = _selected_case(db, user, request.case_id)
+    case_context = _selected_case_context(selected_case)
 
     if rag.is_library_question(request.question):
         return _library_answer(db, user, allowed_document_ids)
@@ -223,9 +289,19 @@ def _ask_impl(request: AskRequest, db: Session, user: User) -> dict:
             "model": "lookup",
         }
 
-    answer_text, level, reason, model = rag.answer(
-        request.question, [(source.text, source.score) for source in sources]
-    )
+    answer_contexts = [(source.text, source.score) for source in sources]
+    if case_context:
+        # The selected case record is authoritative context even when the case
+        # has no uploaded documents yet. It prevents ordinary questions such
+        # as "What happens next in my case?" from incorrectly reporting that
+        # the system knows nothing about the selected case.
+        answer_contexts.insert(0, (case_context, 1.0))
+    answer_text, level, reason, model = rag.answer(request.question, answer_contexts)
+    if selected_case is not None and not sources:
+        answer_text = _friendly_case_guidance(selected_case, request.question)
+        level = "high"
+        reason = "Answered from the selected case's saved details and description."
+        model = "case-guidance"
     if answer_text == rag.NOT_ENOUGH:
         sources = []
     return {
