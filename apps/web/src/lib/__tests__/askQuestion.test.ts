@@ -1,42 +1,50 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { askQuestion } from '../api'
+import { askQuestion, setAuthStorage } from '../api'
 
-describe('askQuestion — conversation memory', () => {
+describe('askQuestion — authenticated document API', () => {
   afterEach(() => {
     vi.restoreAllMocks()
+    localStorage.clear()
   })
 
-  const ragResponse = {
+  const askResponse = {
     answer: 'Bail may be granted [C1].',
-    confidence: 'high',
-    validation_status: 'PASS',
-    retrieved_chunks: [],
-    pipeline_warnings: [],
-    llm_provider: 'ollama',
+    confidence: { level: 'high', reason: 'Relevant passages found.' },
+    sources: [],
+    model: 'ollama/qwen2.5:3b',
   }
 
-  it('given prior turns, it sends them as history to the RAG endpoint', async () => {
+  it('sends the question to /api/v1/ask with the signed-in user token', async () => {
+    setAuthStorage('real-token', {
+      id: 1,
+      email: 'lawyer@example.com',
+      name: 'Lawyer',
+      role: 'lawyer',
+      created_at: '2026-01-01T00:00:00Z',
+    })
     const fetchMock = vi
       .spyOn(globalThis, 'fetch')
-      .mockResolvedValue(new Response(JSON.stringify(ragResponse), { status: 200 }))
+      .mockResolvedValue(new Response(JSON.stringify(askResponse), { status: 200 }))
 
-    const history = [
-      { role: 'user' as const, content: 'was bail granted for a driving death' },
-      { role: 'ai' as const, content: 'Bail depends on the offence [C1].' },
-    ]
-    await askQuestion('it was an accident', history)
+    await askQuestion('Was bail granted?')
 
-    expect(fetchMock).toHaveBeenCalledWith('/api/rag/query', expect.any(Object))
-    const body = JSON.parse((fetchMock.mock.calls[0][1] as RequestInit).body as string)
-    expect(body.question).toBe('it was an accident')
-    expect(body.history).toEqual(history)
+    expect(fetchMock).toHaveBeenCalledWith('/api/v1/ask', expect.objectContaining({
+      method: 'POST',
+      headers: expect.objectContaining({
+        Authorization: 'Bearer real-token',
+        'Content-Type': 'application/json',
+      }),
+    }))
+    expect(JSON.parse((fetchMock.mock.calls[0][1] as RequestInit).body as string)).toEqual({
+      question: 'Was bail granted?',
+    })
   })
 
   it('reports the real provider from the response instead of a hardcoded label', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-      new Response(JSON.stringify(ragResponse), { status: 200 }),
+      new Response(JSON.stringify(askResponse), { status: 200 }),
     )
     const res = await askQuestion('what is section 302')
-    expect(res.model).toBe('ollama')
+    expect(res.model).toBe('ollama/qwen2.5:3b')
   })
 })
