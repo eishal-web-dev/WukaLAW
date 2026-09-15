@@ -85,7 +85,7 @@ describe('AIChat', () => {
     fireEvent.click(screen.getByRole('button', { name: '' }))
 
     await waitFor(() => expect(screen.getByText('Case-specific answer.')).toBeInTheDocument())
-    expect(api.askCaseQuestion).toHaveBeenCalledWith('What is my case about?', 5)
+    expect(api.askCaseQuestion).toHaveBeenCalledWith('What is my case about?', 5, [])
     expect(api.askQuestion).not.toHaveBeenCalled()
   })
 
