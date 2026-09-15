@@ -79,7 +79,11 @@ export default function ClientWorkspace() {
     setInput('')
     setAsking(true)
     try {
-      const res = await askCaseQuestion(question, Number(caseId))
+      const history = messages.map((message) => ({
+        role: message.role,
+        content: message.text,
+      }))
+      const res = await askCaseQuestion(question, Number(caseId), history)
       setMessages((m) => [
         ...m,
         { id: Date.now() + 1, role: 'ai', text: res.answer, sources: res.sources, confidenceReason: res.confidence.reason },
