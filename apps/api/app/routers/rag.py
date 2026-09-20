@@ -14,7 +14,6 @@ from ai.rag.llm_provider import (
     GeminiProvider,
     GroqProvider,
     LLMProvider,
-    LocalLlamaProvider,
     OllamaProvider,
     OpenAIProvider,
 )
@@ -76,8 +75,6 @@ def _build_named_provider(name: str) -> LLMProvider:
         )
     if name == "openai":
         return OpenAIProvider(os.getenv("OPENAI_MODEL", "gpt-4.1-mini"))
-    if name in {"local", "local_llama", "llama"}:
-        return LocalLlamaProvider(model=os.getenv("LOCAL_LLAMA_MODEL", "local-llama"))
     if name == "ollama":
         return OllamaProvider(
             os.getenv("OLLAMA_MODEL", "llama3.1"),

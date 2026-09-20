@@ -18,7 +18,7 @@ def _build_case_summary_text(case, documents: list[Document]) -> str:
     real text report beats a fake 'PDF, 12 pages' claim with nothing
     behind it -- every line here comes from an actual database record."""
     lines = [
-        f"CASE SUMMARY REPORT",
+        "CASE SUMMARY REPORT",
         f"{'=' * 40}",
         f"Case: {case.case_number} — {case.title}",
         f"Type: {case.case_type}",

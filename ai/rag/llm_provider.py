@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import os
 from abc import ABC, abstractmethod
-from typing import Callable
 
 import httpx
 
@@ -126,32 +125,6 @@ class OllamaProvider(LLMProvider):
         )
         response.raise_for_status()
         return str(response.json().get("response", "")).strip()
-
-
-class LocalLlamaProvider(LLMProvider):
-    name = "local"
-
-    def __init__(self, endpoint: str | None = None, model: str = "local-llama"):
-        self.endpoint, self.model = endpoint or os.getenv("LOCAL_LLAMA_URL", "http://localhost:8080/v1/chat/completions"), model
-
-    def generate(self, prompt: str) -> str:
-        response = httpx.post(
-            self.endpoint,
-            json={"model": self.model, "messages": [{"role": "user", "content": prompt}]},
-            timeout=120,
-        )
-        response.raise_for_status()
-        return str(response.json()["choices"][0]["message"]["content"]).strip()
-
-
-class CallableLLMProvider(LLMProvider):
-    name = "callable"
-
-    def __init__(self, function: Callable[[str], str]):
-        self.function = function
-
-    def generate(self, prompt: str) -> str:
-        return self.function(prompt)
 
 
 class FallbackLLMProvider(LLMProvider):

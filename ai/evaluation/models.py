@@ -1,6 +1,5 @@
 ﻿from __future__ import annotations
 from dataclasses import asdict,dataclass,field
-from typing import Any
 @dataclass
 class StratumSummary:
  name:str;requested_count:int;available_count:int;selected_count:int;shortfall:int;source_datasets:list[str];document_ids:list[str];chunk_ids:list[str]

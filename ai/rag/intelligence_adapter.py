@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import asdict,dataclass,field
 import re
 from typing import Any
-from ai.legal_intelligence.models import Intent,Jurisdiction,LegalDomain,LegalQuery
+from ai.legal_intelligence.models import Intent,Jurisdiction,LegalDomain
 from ai.retrieval.models import LegalSearchQuery
 ALLOWED={"source_datasets","document_types","courts","jurisdictions","case_categories","languages","chunk_types","section_numbers","article_numbers","document_ids","require_outcome"}
 ALIASES={"court":"courts","jurisdiction":"jurisdictions","section":"section_numbers","article":"article_numbers","document_id":"document_ids"}
