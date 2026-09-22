@@ -4,7 +4,7 @@ import {
   ArrowLeft, Calendar, FileText, User, Send, AlertCircle, RefreshCw, Sparkles, Clock,
 } from 'lucide-react'
 import {
-  getCase, listCaseDocuments, getCaseTimeline, askCaseQuestion, errorMessage,
+  getCase, listCaseDocuments, getCaseTimeline, askCaseQuestion, updateCase, errorMessage,
 } from '../lib/api'
 import type { Case, DocumentMeta, TimelineEvent, AskResponse } from '../lib/api'
 import { formatDate, excerpt } from '../lib/format'
@@ -29,6 +29,10 @@ export default function ClientWorkspace() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [notFound, setNotFound] = useState(false)
+  const [editingDescription, setEditingDescription] = useState(false)
+  const [descriptionDraft, setDescriptionDraft] = useState('')
+  const [descriptionError, setDescriptionError] = useState<string | null>(null)
+  const [savingDescription, setSavingDescription] = useState(false)
 
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [input, setInput] = useState('')
@@ -48,6 +52,7 @@ export default function ClientWorkspace() {
         getCaseTimeline(caseId).catch(() => ({ events: [] })),
       ])
       setCaseData(c)
+      setDescriptionDraft(c.description ?? '')
       setDocuments(docs.items)
       setEvents(timeline.events)
     } catch (err) {
@@ -162,11 +167,29 @@ export default function ClientWorkspace() {
       {/* 2. What is happening with your case? */}
       <Card className="p-5">
         <h2 className="text-sm font-bold text-foreground mb-2">What's happening with your case?</h2>
+        {editingDescription ? (
+          <form onSubmit={async (e) => {
+            e.preventDefault()
+            if (!caseId) return
+            setSavingDescription(true)
+            setDescriptionError(null)
+            try { setCaseData(await updateCase(caseId, { description: descriptionDraft })); setEditingDescription(false) }
+            catch (err) { setDescriptionError(errorMessage(err)) }
+            finally { setSavingDescription(false) }
+          }} className="space-y-2">
+            <textarea aria-label="Case description" maxLength={5000} rows={5} value={descriptionDraft} onChange={(e) => setDescriptionDraft(e.target.value)} className="w-full rounded-lg border border-border bg-background p-2 text-sm" />
+            {descriptionError && <ErrorAlert message={descriptionError} />}
+            <button disabled={savingDescription} className="rounded-lg px-3 py-2 text-xs font-semibold text-black" style={{ background: G }}>{savingDescription ? 'Saving…' : 'Save description'}</button>
+            <button type="button" onClick={() => setEditingDescription(false)} className="ml-3 text-xs text-muted-foreground">Cancel</button>
+          </form>
+        ) : <>
         {caseData.description ? (
           <p className="text-sm text-muted-foreground leading-relaxed">{caseData.description}</p>
         ) : (
           <p className="text-sm text-muted-foreground italic">No description has been added to this case yet.</p>
         )}
+        <button type="button" onClick={() => setEditingDescription(true)} className="mt-3 text-xs underline" style={{ color: G }}>Edit my case description</button>
+        </>}
         {latestEvent && (
           <p className="text-sm text-muted-foreground leading-relaxed mt-2">
             Most recent update: {excerpt(latestEvent.text, 220)}
@@ -203,6 +226,7 @@ export default function ClientWorkspace() {
         <h2 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
           <Clock size={15} style={{ color: G }} /> Case Timeline
         </h2>
+        <button type="button" onClick={() => navigate(`/client/timeline?case=${caseId}`)} className="mb-3 text-xs underline" style={{ color: G }}>Add a dated update or link a document</button>
         {events.length === 0 ? (
           <p className="text-sm text-muted-foreground">No dated events have been found in this case's documents yet.</p>
         ) : (
