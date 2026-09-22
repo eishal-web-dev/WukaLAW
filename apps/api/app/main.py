@@ -17,7 +17,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.auth import ADMIN_EMAIL, sync_configured_admin
 from app.config import settings
 from app.db import Base, SessionLocal, engine
-from app.routers import admin, auth_routes, case_custom_search, case_pathway, cases, documents, legal_intelligence, notifications, precedent_briefs, qa, rag, reports, search, similar_cases
+from app.routers import admin, auth_routes, case_custom_search, case_pathway, cases, documents, evidence_files, legal_intelligence, notifications, precedent_briefs, qa, rag, reports, search, similar_cases
 
 app = FastAPI(
     title="WukaLAW API",
@@ -130,6 +130,7 @@ api.include_router(case_custom_search.router)
 api.include_router(precedent_briefs.router)
 api.include_router(case_pathway.router)
 api.include_router(documents.router)
+api.include_router(evidence_files.router)
 api.include_router(search.router)
 api.include_router(qa.router)
 api.include_router(reports.router)
