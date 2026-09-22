@@ -58,6 +58,18 @@ class Case(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
+class CaseEvent(Base):
+    __tablename__ = "case_events"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    case_id: Mapped[int] = mapped_column(ForeignKey("cases.id"), index=True)
+    author_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    event_date: Mapped[str] = mapped_column(String(10), index=True)
+    text: Mapped[str] = mapped_column(Text)
+    document_id: Mapped[int | None] = mapped_column(ForeignKey("documents.id"), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
 class Document(Base):
     __tablename__ = "documents"
 
