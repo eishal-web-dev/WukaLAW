@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 from typing import Literal
 
 from pydantic import BaseModel, Field
@@ -185,8 +185,21 @@ class TimelineEventOut(BaseModel):
     date: str
     date_text: str
     text: str
-    document_id: int
-    document_title: str
+    document_id: int | None = None
+    document_title: str | None = None
+    event_id: int | None = None
+
+
+class CaseEventCreate(BaseModel):
+    date: date
+    text: str = Field(min_length=3, max_length=5000)
+    document_id: int | None = None
+
+
+class CaseEventUpdate(BaseModel):
+    date: date
+    text: str = Field(min_length=3, max_length=5000)
+    document_id: int | None = None
 
 
 class TimelineResponse(BaseModel):
