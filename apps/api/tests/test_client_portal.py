@@ -135,6 +135,57 @@ def test_client_cannot_upload_to_a_case_not_theirs(client):
     assert response.status_code == 404
 
 
+def test_client_can_store_media_evidence_privately_without_ai_extraction(client):
+    headers = register_user(client, email="evidence-owner@example.com")
+    _make_client("evidence-owner@example.com")
+    other = register_user(client, email="evidence-other@example.com")
+    _make_client("evidence-other@example.com")
+    created = client.post("/api/v1/cases/request", json={
+        "title": "Evidence case", "case_type": "Civil",
+        "description": "I have an audio recording of the incident.",
+    }, headers=headers)
+    case_id = created.json()["id"]
+    response = client.post(f"/api/v1/cases/{case_id}/evidence-files",
+                           files={"file": ("recording.mp3", b"test audio payload", "audio/mpeg")}, headers=headers)
+    assert response.status_code == 201, response.text
+    evidence_id = response.json()["id"]
+    assert client.get(f"/api/v1/cases/{case_id}/evidence-files", headers=headers).json()["items"][0]["filename"] == "recording.mp3"
+    downloaded = client.get(f"/api/v1/cases/{case_id}/evidence-files/{evidence_id}/download", headers=headers)
+    assert downloaded.content == b"test audio payload"
+    assert client.get(f"/api/v1/cases/{case_id}/evidence-files", headers=other).status_code == 404
+    assert client.get(f"/api/v1/cases/{case_id}/evidence-files/{evidence_id}/download", headers=other).status_code == 404
+    assert client.post(f"/api/v1/cases/{case_id}/evidence-files",
+                       files={"file": ("unsafe.exe", b"payload", "application/octet-stream")}, headers=headers).status_code == 400
+
+
+def test_client_can_upload_image_and_word_documents_for_search(client):
+    from io import BytesIO
+
+    from docx import Document as WordDocument
+
+    headers = register_user(client, email="image-docs@example.com")
+    _make_client("image-docs@example.com")
+    case = client.post("/api/v1/cases/request", json={
+        "title": "Document case", "case_type": "Civil",
+        "description": "There are images and Word documents with details of my case.",
+    }, headers=headers)
+    case_id = case.json()["id"]
+    # Test OCR uses FAKE_OCR=1; real installations require Tesseract on PATH.
+    image = client.post("/api/v1/documents/upload", data={"case_id": str(case_id)},
+                        files={"file": ("scan.png", b"fake test image", "image/png")}, headers=headers)
+    assert image.status_code == 201, image.text
+    assert image.json()["ocr_used"] is True
+
+    word = WordDocument()
+    word.add_paragraph("The landlord kept the deposit after the tenant returned the keys and delivered the signed receipt. " * 5)
+    binary = BytesIO()
+    word.save(binary)
+    response = client.post("/api/v1/documents/upload", data={"case_id": str(case_id)},
+                           files={"file": ("statement.docx", binary.getvalue(), "application/vnd.openxmlformats-officedocument.wordprocessingml.document")},
+                           headers=headers)
+    assert response.status_code == 201, response.text
+
+
 def test_client_ai_question_requires_case_id(client):
     client_headers = register_user(client, email="client6@example.com")
     _make_client("client6@example.com")
