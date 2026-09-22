@@ -4,7 +4,6 @@ from .llm_provider import (
     GeminiProvider,
     GroqProvider,
     LLMProvider,
-    LocalLlamaProvider,
     OllamaProvider,
     OpenAIProvider,
 )
@@ -17,7 +16,6 @@ __all__ = [
     "GroqProvider",
     "Intent",
     "LLMProvider",
-    "LocalLlamaProvider",
     "OllamaProvider",
     "OpenAIProvider",
     "RagPipeline",

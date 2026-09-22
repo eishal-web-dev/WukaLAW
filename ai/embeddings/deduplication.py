@@ -1,6 +1,6 @@
 """Exact-only canonical chunk selection."""
 from __future__ import annotations
-import hashlib,re
+import hashlib
 from dataclasses import dataclass,field
 from typing import Any
 def normalized_text(text:str)->str:return " ".join(text.split()).casefold()

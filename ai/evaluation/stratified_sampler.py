@@ -1,6 +1,6 @@
 ﻿"""Deterministic document-first, duplicate-aware legal corpus sampling."""
 from __future__ import annotations
-import hashlib,json,random
+import hashlib,json
 from collections import Counter,defaultdict
 from pathlib import Path
 from .models import SampleManifest,StratumSummary

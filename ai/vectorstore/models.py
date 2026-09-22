@@ -2,7 +2,6 @@
 from __future__ import annotations
 import uuid
 from dataclasses import dataclass,field
-from typing import Any
 _NAMESPACE=uuid.UUID("632803df-295a-4d69-a55f-4c18d33111ab")
 def stable_point_id(canonical_chunk_id:str)->str:
     if not canonical_chunk_id:raise ValueError("canonical_chunk_id is required")

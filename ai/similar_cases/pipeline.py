@@ -4,7 +4,7 @@ import time
 from ai.legal_intelligence.pipeline import analyze
 from .candidate_retriever import CandidateRetriever
 from .explanation_builder import build_differences, build_explanation
-from .models import SimilarCaseRequest, SimilarCaseResponse, SimilarCaseResult
+from .models import SimilarCaseResponse, SimilarCaseResult
 from .query_builder import build_candidate_query
 from .result_ranker import label, rank_candidates, SimilarityThresholds
 
