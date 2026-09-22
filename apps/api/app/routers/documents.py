@@ -124,7 +124,7 @@ def presign_document_upload(
     if ext not in SUPPORTED_EXTENSIONS:
         raise HTTPException(
             status_code=400,
-            detail=f"Unsupported file type '{ext}'. Allowed: .txt, .pdf",
+            detail=f"Unsupported document type '{ext}'. Allowed: {', '.join(sorted(SUPPORTED_EXTENSIONS))}",
         )
     max_bytes = settings.max_s3_upload_mb * 1024 * 1024
     if request.size_bytes > max_bytes:
