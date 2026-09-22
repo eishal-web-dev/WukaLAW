@@ -387,6 +387,57 @@ def test_client_ai_question_uses_selected_case_description_without_documents(cli
     assert body["model"] == "case-guidance"
 
 
+def test_client_can_edit_description_and_manage_dated_updates(client):
+    headers = register_user(client, email="journal@example.com")
+    _make_client("journal@example.com")
+    created = client.post("/api/v1/cases/request", json={
+        "title": "Deposit dispute", "case_type": "Civil",
+        "description": "The landlord has kept my security deposit after I returned the property.",
+    }, headers=headers)
+    case_id = created.json()["id"]
+    changed = client.patch(f"/api/v1/cases/{case_id}", json={"description": "I returned the keys and have a receipt."}, headers=headers)
+    assert changed.status_code == 200, changed.text
+    assert changed.json()["description"] == "I returned the keys and have a receipt."
+    assert client.patch(f"/api/v1/cases/{case_id}", json={"status": "Closed"}, headers=headers).status_code == 403
+
+    other_headers = register_user(client, email="journal-other@example.com")
+    _make_client("journal-other@example.com")
+    another = client.post("/api/v1/cases/request", json={
+        "title": "Other dispute", "case_type": "Civil",
+        "description": "The respondent did not return the signed agreement.",
+    }, headers=other_headers)
+    other_case_id = another.json()["id"]
+    uploaded = client.post(
+        "/api/v1/documents/upload",
+        files={"file": ("receipt.txt", b"I returned the keys and kept a dated signed receipt for the tenancy deposit. " * 8, "text/plain")},
+        data={"case_id": str(case_id)}, headers=headers,
+    )
+    assert uploaded.status_code == 201, uploaded.text
+    document_id = uploaded.json()["id"]
+    response = client.post(f"/api/v1/cases/{case_id}/events", json={
+        "date": "2026-09-20", "text": "I returned the keys and saved a receipt.", "document_id": document_id,
+    }, headers=headers)
+    assert response.status_code == 201, response.text
+    event_id = response.json()["id"]
+    assert client.post(f"/api/v1/cases/{other_case_id}/events", json={
+        "date": "2026-09-20", "text": "Unauthorized update",
+    }, headers=headers).status_code == 404
+    timeline = client.get(f"/api/v1/cases/{case_id}/timeline", headers=headers)
+    assert timeline.status_code == 200
+    assert any(row["event_id"] == event_id and row["text"].startswith("I returned") for row in timeline.json()["events"])
+    assert any(row["event_id"] == event_id and row["document_id"] == document_id for row in timeline.json()["events"])
+    assert client.post(f"/api/v1/cases/{other_case_id}/events", json={
+        "date": "2026-09-21", "text": "Wrong document", "document_id": document_id,
+    }, headers=other_headers).status_code == 422
+    updated = client.put(f"/api/v1/cases/{case_id}/events/{event_id}", json={
+        "date": "2026-09-21", "text": "I found the signed receipt.", "document_id": None,
+    }, headers=headers)
+    assert updated.status_code == 200, updated.text
+    assert client.put(f"/api/v1/cases/{case_id}/events/{event_id}", json={
+        "date": "2026-09-21", "text": "Someone else's update",
+    }, headers=other_headers).status_code == 404
+
+
 def test_client_ai_followup_uses_history_for_retrieval_and_guidance(client, monkeypatch):
     import app.routers.qa as qa_module
 
