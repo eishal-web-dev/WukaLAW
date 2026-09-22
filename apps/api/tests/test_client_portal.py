@@ -382,8 +382,42 @@ def test_client_ai_question_uses_selected_case_description_without_documents(cli
     assert "security deposit" in body["answer"].lower()
     assert "useful next steps" in body["answer"].lower()
     assert "bank statements" in body["answer"].lower()
-    assert body["confidence"]["level"] == "high"
+    assert body["confidence"]["level"] == "low"
     assert "case" in body["confidence"]["reason"].lower()
+    assert body["model"] == "case-guidance"
+
+
+def test_client_ai_followup_uses_history_for_retrieval_and_guidance(client, monkeypatch):
+    import app.routers.qa as qa_module
+
+    headers = register_user(client, email="followup@example.com")
+    _make_client("followup@example.com")
+    created = client.post(
+        "/api/v1/cases/request",
+        json={"title": "Deposit", "case_type": "Civil", "description": "A disputed security deposit."},
+        headers=headers,
+    )
+    assert created.status_code == 201, created.text
+    searched = []
+
+    def capture_search(question, *args, **kwargs):
+        searched.append(question)
+        return []
+
+    monkeypatch.setattr(qa_module.vector_index, "search", capture_search)
+    response = client.post(
+        "/api/v1/ask",
+        json={
+            "question": "What about that?",
+            "case_id": created.json()["id"],
+            "history": [{"role": "user", "content": "The landlord kept my security deposit."}],
+        },
+        headers=headers,
+    )
+    assert response.status_code == 200, response.text
+    assert searched and "landlord kept my security deposit" in searched[0]
+    assert "landlord kept my security deposit" in response.json()["answer"]
+    assert response.json()["confidence"]["level"] == "low"
 
 
 def test_resolve_search_scope_never_includes_none_for_an_unclaimed_case():
