@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { CalendarClock, FileText, FolderOpen } from 'lucide-react'
-import { listCases, getCaseTimeline, errorMessage } from '../lib/api'
-import type { Case, TimelineEvent } from '../lib/api'
+import { listCases, getCaseTimeline, listCaseDocuments, addCaseEvent, editCaseEvent, errorMessage } from '../lib/api'
+import type { Case, TimelineEvent, DocumentMeta } from '../lib/api'
 import { Card, G } from '../components/design'
 import ErrorAlert from '../components/ErrorAlert'
 import Spinner from '../components/Spinner'
@@ -23,6 +23,13 @@ export default function ClientTimeline() {
   const [events, setEvents] = useState<TimelineEvent[] | null>(null)
   const [eventsLoading, setEventsLoading] = useState(false)
   const [eventsError, setEventsError] = useState<string | null>(null)
+  const [documents, setDocuments] = useState<DocumentMeta[]>([])
+  const [eventDate, setEventDate] = useState('')
+  const [eventText, setEventText] = useState('')
+  const [documentId, setDocumentId] = useState('')
+  const [editingId, setEditingId] = useState<number | null>(null)
+  const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -51,6 +58,8 @@ export default function ClientTimeline() {
     setEventsLoading(true)
     setEventsError(null)
     setEvents(null)
+    setDocuments([])
+    void listCaseDocuments(selectedCaseId).then((res) => { if (!cancelled) setDocuments(res.items) }).catch(() => {})
     getCaseTimeline(selectedCaseId)
       .then((res) => {
         if (!cancelled) setEvents(res.events)
@@ -73,6 +82,24 @@ export default function ClientTimeline() {
 
   const selectedCase = cases?.find((c) => String(c.id) === selectedCaseId)
   const today = new Date().toISOString().slice(0, 10)
+
+  async function saveEntry(e: React.FormEvent) {
+    e.preventDefault()
+    if (!selectedCaseId || saving) return
+    setSaving(true)
+    setSaveError(null)
+    try {
+      const payload = { date: eventDate, text: eventText.trim(), document_id: documentId ? Number(documentId) : null }
+      if (editingId) await editCaseEvent(selectedCaseId, editingId, payload)
+      else await addCaseEvent(selectedCaseId, payload)
+      setEvents((await getCaseTimeline(selectedCaseId)).events)
+      setEventDate('')
+      setEventText('')
+      setDocumentId('')
+      setEditingId(null)
+    } catch (err) { setSaveError(errorMessage(err)) }
+    finally { setSaving(false) }
+  }
 
   return (
     <div className="p-6 sm:p-8 max-w-4xl mx-auto space-y-5">
@@ -139,12 +166,34 @@ export default function ClientTimeline() {
 
       {selectedCaseId && eventsError && <ErrorAlert message={eventsError} />}
 
+      {selectedCaseId && cases?.some((c) => String(c.id) === selectedCaseId) && (
+        <Card className="p-5 space-y-3">
+          <h2 className="font-semibold text-foreground">{editingId ? 'Edit your update' : 'Add a dated update'}</h2>
+          <p className="text-xs text-muted-foreground">Record what happened in your own words. Link an uploaded case document if it supports this update. <Link to="/client/upload" className="underline" style={{ color: G }}>Upload a document</Link> first if needed.</p>
+          <form onSubmit={(e) => void saveEntry(e)} className="space-y-3">
+            <label className="block text-sm text-foreground">Date
+              <input required type="date" value={eventDate} onChange={(e) => setEventDate(e.target.value)} className="block mt-1 w-full rounded-lg border border-border bg-background p-2" />
+            </label>
+            <label className="block text-sm text-foreground">What happened?
+              <textarea required minLength={3} maxLength={5000} value={eventText} onChange={(e) => setEventText(e.target.value)} rows={4} className="block mt-1 w-full rounded-lg border border-border bg-background p-2" />
+            </label>
+            <label className="block text-sm text-foreground">Related document (optional)
+              <select value={documentId} onChange={(e) => setDocumentId(e.target.value)} className="block mt-1 w-full rounded-lg border border-border bg-background p-2">
+                <option value="">No document linked</option>
+                {documents.map((doc) => <option key={doc.id} value={doc.id}>{doc.title}</option>)}
+              </select>
+            </label>
+            {saveError && <ErrorAlert message={saveError} />}
+            <button disabled={saving} type="submit" className="rounded-lg px-4 py-2 text-sm font-semibold text-black disabled:opacity-50" style={{ background: G }}>{saving ? 'Saving…' : editingId ? 'Save changes' : 'Add update'}</button>
+            {editingId && <button type="button" onClick={() => { setEditingId(null); setEventDate(''); setEventText(''); setDocumentId('') }} className="ml-3 text-sm text-muted-foreground">Cancel</button>}
+          </form>
+        </Card>
+      )}
+
       {selectedCaseId && sortedEvents && sortedEvents.length === 0 && (
         <Card className="p-10 text-center space-y-2">
           <CalendarClock size={28} className="mx-auto text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">
-            No dated events have been found in this case's documents yet.
-          </p>
+          <p className="text-sm text-muted-foreground">No dated updates yet. Add one above or upload a document containing dated events.</p>
         </Card>
       )}
 
@@ -185,13 +234,14 @@ export default function ClientTimeline() {
                         </span>
                       </div>
                       <p className="text-sm text-foreground leading-relaxed">{ev.text}</p>
-                      <Link
+                      {ev.event_id && <button type="button" onClick={() => { setEditingId(ev.event_id!); setEventDate(ev.date); setEventText(ev.text); setDocumentId(ev.document_id ? String(ev.document_id) : ''); document.querySelector('main')?.scrollTo({ top: 0, behavior: 'smooth' }) }} className="block mt-2 text-xs underline" style={{ color: G }}>Edit this update</button>}
+                      {ev.document_id && <Link
                         to={`/documents/${ev.document_id}`}
                         className="inline-flex items-center gap-1.5 mt-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
                       >
                         <FileText size={11} style={{ color: G }} />
                         {ev.document_title}
-                      </Link>
+                      </Link>}
                     </div>
                   </Card>
                 </li>
