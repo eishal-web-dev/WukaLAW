@@ -5,9 +5,8 @@ import { listCases, uploadDocument, errorMessage } from '../lib/api'
 import type { Case } from '../lib/api'
 import { Card, G } from '../components/design'
 
-const ALLOWED_TYPES = new Set(['application/pdf', 'text/plain'])
-const ALLOWED_EXT = ['.pdf', '.txt']
-const MAX_BYTES = 50 * 1024 * 1024 // 50MB
+const ALLOWED_EXT = ['.pdf', '.txt', '.docx', '.png', '.jpg', '.jpeg', '.webp', '.tif', '.tiff']
+const MAX_BYTES = 20 * 1024 * 1024
 
 interface StagedFile {
   id: string
@@ -49,12 +48,12 @@ export default function ClientUpload() {
     const next: StagedFile[] = []
     for (const file of Array.from(files)) {
       const ext = file.name.slice(file.name.lastIndexOf('.')).toLowerCase()
-      if (!ALLOWED_TYPES.has(file.type) && !ALLOWED_EXT.includes(ext)) {
-        next.push({ id: crypto.randomUUID(), file, status: 'error', percent: 0, error: 'Only PDF and TXT files are supported.' })
+      if (!ALLOWED_EXT.includes(ext)) {
+        next.push({ id: crypto.randomUUID(), file, status: 'error', percent: 0, error: 'Use PDF, Word, TXT, or an image with readable text. Other files belong in Evidence.' })
         continue
       }
       if (file.size > MAX_BYTES) {
-        next.push({ id: crypto.randomUUID(), file, status: 'error', percent: 0, error: 'File exceeds the 50 MB limit.' })
+        next.push({ id: crypto.randomUUID(), file, status: 'error', percent: 0, error: 'File exceeds the 20 MB local upload limit.' })
         continue
       }
       next.push({ id: crypto.randomUUID(), file, status: 'staged', percent: 0 })
@@ -135,7 +134,7 @@ export default function ClientUpload() {
     <div className="p-6 sm:p-8 max-w-2xl mx-auto space-y-5">
       <div>
         <h1 className="text-xl font-bold text-foreground tracking-tight mb-1">Upload Documents</h1>
-        <p className="text-sm text-muted-foreground">Add documents to one of your cases. PDF and TXT, up to 50 MB per file.</p>
+        <p className="text-sm text-muted-foreground">Add searchable PDF, Word, TXT, or image documents (OCR). Images without readable text and audio/video belong in Evidence. Up to 20 MB per document.</p>
       </div>
 
       <Card className="p-5">
@@ -182,12 +181,12 @@ export default function ClientUpload() {
       >
         <Upload size={26} style={{ color: G }} className="mx-auto mb-3" />
         <div className="text-sm font-semibold text-foreground mb-1">Drop files here or click to browse</div>
-        <div className="text-xs text-muted-foreground">PDF, TXT — up to 50 MB per file</div>
+        <div className="text-xs text-muted-foreground">PDF, DOCX, TXT, PNG, JPG, WEBP, TIFF — up to 20 MB</div>
         <input
           id="client-upload-input"
           type="file"
           multiple
-          accept=".pdf,.txt,application/pdf,text/plain"
+          accept=".pdf,.txt,.docx,.png,.jpg,.jpeg,.webp,.tif,.tiff"
           className="hidden"
           onChange={(e) => {
             if (e.target.files?.length) addFiles(e.target.files)
