@@ -98,3 +98,21 @@ def ocr_pdf(path: Path) -> str:
         raise OcrUnavailableError("OCR completed but found no readable text on any page")
 
     return text
+
+
+def ocr_image(path: Path) -> str:
+    """Read text in an image, with the same local OCR requirement as PDFs."""
+    if settings.fake_ocr:
+        return _fake_ocr(path)
+    try:
+        import pytesseract
+        from PIL import Image, UnidentifiedImageError
+        pytesseract.get_tesseract_version()
+        with Image.open(path) as image:
+            image.verify()
+        with Image.open(path) as image:
+            return pytesseract.image_to_string(image, lang=settings.ocr_language)
+    except (ImportError, OSError, UnidentifiedImageError) as exc:
+        raise OcrUnavailableError("Image OCR requires Pillow and Tesseract and a readable image") from exc
+    except Exception as exc:
+        raise OcrUnavailableError("Tesseract could not read this image") from exc
