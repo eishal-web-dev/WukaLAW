@@ -5,6 +5,7 @@ from sqlalchemy import and_, select
 from sqlalchemy.orm import Session
 
 from ai.qa import rag
+from ai.rag.conversation import contextualize_query, to_turns
 from ai.retrieval import index as vector_index
 from app.auth import get_current_user
 from app.config import settings
@@ -49,7 +50,7 @@ def _selected_case_context(case: Case | None) -> str | None:
     return "Selected case record — " + "; ".join(fields) + "."
 
 
-def _friendly_case_guidance(case: Case, question: str) -> str:
+def _friendly_case_guidance(case: Case, question: str, history: list[dict]) -> str:
     """Useful, non-predictive guidance when only the case record is available."""
     description = (case.description or "No case description has been added yet.").strip()
     deadline = (
@@ -59,6 +60,12 @@ def _friendly_case_guidance(case: Case, question: str) -> str:
     )
     clarification = ""
     normalized = question.strip()
+    previous_user_messages = [
+        turn["content"].strip()
+        for turn in history
+        if turn.get("role") == "user" and turn.get("content", "").strip()
+    ]
+    remembered = previous_user_messages[-1] if previous_user_messages else None
     if normalized.casefold() not in {
         "what is my case about?",
         "what happens next in my case?",
@@ -67,6 +74,11 @@ def _friendly_case_guidance(case: Case, question: str) -> str:
         clarification = (
             f"\n\nI understand your latest clarification as: “{normalized}” "
             "This is your account of events and should be supported with evidence where possible."
+        )
+    if remembered and remembered.casefold() != normalized.casefold():
+        clarification += (
+            f"\n\nFrom our earlier conversation, I also understand that you said: “{remembered}” "
+            "I am treating this as your statement, not as a verified fact."
         )
     return (
         f"I understand your case is currently marked {case.status}. "
@@ -208,6 +220,9 @@ def _ask_impl(request: AskRequest, db: Session, user: User) -> dict:
     search_owner_ids, allowed_document_ids = _resolve_search_scope(db, user, request.case_id)
     selected_case = _selected_case(db, user, request.case_id)
     case_context = _selected_case_context(selected_case)
+    history = [turn.model_dump() for turn in request.history]
+    conversation_turns = to_turns(history)
+    retrieval_question = contextualize_query(conversation_turns, request.question)
 
     if rag.is_library_question(request.question):
         return _library_answer(db, user, allowed_document_ids)
@@ -234,7 +249,7 @@ def _ask_impl(request: AskRequest, db: Session, user: User) -> dict:
     for owner_id in search_owner_ids:
         hits.extend(
             vector_index.search(
-                request.question,
+                retrieval_question,
                 settings.top_k * OVERFETCH_FACTOR,
                 owner_id=owner_id,
             )
@@ -250,7 +265,7 @@ def _ask_impl(request: AskRequest, db: Session, user: User) -> dict:
         for owner_id in search_owner_ids:
             hits.extend(
                 vector_index.search(
-                    request.question,
+                    retrieval_question,
                     settings.top_k * OVERFETCH_FACTOR,
                     owner_id=owner_id,
                 )
@@ -289,18 +304,23 @@ def _ask_impl(request: AskRequest, db: Session, user: User) -> dict:
             "model": "lookup",
         }
 
+    # Only retrieved document passages carry similarity scores. The case
+    # record is useful background, but it must never inflate confidence.
     answer_contexts = [(source.text, source.score) for source in sources]
-    if case_context:
-        # The selected case record is authoritative context even when the case
-        # has no uploaded documents yet. It prevents ordinary questions such
-        # as "What happens next in my case?" from incorrectly reporting that
-        # the system knows nothing about the selected case.
-        answer_contexts.insert(0, (case_context, 1.0))
-    answer_text, level, reason, model = rag.answer(request.question, answer_contexts)
+    answer_text, level, reason, model = rag.answer(
+        request.question,
+        answer_contexts,
+        background_context=case_context,
+        history=history,
+        search_question=retrieval_question,
+    )
     if selected_case is not None and not sources:
-        answer_text = _friendly_case_guidance(selected_case, request.question)
-        level = "high"
-        reason = "Answered from the selected case's saved details and description."
+        answer_text = _friendly_case_guidance(selected_case, request.question, history)
+        level = "low"
+        reason = (
+            "General guidance from the selected case record and conversation only; "
+            "no supporting document passage was retrieved."
+        )
         model = "case-guidance"
     if answer_text == rag.NOT_ENOUGH:
         sources = []
