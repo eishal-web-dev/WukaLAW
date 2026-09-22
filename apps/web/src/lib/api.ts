@@ -777,3 +777,38 @@ export function uploadDocument(
     xhr.send(form)
   })
 }
+
+export interface EvidenceFile {
+  id: number
+  case_id: number
+  filename: string
+  media_type: string
+  size_bytes: number
+  created_at: string
+}
+
+export function listEvidenceFiles(caseId: number): Promise<{ items: EvidenceFile[] }> {
+  return request<{ items: EvidenceFile[] }>(`/cases/${caseId}/evidence-files`)
+}
+
+export function uploadEvidenceFile(caseId: number, file: File): Promise<EvidenceFile> {
+  const body = new FormData()
+  body.append('file', file)
+  return request<EvidenceFile>(`/cases/${caseId}/evidence-files`, { method: 'POST', body })
+}
+
+export async function downloadEvidenceFile(caseId: number, item: EvidenceFile): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/cases/${caseId}/evidence-files/${item.id}/download`, {
+    headers: authHeaders(),
+  })
+  if (response.status === 401) throw handleSessionExpired()
+  if (!response.ok) throw new ApiError('Could not download this evidence file.', response.status)
+  const url = URL.createObjectURL(await response.blob())
+  const link = document.createElement('a')
+  link.href = url
+  link.download = item.filename
+  document.body.append(link)
+  link.click()
+  link.remove()
+  setTimeout(() => URL.revokeObjectURL(url), 60000)
+}
