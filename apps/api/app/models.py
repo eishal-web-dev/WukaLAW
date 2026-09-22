@@ -90,6 +90,19 @@ class Document(Base):
     )
 
 
+class EvidenceFile(Base):
+    __tablename__ = "evidence_files"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    case_id: Mapped[int] = mapped_column(ForeignKey("cases.id"), index=True)
+    uploaded_by_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    filename: Mapped[str] = mapped_column(String(255))
+    storage_name: Mapped[str] = mapped_column(String(80), unique=True)
+    media_type: Mapped[str] = mapped_column(String(100))
+    size_bytes: Mapped[int] = mapped_column(Integer)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
 class Chunk(Base):
     __tablename__ = "chunks"
 
