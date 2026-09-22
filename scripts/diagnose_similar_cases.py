@@ -37,7 +37,7 @@ def main() -> int:
         print("Judgments index is available. Similar Cases can search this collection.")
         return 0
     except Exception as exc:
-        print(f"Cannot inspect Qdrant ({type(exc).__name__}). Check that the configured server is running or use an existing QDRANT_LOCAL_PATH.")
+        print(f"Cannot inspect Qdrant ({type(exc).__name__}: {exc}). Check that the configured server is running or use an existing QDRANT_LOCAL_PATH.")
         return 1
 
 
