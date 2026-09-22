@@ -19,3 +19,4 @@ PyJWT>=2.9
 bcrypt>=4.2
 pytest-bdd>=7.3
 python-dateutil>=2.9
+python-dotenv>=1.0
