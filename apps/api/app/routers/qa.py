@@ -56,7 +56,7 @@ def _selected_case_context(case: Case | None, db: Session | None = None) -> str 
     return "Selected case record — " + "; ".join(fields) + "."
 
 
-def _friendly_case_guidance(case: Case, question: str, history: list[dict]) -> str:
+def _friendly_case_guidance(case: Case, question: str, history: list[dict], db: Session | None = None) -> str:
     """Useful, non-predictive guidance when only the case record is available."""
     description = (case.description or "No case description has been added yet.").strip()
     deadline = (
@@ -72,6 +72,11 @@ def _friendly_case_guidance(case: Case, question: str, history: list[dict]) -> s
         if turn.get("role") == "user" and turn.get("content", "").strip()
     ]
     remembered = previous_user_messages[-1] if previous_user_messages else None
+    latest_update = None
+    if db is not None:
+        latest_update = db.scalar(
+            select(CaseEvent).where(CaseEvent.case_id == case.id).order_by(CaseEvent.event_date.desc(), CaseEvent.id.desc()).limit(1)
+        )
     if normalized.casefold() not in {
         "what is my case about?",
         "what happens next in my case?",
@@ -89,7 +94,8 @@ def _friendly_case_guidance(case: Case, question: str, history: list[dict]) -> s
     return (
         f"I understand your case is currently marked {case.status}. "
         f"The issue recorded in your case is: {description}{clarification}\n\n"
-        "Useful next steps:\n"
+        + (f"Your latest recorded update ({latest_update.event_date}) says: {latest_update.text}\n\n" if latest_update else "")
+        + "Useful next steps:\n"
         "1. Write a dated timeline of what happened, including payments, property, conversations, and handovers.\n"
         "2. Collect supporting evidence such as bank statements, receipts, messages, photographs, ownership records, and witness details.\n"
         "3. Keep the original files unchanged and give copies to your lawyer.\n"
@@ -321,7 +327,7 @@ def _ask_impl(request: AskRequest, db: Session, user: User) -> dict:
         search_question=retrieval_question,
     )
     if selected_case is not None and not sources:
-        answer_text = _friendly_case_guidance(selected_case, request.question, history)
+        answer_text = _friendly_case_guidance(selected_case, request.question, history, db)
         level = "low"
         reason = (
             "General guidance from the selected case record and conversation only; "
