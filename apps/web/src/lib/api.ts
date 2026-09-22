@@ -216,8 +216,9 @@ export interface TimelineEvent {
   date_text: string
   /** The sentence describing the event. */
   text: string
-  document_id: number
-  document_title: string
+  document_id: number | null
+  document_title: string | null
+  event_id?: number | null
 }
 
 export interface TimelineResponse {
@@ -632,6 +633,22 @@ export function getCaseTimeline(
   id: number | string,
 ): Promise<TimelineResponse> {
   return request<TimelineResponse>(`/cases/${id}/timeline`)
+}
+
+export interface CaseEventPayload {
+  date: string
+  text: string
+  document_id: number | null
+}
+
+export function addCaseEvent(id: number | string, payload: CaseEventPayload): Promise<{ id: number }> {
+  return postJson<{ id: number }>(`/cases/${id}/events`, payload)
+}
+
+export function editCaseEvent(id: number | string, eventId: number, payload: CaseEventPayload): Promise<{ id: number }> {
+  return request<{ id: number }>(`/cases/${id}/events/${eventId}`, {
+    method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
+  })
 }
 
 export interface CasePredictionFactor {
