@@ -10,7 +10,7 @@ from ai.retrieval import index as vector_index
 from app.auth import get_current_user
 from app.config import settings
 from app.db import get_db
-from app.models import Case, Chunk, Document, User
+from app.models import Case, CaseEvent, Chunk, Document, User
 from app.routers.search import OVERFETCH_FACTOR, chunks_to_sources
 from app.schemas import AskRequest, AskResponse
 
@@ -28,7 +28,7 @@ def _selected_case(db: Session, user: User, case_id: int | None) -> Case | None:
     return _get_owned_case(db, case_id, user)
 
 
-def _selected_case_context(case: Case | None) -> str | None:
+def _selected_case_context(case: Case | None, db: Session | None = None) -> str | None:
     """Build private AI context from the selected client's real case record."""
     if case is None:
         return None
@@ -45,6 +45,12 @@ def _selected_case_context(case: Case | None) -> str | None:
         fields.append(f"next recorded deadline: {case.deadline}")
     else:
         fields.append("no upcoming deadline is recorded")
+    if db is not None:
+        entries = db.scalars(select(CaseEvent).where(CaseEvent.case_id == case.id).order_by(CaseEvent.event_date.desc()).limit(12)).all()
+        for entry in entries:
+            linked = db.get(Document, entry.document_id) if entry.document_id else None
+            title = f" (linked document: {linked.title})" if linked and linked.case_id == case.id else ""
+            fields.append(f"client timeline update {entry.event_date}: {entry.text}{title}")
     # Keep this as one compact passage so the extractive fallback cannot drop
     # the description while selecting individual sentences.
     return "Selected case record — " + "; ".join(fields) + "."
@@ -219,7 +225,7 @@ def ask(
 def _ask_impl(request: AskRequest, db: Session, user: User) -> dict:
     search_owner_ids, allowed_document_ids = _resolve_search_scope(db, user, request.case_id)
     selected_case = _selected_case(db, user, request.case_id)
-    case_context = _selected_case_context(selected_case)
+    case_context = _selected_case_context(selected_case, db)
     history = [turn.model_dump() for turn in request.history]
     conversation_turns = to_turns(history)
     retrieval_question = contextualize_query(conversation_turns, request.question)
