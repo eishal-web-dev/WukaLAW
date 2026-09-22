@@ -7,13 +7,15 @@ from ai.similar_cases import SimilarCaseRequest
 from ai.timeline.extract import extract_events
 from app.auth import get_current_user
 from app.db import get_db
-from app.models import Case, Chunk, Document, User
+from app.models import Case, CaseEvent, Chunk, Document, User
 from app.schemas import (
     CaseCreate,
     CaseList,
     CaseOut,
     CaseRequestCreate,
     CaseUpdate,
+    CaseEventCreate,
+    CaseEventUpdate,
     ContradictionsResponse,
     DocumentList,
     TimelineResponse,
@@ -127,6 +129,15 @@ def _run_similar_search(
 ) -> dict:
     situation = _similar_case_seed(case, documents, focus=focus)
     try:
+        from ai.vectorstore.config import QdrantSettings
+        from ai.vectorstore.qdrant_client import get_shared_qdrant_client
+
+        corpus = QdrantSettings.from_env()
+        if not get_shared_qdrant_client(corpus).client.collection_exists(corpus.collection):
+            raise HTTPException(
+                status_code=503,
+                detail=f"Pakistani judgments collection '{corpus.collection}' is missing. Check QDRANT_COLLECTION and QDRANT_LOCAL_PATH in your .env, or import the legal corpus before searching similar cases.",
+            )
         from app.routers.similar_cases import get_similar_case_pipeline
 
         result = get_similar_case_pipeline().run(
@@ -137,10 +148,18 @@ def _run_similar_search(
                 include_outcomes=True,
             )
         ).to_dict()
+    except HTTPException:
+        raise
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     except RuntimeError as exc:
         raise HTTPException(status_code=503, detail=f"Similar-case service unavailable: {exc}") from exc
+    except Exception as exc:
+        if "not found" in str(exc).lower() and "collection" in str(exc).lower():
+            raise HTTPException(status_code=503, detail="Pakistani judgments collection is missing. Check QDRANT_COLLECTION and QDRANT_LOCAL_PATH in your .env, or import the legal corpus.") from exc
+        if "connection" in str(exc).lower() or "refused" in str(exc).lower():
+            raise HTTPException(status_code=503, detail="Cannot reach the legal corpus. Set QDRANT_LOCAL_PATH to your indexed local collection or start the configured Qdrant server.") from exc
+        raise
 
     result["source_case"] = {
         "id": case.id,
@@ -273,7 +292,14 @@ def update_case(
 ):
     case = _get_owned_case(db, case_id, user)
     if user.role == "client":
-        raise HTTPException(status_code=403, detail="Clients cannot modify case details.")
+        if request.model_fields_set - {"description"}:
+            raise HTTPException(status_code=403, detail="Clients may edit their case description only; a lawyer manages case status and deadlines.")
+        if request.description is None:
+            raise HTTPException(status_code=422, detail="Provide a case description to update.")
+        case.description = request.description.strip()
+        db.commit()
+        db.refresh(case)
+        return _case_out(db, case)
     _validate(request.status, request.priority)
     changes: list[str] = []
     for field in ("title", "case_type", "status", "priority", "description", "deadline"):
@@ -337,8 +363,49 @@ def case_timeline(case_id: int, db: Session = Depends(get_db), user: User = Depe
     for document in documents:
         for event in extract_events(document.text):
             events.append({**event.__dict__, "document_id": document.id, "document_title": document.title})
+    for entry in db.scalars(select(CaseEvent).where(CaseEvent.case_id == case.id)):
+        linked = db.get(Document, entry.document_id) if entry.document_id else None
+        events.append({"date": entry.event_date, "date_text": entry.event_date, "text": entry.text,
+                       "document_id": linked.id if linked and linked.case_id == case.id else None,
+                       "document_title": linked.title if linked and linked.case_id == case.id else None,
+                       "event_id": entry.id})
     events.sort(key=lambda event: event["date"])
     return {"events": events}
+
+
+def _event_document(db: Session, case_id: int, document_id: int | None) -> None:
+    if document_id is not None:
+        document = db.get(Document, document_id)
+        if document is None or document.case_id != case_id:
+            raise HTTPException(status_code=422, detail="Choose a document from this case.")
+
+
+@router.post("/{case_id}/events", status_code=201)
+def create_case_event(case_id: int, request: CaseEventCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    case = _get_owned_case(db, case_id, user)
+    if user.role == "client" and case.client_id != user.id:
+        raise HTTPException(status_code=404, detail="Case not found.")
+    _event_document(db, case.id, request.document_id)
+    entry = CaseEvent(case_id=case.id, author_id=user.id, event_date=request.date.isoformat(),
+                      text=request.text.strip(), document_id=request.document_id)
+    db.add(entry)
+    db.commit()
+    db.refresh(entry)
+    return {"id": entry.id}
+
+
+@router.put("/{case_id}/events/{event_id}")
+def update_case_event(case_id: int, event_id: int, request: CaseEventUpdate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    _get_owned_case(db, case_id, user)
+    entry = db.get(CaseEvent, event_id)
+    if entry is None or entry.case_id != case_id or entry.author_id != user.id:
+        raise HTTPException(status_code=404, detail="Event not found.")
+    _event_document(db, case_id, request.document_id)
+    entry.event_date = request.date.isoformat()
+    entry.text = request.text.strip()
+    entry.document_id = request.document_id
+    db.commit()
+    return {"id": entry.id}
 
 
 @router.get("/{case_id}/similar")
