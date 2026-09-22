@@ -22,7 +22,7 @@ def _validate_filename(filename: str) -> str:
     if ext not in SUPPORTED_EXTENSIONS:
         raise HTTPException(
             status_code=400,
-            detail=f"Unsupported file type '{ext}'. Allowed: .txt, .pdf",
+            detail=f"Unsupported document type '{ext}'. Allowed: {', '.join(sorted(SUPPORTED_EXTENSIONS))}",
         )
     return clean_name
 
@@ -38,6 +38,15 @@ def _validate_size(size_bytes: int, *, max_mb: int) -> None:
 def _extract_with_ocr_fallback(source_path: Path) -> tuple[str, bool]:
     """Extract text, falling back to OCR for PDFs with too little embedded
     text. Returns (cleaned_text, ocr_used)."""
+    if source_path.suffix.lower() in {".png", ".jpg", ".jpeg", ".webp", ".tif", ".tiff"}:
+        from ai.preprocessing.ocr import ocr_image
+        try:
+            text = clean_text(ocr_image(source_path))
+        except OcrUnavailableError as error:
+            raise HTTPException(status_code=422, detail=f"Image OCR is unavailable: {error}") from error
+        if len(text.split()) < settings.ocr_min_words:
+            raise HTTPException(status_code=422, detail="This image has too little readable text for AI document search. Upload it as case evidence instead.")
+        return text, True
     try:
         raw = extract_text(source_path)
     except Exception as error:  # corrupt PDF etc.
@@ -145,13 +154,12 @@ def ingest_upload(db: Session, file: UploadFile, owner_id: int) -> Document:
 
     destination = settings.upload_dir / f"{uuid4().hex}_{filename}"
     destination.write_bytes(content)
-    return _index_extracted_document(
-        db,
-        source_path=destination,
-        filename=filename,
-        owner_id=owner_id,
-        size_bytes=len(content),
-    )
+    try:
+        return _index_extracted_document(
+            db, source_path=destination, filename=filename, owner_id=owner_id, size_bytes=len(content),
+        )
+    finally:
+        destination.unlink(missing_ok=True)
 
 
 def ingest_s3_object(
