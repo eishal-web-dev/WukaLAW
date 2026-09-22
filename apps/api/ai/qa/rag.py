@@ -104,14 +104,33 @@ def _ollama_available() -> bool:
         return False
 
 
-def _generate_with_ollama(question: str, contexts: list[str]) -> str | None:
+def _generate_with_ollama(
+    question: str,
+    contexts: list[str],
+    background_context: str | None = None,
+    history: list[dict] | None = None,
+) -> str | None:
     context_block = "\n\n---\n\n".join(contexts)
+    background_block = (
+        f"\n\nCase record background (not independent evidence):\n{background_context}"
+        if background_context
+        else ""
+    )
+    history_block = "\n".join(
+        f"{'User' if turn.get('role') == 'user' else 'Assistant'}: {turn.get('content', '').strip()}"
+        for turn in (history or [])[-8:]
+        if turn.get("content", "").strip()
+    )
+    conversation_block = f"\n\nConversation so far:\n{history_block}" if history_block else ""
     prompt = (
         "You are a legal research assistant. Answer the question using ONLY the "
         "context passages below, which come from legal documents uploaded by the user. "
+        "You may use the case record and conversation only to understand the user's situation; "
+        "do not present either as independently verified evidence. "
         "If the context does not contain the answer, say so plainly. Do not invent "
-        "facts, citations, or case law. Keep the answer concise.\n\n"
-        f"Context:\n{context_block}\n\nQuestion: {question}\n\nAnswer:"
+        "facts, citations, case law, outcomes, or deadlines. Keep the answer concise and helpful.\n\n"
+        f"Document evidence:\n{context_block}{background_block}{conversation_block}"
+        f"\n\nQuestion: {question}\n\nAnswer:"
     )
     try:
         response = httpx.post(
@@ -195,7 +214,14 @@ def best_matching_sentences(phrase: str, contexts: list[str], limit: int = 2) ->
     return [sentence for _, sentence in scored[:limit]]
 
 
-def answer(question: str, retrieved: list[tuple[str, float]]) -> tuple[str, str, str, str]:
+def answer(
+    question: str,
+    retrieved: list[tuple[str, float]],
+    *,
+    background_context: str | None = None,
+    history: list[dict] | None = None,
+    search_question: str | None = None,
+) -> tuple[str, str, str, str]:
     """retrieved: [(chunk_text, score)] sorted by score desc.
 
     Returns (answer_text, confidence_level, confidence_reason, model_name).
@@ -209,8 +235,8 @@ def answer(question: str, retrieved: list[tuple[str, float]]) -> tuple[str, str,
     level, reason = confidence_from_score(retrieved[0][1])
 
     if _ollama_available():
-        generated = _generate_with_ollama(question, contexts)
+        generated = _generate_with_ollama(question, contexts, background_context, history)
         if generated:
             return generated, level, reason, f"ollama/{settings.ollama_model}"
 
-    return _extractive_answer(question, contexts), level, reason, "extractive-fallback"
+    return _extractive_answer(search_question or question, contexts), level, reason, "extractive-fallback"
