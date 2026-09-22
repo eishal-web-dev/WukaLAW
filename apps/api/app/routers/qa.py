@@ -239,7 +239,7 @@ def _ask_impl(request: AskRequest, db: Session, user: User) -> dict:
     if rag.is_library_question(request.question):
         return _library_answer(db, user, allowed_document_ids)
 
-    kind = rag.classify_query(request.question)
+    kind = rag.classify_query(retrieval_question)
 
     if kind == "vague":
         return {
