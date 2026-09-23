@@ -8,6 +8,7 @@ over it, skipping if tesseract isn't installed, to prove the feature
 genuinely works end to end rather than just being wired up correctly.
 """
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 from fastapi import HTTPException
@@ -52,6 +53,23 @@ def test_ocr_unavailable_when_tesseract_binary_missing(tmp_path, monkeypatch):
     assert ocr_module.ocr_available() is False
     with pytest.raises(ocr_module.OcrUnavailableError):
         ocr_module.ocr_pdf(pdf_path)
+
+
+def test_configured_windows_tesseract_path_is_used(tmp_path, monkeypatch):
+    executable = tmp_path / "tesseract.exe"
+    executable.write_bytes(b"placeholder")
+    monkeypatch.setattr(config_module.settings, "tesseract_cmd", str(executable))
+    fake = SimpleNamespace(pytesseract=SimpleNamespace(tesseract_cmd=""))
+
+    assert ocr_module._configure_tesseract(fake) == str(executable)
+    assert fake.pytesseract.tesseract_cmd == str(executable)
+
+
+def test_missing_configured_tesseract_path_has_specific_message(tmp_path, monkeypatch):
+    missing = tmp_path / "missing-tesseract.exe"
+    monkeypatch.setattr(config_module.settings, "tesseract_cmd", str(missing))
+    with pytest.raises(ocr_module.OcrUnavailableError, match="points to a missing file"):
+        ocr_module._configure_tesseract(SimpleNamespace())
 
 
 def _build_scanned_pdf(tmp_path: Path, text: str) -> Path:
