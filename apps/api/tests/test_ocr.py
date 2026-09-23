@@ -72,6 +72,14 @@ def test_missing_configured_tesseract_path_has_specific_message(tmp_path, monkey
         ocr_module._configure_tesseract(SimpleNamespace())
 
 
+def test_missing_urdu_language_model_has_specific_message(monkeypatch):
+    monkeypatch.setattr(config_module.settings, "ocr_language", "eng+urd")
+    fake = SimpleNamespace(get_languages=lambda config="": ["eng", "osd"])
+
+    with pytest.raises(ocr_module.OcrUnavailableError, match="Missing Tesseract OCR language model.*urd"):
+        ocr_module._check_languages(fake)
+
+
 def _build_scanned_pdf(tmp_path: Path, text: str) -> Path:
     """Renders `text` onto a blank page as an image, then saves it as a
     PDF with no embedded text layer — i.e. a realistic scanned document."""
@@ -101,6 +109,8 @@ def _tesseract_really_available() -> bool:
 @pytest.mark.skipif(not _tesseract_really_available(), reason="tesseract/poppler not installed")
 def test_real_ocr_recovers_text_from_a_scanned_pdf(tmp_path, monkeypatch):
     monkeypatch.setattr(config_module.settings, "fake_ocr", False)
+    # This fixture contains English only; Urdu support is checked separately.
+    monkeypatch.setattr(config_module.settings, "ocr_language", "eng")
     pdf_path = _build_scanned_pdf(tmp_path, "WAKULAW COURT ORDER TEST")
 
     # Sanity check: pypdf should find nothing, since this PDF is an image
