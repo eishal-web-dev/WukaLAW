@@ -4,7 +4,7 @@ WORKDIR /app
 
 # faiss needs libgomp at runtime; tesseract-ocr + poppler-utils power the
 # scanned-PDF OCR fallback (ai/preprocessing/ocr.py)
-RUN apt-get update && apt-get install -y --no-install-recommends libgomp1 curl tesseract-ocr poppler-utils \
+RUN apt-get update && apt-get install -y --no-install-recommends libgomp1 curl tesseract-ocr tesseract-ocr-urd poppler-utils \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
