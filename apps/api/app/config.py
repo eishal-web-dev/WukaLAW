@@ -30,6 +30,7 @@ class Settings(BaseSettings):
     ocr_dpi: int = 300
     ocr_language: str = "eng"
     ocr_max_pages: int = 50  # safety cap so a huge scanned PDF can't hang an upload request
+    tesseract_cmd: str = ""  # optional full path, useful on Windows when Tesseract is not on PATH
 
     # AWS/S3. boto3 uses its standard credential chain: IAM task/instance role
     # in AWS, and AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY for local development.
