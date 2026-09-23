@@ -15,6 +15,8 @@ tesseract binary and is too slow for a fast test suite.
 """
 from __future__ import annotations
 
+import os
+import shutil
 from pathlib import Path
 
 from app.config import settings
@@ -23,6 +25,40 @@ from app.config import settings
 class OcrUnavailableError(RuntimeError):
     """Raised when OCR was needed but tesseract/poppler aren't available,
     or when OCR ran but produced no usable text."""
+
+
+def _configure_tesseract(pytesseract) -> str:
+    """Locate the native executable, including standard Windows installs."""
+    configured = settings.tesseract_cmd.strip()
+    candidates = [configured] if configured else []
+    executable = shutil.which("tesseract")
+    if executable:
+        candidates.append(executable)
+    for variable in ("ProgramFiles", "ProgramFiles(x86)", "LOCALAPPDATA"):
+        base = os.environ.get(variable)
+        if base:
+            candidates.append(str(Path(base) / "Tesseract-OCR" / "tesseract.exe"))
+    for candidate in candidates:
+        if candidate and Path(candidate).is_file():
+            try:
+                pytesseract.pytesseract.tesseract_cmd = candidate
+            except AttributeError as exc:
+                raise OcrUnavailableError("The pytesseract installation is incomplete.") from exc
+            return candidate
+    if configured:
+        raise OcrUnavailableError(f"TESSERACT_CMD points to a missing file: {configured}")
+    raise OcrUnavailableError(
+        "Tesseract executable was not found. Install Tesseract OCR, add it to PATH, "
+        "or set TESSERACT_CMD in .env (usually C:\\Program Files\\Tesseract-OCR\\tesseract.exe)."
+    )
+
+
+def _check_tesseract(pytesseract) -> None:
+    _configure_tesseract(pytesseract)
+    try:
+        pytesseract.get_tesseract_version()
+    except Exception as exc:
+        raise OcrUnavailableError("Tesseract was found but could not be started.") from exc
 
 
 def _fake_ocr(path: Path) -> str:
@@ -45,7 +81,7 @@ def ocr_available() -> bool:
     try:
         import pytesseract
 
-        pytesseract.get_tesseract_version()
+        _check_tesseract(pytesseract)
     except Exception:
         return False
     try:
@@ -73,11 +109,9 @@ def ocr_pdf(path: Path) -> str:
         ) from exc
 
     try:
-        pytesseract.get_tesseract_version()
-    except Exception as exc:
-        raise OcrUnavailableError(
-            "The tesseract-ocr system package is not installed or not on PATH"
-        ) from exc
+        _check_tesseract(pytesseract)
+    except OcrUnavailableError:
+        raise
 
     try:
         images = convert_from_path(
@@ -107,12 +141,21 @@ def ocr_image(path: Path) -> str:
     try:
         import pytesseract
         from PIL import Image, UnidentifiedImageError
-        pytesseract.get_tesseract_version()
+    except ImportError as exc:
+        raise OcrUnavailableError("Image OCR Python packages are missing; reinstall backend requirements.") from exc
+    try:
+        _check_tesseract(pytesseract)
+        try:
+            with Image.open(path) as image:
+                image.verify()
+        except (OSError, UnidentifiedImageError) as exc:
+            raise OcrUnavailableError("The uploaded file is not a readable image or is corrupted.") from exc
         with Image.open(path) as image:
-            image.verify()
-        with Image.open(path) as image:
-            return pytesseract.image_to_string(image, lang=settings.ocr_language)
-    except (ImportError, OSError, UnidentifiedImageError) as exc:
-        raise OcrUnavailableError("Image OCR requires Pillow and Tesseract and a readable image") from exc
+            text = pytesseract.image_to_string(image, lang=settings.ocr_language).strip()
+        if not text:
+            raise OcrUnavailableError("OCR ran successfully but found no readable text in this image. Upload it as Evidence instead.")
+        return text
+    except OcrUnavailableError:
+        raise
     except Exception as exc:
-        raise OcrUnavailableError("Tesseract could not read this image") from exc
+        raise OcrUnavailableError(f"Tesseract could not read this image: {type(exc).__name__}") from exc
