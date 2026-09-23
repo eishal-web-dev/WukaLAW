@@ -70,7 +70,7 @@ describe('ClientUpload', () => {
     const badFile = new File(['data'], 'malware.exe', { type: 'application/x-msdownload' })
     fireEvent.change(input, { target: { files: [badFile] } })
 
-    expect(await screen.findByText(/Only PDF and TXT files are supported/i)).toBeInTheDocument()
+    expect(await screen.findByText(/Use PDF, Word, TXT, or an image with readable text/i)).toBeInTheDocument()
     expect(api.uploadDocument).not.toHaveBeenCalled()
   })
 
