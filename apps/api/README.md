@@ -31,8 +31,13 @@ PDFs with a real text layer work with no setup. If a PDF looks like a scan (too 
 brew install tesseract poppler
 
 # Debian/Ubuntu
-sudo apt-get install tesseract-ocr poppler-utils
+sudo apt-get install tesseract-ocr tesseract-ocr-urd poppler-utils
 ```
+
+WukaLAW defaults to `OCR_LANGUAGE=eng+urd` so mixed English/Urdu Pakistani
+documents are read with both models. On Windows, rerun the Tesseract installer,
+select **Additional language data → Urdu**, and restart the API. You can verify
+the installation with `tesseract --list-langs`; it must list both `eng` and `urd`.
 
 Without them, scanned PDFs are still rejected with a clear message rather than the app crashing — OCR is attempted only if `pytesseract` reports the `tesseract` binary is actually available. Set `OCR_ENABLED=false` in `.env` to skip the OCR attempt entirely and go straight to that rejection message.
 
