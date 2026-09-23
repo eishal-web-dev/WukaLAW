@@ -8,6 +8,9 @@ import type { Case, DocumentMeta } from '../../lib/api'
 vi.mock('../../lib/api', () => ({
   listCases: vi.fn(),
   listCaseDocuments: vi.fn(),
+  listEvidenceFiles: vi.fn(),
+  uploadEvidenceFile: vi.fn(),
+  downloadEvidenceFile: vi.fn(),
   errorMessage: (err: unknown) =>
     err instanceof Error ? err.message : 'Something went wrong.',
 }))
@@ -47,6 +50,7 @@ function makeDoc(overrides: Partial<DocumentMeta>): DocumentMeta {
 
 beforeEach(() => {
   vi.clearAllMocks()
+  vi.mocked(api.listEvidenceFiles).mockResolvedValue({ items: [] })
 })
 
 function renderEvidence() {
