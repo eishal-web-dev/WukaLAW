@@ -61,6 +61,30 @@ def _check_tesseract(pytesseract) -> None:
         raise OcrUnavailableError("Tesseract was found but could not be started.") from exc
 
 
+def _check_languages(pytesseract) -> None:
+    """Fail clearly instead of silently reading Urdu with the English model."""
+    requested = {lang.strip() for lang in settings.ocr_language.split("+") if lang.strip()}
+    try:
+        installed = set(pytesseract.get_languages(config=""))
+    except Exception as exc:
+        raise OcrUnavailableError("Tesseract language models could not be checked.") from exc
+    missing = requested - installed
+    if missing:
+        names = ", ".join(sorted(missing))
+        hint = (
+            "Install the Urdu language data (urd.traineddata) in Tesseract's tessdata folder. "
+            "On Windows, rerun the Tesseract installer and select Urdu under Additional language data."
+            if "urd" in missing
+            else "Install the missing Tesseract traineddata file(s)."
+        )
+        raise OcrUnavailableError(f"Missing Tesseract OCR language model(s): {names}. {hint}")
+
+
+def _prepare_tesseract(pytesseract) -> None:
+    _check_tesseract(pytesseract)
+    _check_languages(pytesseract)
+
+
 def _fake_ocr(path: Path) -> str:
     """Deterministic stand-in for tests/CI: returns fixed text derived from
     the filename so different fixture files can produce distinguishable
@@ -81,7 +105,7 @@ def ocr_available() -> bool:
     try:
         import pytesseract
 
-        _check_tesseract(pytesseract)
+        _prepare_tesseract(pytesseract)
     except Exception:
         return False
     try:
@@ -109,7 +133,7 @@ def ocr_pdf(path: Path) -> str:
         ) from exc
 
     try:
-        _check_tesseract(pytesseract)
+        _prepare_tesseract(pytesseract)
     except OcrUnavailableError:
         raise
 
@@ -144,7 +168,7 @@ def ocr_image(path: Path) -> str:
     except ImportError as exc:
         raise OcrUnavailableError("Image OCR Python packages are missing; reinstall backend requirements.") from exc
     try:
-        _check_tesseract(pytesseract)
+        _prepare_tesseract(pytesseract)
         try:
             with Image.open(path) as image:
                 image.verify()
