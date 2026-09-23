@@ -100,7 +100,7 @@ def _ollama_available() -> bool:
     try:
         response = httpx.get(f"{settings.ollama_base_url}/api/tags", timeout=2.0)
         return response.status_code == 200
-    except httpx.HTTPError:
+    except (httpx.HTTPError, ImportError):
         return False
 
 
@@ -140,7 +140,7 @@ def _generate_with_ollama(
         )
         response.raise_for_status()
         return response.json().get("response", "").strip() or None
-    except httpx.HTTPError:
+    except (httpx.HTTPError, ImportError):
         return None
 
 
