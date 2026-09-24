@@ -93,6 +93,7 @@ export interface DocumentMeta {
   created_at: string
   has_summary: boolean
   ocr_used: boolean
+  ocr_review_status?: 'needs_review' | 'verified' | null
 }
 
 export interface Summary {
@@ -531,7 +532,7 @@ export function findSimilarCases(
 /** PATCH /documents/{id} — reassign to a case and/or retitle. */
 export function updateDocument(
   id: number | string,
-  payload: { case_id?: number | null; title?: string },
+  payload: { case_id?: number | null; title?: string; text?: string; confirm_ocr?: boolean },
 ): Promise<DocumentMeta> {
   return patchJson<DocumentMeta>(`/documents/${id}`, payload)
 }
