@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import os
 import shutil
+from statistics import mean
 from pathlib import Path
 
 from app.config import settings
@@ -97,6 +98,58 @@ def _fake_ocr(path: Path) -> str:
     )
 
 
+def _enhance_for_urdu(image):
+    """Upscale and clean a phone scan while preserving Nastaliq strokes."""
+    from PIL import Image as PILImage
+    from PIL import ImageEnhance, ImageFilter, ImageOps
+
+    image = ImageOps.exif_transpose(image).convert("L")
+    scale = min(3.0, max(1.0, 2200 / max(image.width, 1)))
+    if scale > 1.05:
+        image = image.resize(
+            (round(image.width * scale), round(image.height * scale)),
+            PILImage.Resampling.LANCZOS,
+        )
+    image = ImageOps.autocontrast(image, cutoff=1)
+    image = ImageEnhance.Contrast(image).enhance(1.25)
+    return image.filter(ImageFilter.UnsharpMask(radius=1.4, percent=150, threshold=3))
+
+
+def _ocr_confidence(pytesseract, image, config: str) -> float:
+    """Return mean word confidence; malformed/empty confidence data scores zero."""
+    try:
+        data = pytesseract.image_to_data(
+            image,
+            lang=settings.ocr_language,
+            config=config,
+            output_type=pytesseract.Output.DICT,
+        )
+        values = [float(value) for value in data.get("conf", []) if float(value) >= 0]
+        words = [word for word in data.get("text", []) if str(word).strip()]
+        return (mean(values) if values else 0.0) + min(len(words), 100) * 0.03
+    except (AttributeError, TypeError, ValueError):
+        return 0.0
+
+
+def _ocr_page(pytesseract, image) -> str:
+    """Try raw and Urdu-friendly variants, then OCR the most confident one."""
+    enhanced = _enhance_for_urdu(image)
+    candidates = (
+        (image, "--oem 1 --psm 3 -c preserve_interword_spaces=1"),
+        (enhanced, "--oem 1 --psm 3 -c preserve_interword_spaces=1"),
+        (enhanced, "--oem 1 --psm 6 -c preserve_interword_spaces=1"),
+    )
+    best_image, best_config = max(
+        candidates,
+        key=lambda candidate: _ocr_confidence(pytesseract, candidate[0], candidate[1]),
+    )
+    return pytesseract.image_to_string(
+        best_image,
+        lang=settings.ocr_language,
+        config=best_config,
+    ).strip()
+
+
 def ocr_available() -> bool:
     """Best-effort check that the OCR dependencies are actually usable,
     without raising. Used to give a clear pre-flight error message."""
@@ -146,10 +199,7 @@ def ocr_pdf(path: Path) -> str:
     except Exception as exc:
         raise OcrUnavailableError(f"Could not render PDF pages for OCR: {exc}") from exc
 
-    pages_text = [
-        pytesseract.image_to_string(image, lang=settings.ocr_language)
-        for image in images
-    ]
+    pages_text = [_ocr_page(pytesseract, image) for image in images]
     text = "\n".join(pages_text).strip()
 
     if not text:
@@ -175,7 +225,7 @@ def ocr_image(path: Path) -> str:
         except (OSError, UnidentifiedImageError) as exc:
             raise OcrUnavailableError("The uploaded file is not a readable image or is corrupted.") from exc
         with Image.open(path) as image:
-            text = pytesseract.image_to_string(image, lang=settings.ocr_language).strip()
+            text = _ocr_page(pytesseract, image)
         if not text:
             raise OcrUnavailableError("OCR ran successfully but found no readable text in this image. Upload it as Evidence instead.")
         return text
