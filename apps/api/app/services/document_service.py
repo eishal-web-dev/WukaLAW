@@ -107,9 +107,17 @@ def _index_extracted_document(
         size_bytes=size_bytes,
         text=text,
         ocr_used=ocr_used,
+        ocr_review_status="needs_review" if ocr_used else None,
     )
     db.add(document)
     db.flush()  # assign document.id
+
+    # OCR is evidence-derived text, not authoritative text. Do not place it in
+    # legal retrieval until a person has reviewed and confirmed it.
+    if ocr_used:
+        db.commit()
+        db.refresh(document)
+        return document
 
     # Adaptive chunking: the number and size of chunks are derived from this
     # document's extracted length; there is no fixed arbitrary chunk count.
@@ -142,6 +150,41 @@ def _index_extracted_document(
             detail=f"Document was extracted but could not be indexed for AI search: {error}",
         ) from error
 
+    db.refresh(document)
+    return document
+
+
+def replace_and_verify_ocr_text(db: Session, document: Document, text: str) -> Document:
+    """Replace uncertain OCR, rebuild chunks/vectors, then mark it verified."""
+    cleaned = clean_text(text)
+    if len(cleaned.split()) < settings.ocr_min_words:
+        raise HTTPException(status_code=422, detail="Reviewed text is too short to index for AI search.")
+
+    old_chunk_ids = [chunk.id for chunk in document.chunks]
+    vector_index.delete_chunks(old_chunk_ids)
+    for chunk in list(document.chunks):
+        db.delete(chunk)
+    db.flush()
+
+    document.text = cleaned
+    document.summary = None
+    document.ocr_review_status = "verified"
+    pieces = chunk_text(cleaned)
+    chunks = [Chunk(document_id=document.id, position=piece.position, text=piece.text) for piece in pieces]
+    db.add_all(chunks)
+    db.flush()
+    try:
+        vector_index.add_chunks(
+            [chunk.id for chunk in chunks],
+            [chunk.text for chunk in chunks],
+            owner_id=document.owner_id,
+            document_id=document.id,
+            document_title=document.title,
+        )
+        db.commit()
+    except Exception as error:
+        db.rollback()
+        raise HTTPException(status_code=503, detail=f"Corrected text could not be indexed: {error}") from error
     db.refresh(document)
     return document
 
