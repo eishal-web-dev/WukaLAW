@@ -37,6 +37,36 @@ def test_ocr_available_is_true_under_fake_mode():
     assert ocr_module.ocr_available() is True
 
 
+def test_gemini_provider_is_used_for_urdu_images(tmp_path, monkeypatch):
+    image_path = tmp_path / "urdu.jpeg"
+    image_path.write_bytes(b"image bytes are passed to the provider")
+    monkeypatch.setattr(config_module.settings, "fake_ocr", False)
+    monkeypatch.setattr(config_module.settings, "ocr_provider", "gemini")
+    calls = []
+    monkeypatch.setattr(
+        ocr_module,
+        "_ocr_with_gemini",
+        lambda path, mime: calls.append((path, mime)) or "درست اردو عدالتی متن",
+    )
+
+    assert ocr_module.ocr_image(image_path) == "درست اردو عدالتی متن"
+    assert calls == [(image_path, "image/jpeg")]
+
+
+def test_gemini_provider_is_used_for_scanned_pdfs(tmp_path, monkeypatch):
+    pdf_path = tmp_path / "urdu.pdf"
+    pdf_path.write_bytes(b"%PDF")
+    monkeypatch.setattr(config_module.settings, "fake_ocr", False)
+    monkeypatch.setattr(config_module.settings, "ocr_provider", "gemini")
+    monkeypatch.setattr(
+        ocr_module,
+        "_ocr_with_gemini",
+        lambda path, mime: "درست متن" if mime == "application/pdf" else "",
+    )
+
+    assert ocr_module.ocr_pdf(pdf_path) == "درست متن"
+
+
 def test_ocr_unavailable_when_tesseract_binary_missing(tmp_path, monkeypatch):
     monkeypatch.setattr(config_module.settings, "fake_ocr", False)
 
