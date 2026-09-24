@@ -18,6 +18,10 @@ router = APIRouter(tags=["qa"])
 logger = logging.getLogger(__name__)
 
 
+def _verified_document_filter():
+    return (Document.ocr_used.is_(False)) | (Document.ocr_review_status == "verified")
+
+
 def _selected_case(db: Session, user: User, case_id: int | None) -> Case | None:
     """Return the selected client case after enforcing ownership."""
     if user.role != "client" or case_id is None:
@@ -118,7 +122,7 @@ def _repair_missing_document_vectors(
     is uploaded again.  Rebuilding only the current user's accessible chunks
     keeps the repair private and bounded.
     """
-    query = select(Chunk, Document.owner_id).join(Document, Chunk.document_id == Document.id)
+    query = select(Chunk, Document.owner_id).join(Document, Chunk.document_id == Document.id).where(_verified_document_filter())
     if allowed_document_ids is not None:
         query = query.where(Document.id.in_(allowed_document_ids))
     else:
@@ -154,7 +158,7 @@ def _documents_containing_terms(
         scope = Document.owner_id == search_owner_id
     rows = db.scalars(
         select(Document.title)
-        .where(and_(scope, *conditions))
+        .where(and_(scope, _verified_document_filter(), *conditions))
         .order_by(Document.created_at.desc())
     ).all()
     return list(rows)
@@ -189,7 +193,7 @@ def _resolve_search_scope(db: Session, user: User, case_id: int | None) -> tuple
     from app.routers.cases import _get_owned_case
 
     case = _get_owned_case(db, case_id, user)
-    document_ids = set(db.scalars(select(Document.id).where(Document.case_id == case.id)).all())
+    document_ids = set(db.scalars(select(Document.id).where(Document.case_id == case.id, _verified_document_filter())).all())
     owner_ids = {user.id}
     if case.owner_id is not None:
         owner_ids.add(case.owner_id)
@@ -363,6 +367,9 @@ def _library_answer(db: Session, user: User, allowed_document_ids: set[int] | No
     else:
         lines = []
         for document in documents:
+            if document.ocr_used and document.ocr_review_status != "verified":
+                lines.append(f"• {document.title} — OCR text needs review before AI can use it")
+                continue
             if document.summary and document.summary.get("short_summary"):
                 about = rag._truncate_words(document.summary["short_summary"], 25)
             else:
