@@ -81,6 +81,7 @@ class Document(Base):
     size_bytes: Mapped[int] = mapped_column(Integer)
     text: Mapped[str] = mapped_column(Text)
     ocr_used: Mapped[bool] = mapped_column(Boolean, default=False)
+    ocr_review_status: Mapped[str | None] = mapped_column(String(32), nullable=True)
     summary: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
