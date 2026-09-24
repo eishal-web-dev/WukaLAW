@@ -135,6 +135,72 @@ def test_client_cannot_upload_to_a_case_not_theirs(client):
     assert response.status_code == 404
 
 
+def test_client_can_store_media_evidence_privately_without_ai_extraction(client):
+    headers = register_user(client, email="evidence-owner@example.com")
+    _make_client("evidence-owner@example.com")
+    other = register_user(client, email="evidence-other@example.com")
+    _make_client("evidence-other@example.com")
+    created = client.post("/api/v1/cases/request", json={
+        "title": "Evidence case", "case_type": "Civil",
+        "description": "I have an audio recording of the incident.",
+    }, headers=headers)
+    case_id = created.json()["id"]
+    response = client.post(f"/api/v1/cases/{case_id}/evidence-files",
+                           files={"file": ("recording.mp3", b"test audio payload", "audio/mpeg")}, headers=headers)
+    assert response.status_code == 201, response.text
+    evidence_id = response.json()["id"]
+    assert client.get(f"/api/v1/cases/{case_id}/evidence-files", headers=headers).json()["items"][0]["filename"] == "recording.mp3"
+    downloaded = client.get(f"/api/v1/cases/{case_id}/evidence-files/{evidence_id}/download", headers=headers)
+    assert downloaded.content == b"test audio payload"
+    assert client.get(f"/api/v1/cases/{case_id}/evidence-files", headers=other).status_code == 404
+    assert client.get(f"/api/v1/cases/{case_id}/evidence-files/{evidence_id}/download", headers=other).status_code == 404
+    assert client.post(f"/api/v1/cases/{case_id}/evidence-files",
+                       files={"file": ("unsafe.exe", b"payload", "application/octet-stream")}, headers=headers).status_code == 400
+
+
+def test_client_can_upload_image_and_word_documents_for_search(client):
+    from io import BytesIO
+
+    from docx import Document as WordDocument
+
+    headers = register_user(client, email="image-docs@example.com")
+    _make_client("image-docs@example.com")
+    case = client.post("/api/v1/cases/request", json={
+        "title": "Document case", "case_type": "Civil",
+        "description": "There are images and Word documents with details of my case.",
+    }, headers=headers)
+    case_id = case.json()["id"]
+    # Test OCR uses FAKE_OCR=1; real installations require Tesseract on PATH.
+    image = client.post("/api/v1/documents/upload", data={"case_id": str(case_id)},
+                        files={"file": ("scan.png", b"fake test image", "image/png")}, headers=headers)
+    assert image.status_code == 201, image.text
+    assert image.json()["ocr_used"] is True
+    assert image.json()["ocr_review_status"] == "needs_review"
+    assert image.json()["num_chunks"] == 0
+
+    document_id = image.json()["id"]
+    corrected = " ".join(["درست عدالتی دستاویز کا تصدیق شدہ متن"] * 12)
+    verified = client.patch(
+        f"/api/v1/documents/{document_id}",
+        json={"text": corrected, "confirm_ocr": True},
+        headers=headers,
+    )
+    assert verified.status_code == 200, verified.text
+    assert verified.json()["ocr_review_status"] == "verified"
+    assert verified.json()["num_chunks"] > 0
+    detail = client.get(f"/api/v1/documents/{document_id}", headers=headers).json()
+    assert detail["text"] == corrected
+
+    word = WordDocument()
+    word.add_paragraph("The landlord kept the deposit after the tenant returned the keys and delivered the signed receipt. " * 5)
+    binary = BytesIO()
+    word.save(binary)
+    response = client.post("/api/v1/documents/upload", data={"case_id": str(case_id)},
+                           files={"file": ("statement.docx", binary.getvalue(), "application/vnd.openxmlformats-officedocument.wordprocessingml.document")},
+                           headers=headers)
+    assert response.status_code == 201, response.text
+
+
 def test_client_ai_question_requires_case_id(client):
     client_headers = register_user(client, email="client6@example.com")
     _make_client("client6@example.com")
@@ -350,6 +416,125 @@ def test_client_ai_question_on_unclaimed_own_case_does_not_500(client):
     )
     assert response.status_code == 200, response.text
     assert response.json()["answer"]
+
+
+def test_client_ai_question_uses_selected_case_description_without_documents(client):
+    client_headers = register_user(client, email="casecontext@example.com")
+    _make_client("casecontext@example.com")
+
+    created = client.post(
+        "/api/v1/cases/request",
+        json={
+            "title": "Tenancy deposit dispute",
+            "case_type": "Civil",
+            "description": (
+                "The landlord retained the security deposit after the tenant returned "
+                "the keys and provided photographs showing no property damage."
+            ),
+        },
+        headers=client_headers,
+    )
+    case_id = created.json()["id"]
+
+    response = client.post(
+        "/api/v1/ask",
+        json={"question": "What happens next in my case?", "case_id": case_id},
+        headers=client_headers,
+    )
+
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert "Not enough information" not in body["answer"]
+    assert "security deposit" in body["answer"].lower()
+    assert "useful next steps" in body["answer"].lower()
+    assert "bank statements" in body["answer"].lower()
+    assert body["confidence"]["level"] == "low"
+    assert "case" in body["confidence"]["reason"].lower()
+    assert body["model"] == "case-guidance"
+
+
+def test_client_can_edit_description_and_manage_dated_updates(client):
+    headers = register_user(client, email="journal@example.com")
+    _make_client("journal@example.com")
+    created = client.post("/api/v1/cases/request", json={
+        "title": "Deposit dispute", "case_type": "Civil",
+        "description": "The landlord has kept my security deposit after I returned the property.",
+    }, headers=headers)
+    case_id = created.json()["id"]
+    changed = client.patch(f"/api/v1/cases/{case_id}", json={"description": "I returned the keys and have a receipt."}, headers=headers)
+    assert changed.status_code == 200, changed.text
+    assert changed.json()["description"] == "I returned the keys and have a receipt."
+    assert client.patch(f"/api/v1/cases/{case_id}", json={"status": "Closed"}, headers=headers).status_code == 403
+
+    other_headers = register_user(client, email="journal-other@example.com")
+    _make_client("journal-other@example.com")
+    another = client.post("/api/v1/cases/request", json={
+        "title": "Other dispute", "case_type": "Civil",
+        "description": "The respondent did not return the signed agreement.",
+    }, headers=other_headers)
+    other_case_id = another.json()["id"]
+    uploaded = client.post(
+        "/api/v1/documents/upload",
+        files={"file": ("receipt.txt", b"I returned the keys and kept a dated signed receipt for the tenancy deposit. " * 8, "text/plain")},
+        data={"case_id": str(case_id)}, headers=headers,
+    )
+    assert uploaded.status_code == 201, uploaded.text
+    document_id = uploaded.json()["id"]
+    response = client.post(f"/api/v1/cases/{case_id}/events", json={
+        "date": "2026-09-20", "text": "I returned the keys and saved a receipt.", "document_id": document_id,
+    }, headers=headers)
+    assert response.status_code == 201, response.text
+    event_id = response.json()["id"]
+    assert client.post(f"/api/v1/cases/{other_case_id}/events", json={
+        "date": "2026-09-20", "text": "Unauthorized update",
+    }, headers=headers).status_code == 404
+    timeline = client.get(f"/api/v1/cases/{case_id}/timeline", headers=headers)
+    assert timeline.status_code == 200
+    assert any(row["event_id"] == event_id and row["text"].startswith("I returned") for row in timeline.json()["events"])
+    assert any(row["event_id"] == event_id and row["document_id"] == document_id for row in timeline.json()["events"])
+    assert client.post(f"/api/v1/cases/{other_case_id}/events", json={
+        "date": "2026-09-21", "text": "Wrong document", "document_id": document_id,
+    }, headers=other_headers).status_code == 422
+    updated = client.put(f"/api/v1/cases/{case_id}/events/{event_id}", json={
+        "date": "2026-09-21", "text": "I found the signed receipt.", "document_id": None,
+    }, headers=headers)
+    assert updated.status_code == 200, updated.text
+    assert client.put(f"/api/v1/cases/{case_id}/events/{event_id}", json={
+        "date": "2026-09-21", "text": "Someone else's update",
+    }, headers=other_headers).status_code == 404
+
+
+def test_client_ai_followup_uses_history_for_retrieval_and_guidance(client, monkeypatch):
+    import app.routers.qa as qa_module
+
+    headers = register_user(client, email="followup@example.com")
+    _make_client("followup@example.com")
+    created = client.post(
+        "/api/v1/cases/request",
+        json={"title": "Deposit", "case_type": "Civil", "description": "A disputed security deposit."},
+        headers=headers,
+    )
+    assert created.status_code == 201, created.text
+    searched = []
+
+    def capture_search(question, *args, **kwargs):
+        searched.append(question)
+        return []
+
+    monkeypatch.setattr(qa_module.vector_index, "search", capture_search)
+    response = client.post(
+        "/api/v1/ask",
+        json={
+            "question": "What about that?",
+            "case_id": created.json()["id"],
+            "history": [{"role": "user", "content": "The landlord kept my security deposit."}],
+        },
+        headers=headers,
+    )
+    assert response.status_code == 200, response.text
+    assert searched and "landlord kept my security deposit" in searched[0]
+    assert "landlord kept my security deposit" in response.json()["answer"]
+    assert response.json()["confidence"]["level"] == "low"
 
 
 def test_resolve_search_scope_never_includes_none_for_an_unclaimed_case():

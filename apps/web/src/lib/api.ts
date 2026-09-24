@@ -93,6 +93,7 @@ export interface DocumentMeta {
   created_at: string
   has_summary: boolean
   ocr_used: boolean
+  ocr_review_status?: 'needs_review' | 'verified' | null
 }
 
 export interface Summary {
@@ -216,8 +217,9 @@ export interface TimelineEvent {
   date_text: string
   /** The sentence describing the event. */
   text: string
-  document_id: number
-  document_title: string
+  document_id: number | null
+  document_title: string | null
+  event_id?: number | null
 }
 
 export interface TimelineResponse {
@@ -488,12 +490,12 @@ export interface ChatTurnInput {
  */
 export async function askQuestion(
   question: string,
-  _history: ChatTurnInput[] = [],
+  history: ChatTurnInput[] = [],
 ): Promise<AskResponse> {
   return request<AskResponse>('/ask', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ question }),
+    body: JSON.stringify({ question, history }),
   })
 }
 
@@ -505,11 +507,15 @@ export async function askQuestion(
  * and, for a client-role user, requires caseId and is scoped to only
  * that case's documents by the backend (see api/routers/qa.py).
  */
-export function askCaseQuestion(question: string, caseId?: number): Promise<AskResponse> {
+export function askCaseQuestion(
+  question: string,
+  caseId?: number,
+  history: ChatTurnInput[] = [],
+): Promise<AskResponse> {
   return request<AskResponse>('/ask', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ question, case_id: caseId ?? null }),
+    body: JSON.stringify({ question, case_id: caseId ?? null, history }),
   })
 }
 
@@ -526,7 +532,7 @@ export function findSimilarCases(
 /** PATCH /documents/{id} — reassign to a case and/or retitle. */
 export function updateDocument(
   id: number | string,
-  payload: { case_id?: number | null; title?: string },
+  payload: { case_id?: number | null; title?: string; text?: string; confirm_ocr?: boolean },
 ): Promise<DocumentMeta> {
   return patchJson<DocumentMeta>(`/documents/${id}`, payload)
 }
@@ -628,6 +634,22 @@ export function getCaseTimeline(
   id: number | string,
 ): Promise<TimelineResponse> {
   return request<TimelineResponse>(`/cases/${id}/timeline`)
+}
+
+export interface CaseEventPayload {
+  date: string
+  text: string
+  document_id: number | null
+}
+
+export function addCaseEvent(id: number | string, payload: CaseEventPayload): Promise<{ id: number }> {
+  return postJson<{ id: number }>(`/cases/${id}/events`, payload)
+}
+
+export function editCaseEvent(id: number | string, eventId: number, payload: CaseEventPayload): Promise<{ id: number }> {
+  return request<{ id: number }>(`/cases/${id}/events/${eventId}`, {
+    method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
+  })
 }
 
 export interface CasePredictionFactor {
@@ -755,4 +777,39 @@ export function uploadDocument(
     if (caseId !== undefined) form.append('case_id', String(caseId))
     xhr.send(form)
   })
+}
+
+export interface EvidenceFile {
+  id: number
+  case_id: number
+  filename: string
+  media_type: string
+  size_bytes: number
+  created_at: string
+}
+
+export function listEvidenceFiles(caseId: number): Promise<{ items: EvidenceFile[] }> {
+  return request<{ items: EvidenceFile[] }>(`/cases/${caseId}/evidence-files`)
+}
+
+export function uploadEvidenceFile(caseId: number, file: File): Promise<EvidenceFile> {
+  const body = new FormData()
+  body.append('file', file)
+  return request<EvidenceFile>(`/cases/${caseId}/evidence-files`, { method: 'POST', body })
+}
+
+export async function downloadEvidenceFile(caseId: number, item: EvidenceFile): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/cases/${caseId}/evidence-files/${item.id}/download`, {
+    headers: authHeaders(),
+  })
+  if (response.status === 401) throw handleSessionExpired()
+  if (!response.ok) throw new ApiError('Could not download this evidence file.', response.status)
+  const url = URL.createObjectURL(await response.blob())
+  const link = document.createElement('a')
+  link.href = url
+  link.download = item.filename
+  document.body.append(link)
+  link.click()
+  link.remove()
+  setTimeout(() => URL.revokeObjectURL(url), 60000)
 }

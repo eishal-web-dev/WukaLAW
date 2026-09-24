@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, FileText, Sparkles, Scale, ListChecks, Target, BookMarked, ScanText } from 'lucide-react'
-import { getDocument, summarizeDocument, getDocumentCitations, errorMessage } from '../lib/api'
+import { ArrowLeft, FileText, Sparkles, Scale, ListChecks, Target, BookMarked, ScanText, Pencil, Check, X, AlertTriangle } from 'lucide-react'
+import { getDocument, summarizeDocument, getDocumentCitations, updateDocument, errorMessage } from '../lib/api'
 import type { Document, Citation, CitationType } from '../lib/api'
 import { formatBytes, formatDate } from '../lib/format'
 import { Btn, Card, Badge, G } from '../components/design'
@@ -37,6 +37,9 @@ export default function DocumentDetail() {
   const [summarizing, setSummarizing] = useState(false)
   const [citations, setCitations] = useState<Citation[] | null>(null)
   const [citationsError, setCitationsError] = useState<string | null>(null)
+  const [editingText, setEditingText] = useState(false)
+  const [editedText, setEditedText] = useState('')
+  const [savingText, setSavingText] = useState(false)
 
   useEffect(() => {
     if (!id) return
@@ -78,6 +81,23 @@ export default function DocumentDetail() {
     }
   }
 
+  const saveReviewedText = async () => {
+    if (!id || !doc) return
+    setSavingText(true)
+    setError(null)
+    try {
+      const meta = await updateDocument(id, { text: editedText, confirm_ocr: true })
+      setDoc({ ...doc, ...meta, text: editedText, summary: null, has_summary: false })
+      setEditingText(false)
+      const refreshed = await getDocumentCitations(id)
+      setCitations(refreshed.citations)
+    } catch (err) {
+      setError(errorMessage(err))
+    } finally {
+      setSavingText(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="p-8 flex justify-center h-full items-center">
@@ -96,6 +116,8 @@ export default function DocumentDetail() {
       </div>
     )
   }
+
+  const needsOcrReview = doc.ocr_used && doc.ocr_review_status !== 'verified'
 
   return (
     <div className="p-8 space-y-6 overflow-y-auto h-full">
@@ -129,13 +151,29 @@ export default function DocumentDetail() {
                   <ScanText size={12} /> OCR
                 </span>
               )}
+              {needsOcrReview && <Badge label="Needs OCR review" />}
+              {doc.ocr_review_status === 'verified' && <Badge label="OCR verified" />}
             </div>
           </div>
-          <Btn onClick={generateSummary} disabled={summarizing} icon={<Sparkles size={14} />}>
+          <Btn onClick={generateSummary} disabled={summarizing || needsOcrReview} icon={<Sparkles size={14} />}>
             {summarizing ? 'Summarizing…' : doc.summary ? 'Regenerate Summary' : 'Generate Summary'}
           </Btn>
         </div>
       </Card>
+
+      {needsOcrReview && (
+        <Card className="p-5 border-amber-500/30 bg-amber-500/5">
+          <div className="flex items-start gap-3">
+            <AlertTriangle size={18} className="text-amber-400 mt-0.5" />
+            <div>
+              <h3 className="text-sm font-semibold text-foreground">OCR text needs human review</h3>
+              <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                This extracted text is excluded from AI answers, summaries, citations and search until you correct and verify it.
+              </p>
+            </div>
+          </div>
+        </Card>
+      )}
 
       {/* AI Summary */}
       {doc.summary && (
@@ -241,10 +279,35 @@ export default function DocumentDetail() {
 
       {/* Extracted text */}
       <Card className="p-5">
-        <h4 className="text-sm font-semibold text-foreground mb-3">Extracted Text</h4>
-        <pre className="text-xs text-muted-foreground leading-relaxed whitespace-pre-wrap font-sans max-h-[480px] overflow-y-auto">
-          {doc.text || 'No text extracted.'}
-        </pre>
+        <div className="flex items-center justify-between gap-3 mb-3">
+          <h4 className="text-sm font-semibold text-foreground">Extracted Text</h4>
+          {doc.ocr_used && !editingText && (
+            <Btn variant="secondary" onClick={() => { setEditedText(doc.text); setEditingText(true) }} icon={<Pencil size={14} />}>
+              Review and edit
+            </Btn>
+          )}
+        </div>
+        {editingText ? (
+          <div className="space-y-3">
+            <textarea
+              dir="auto"
+              lang="ur"
+              value={editedText}
+              onChange={(event) => setEditedText(event.target.value)}
+              className="w-full min-h-[480px] rounded-xl border border-border bg-background p-4 text-sm text-foreground leading-8 focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/40"
+            />
+            <div className="flex justify-end gap-2">
+              <Btn variant="secondary" onClick={() => setEditingText(false)} disabled={savingText} icon={<X size={14} />}>Cancel</Btn>
+              <Btn onClick={saveReviewedText} disabled={savingText || editedText.trim().length < 20} icon={<Check size={14} />}>
+                {savingText ? 'Saving and indexing…' : 'Save, verify and index'}
+              </Btn>
+            </div>
+          </div>
+        ) : (
+          <pre dir="auto" className="text-xs text-muted-foreground leading-relaxed whitespace-pre-wrap font-sans max-h-[480px] overflow-y-auto">
+            {doc.text || 'No text extracted.'}
+          </pre>
+        )}
       </Card>
     </div>
   )

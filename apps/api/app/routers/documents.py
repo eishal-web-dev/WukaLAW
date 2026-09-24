@@ -22,7 +22,7 @@ from app.schemas import (
     TimelineResponse,
 )
 from app.services import s3_storage
-from app.services.document_service import ingest_s3_object, ingest_upload
+from app.services.document_service import ingest_s3_object, ingest_upload, replace_and_verify_ocr_text
 from app.services.notification_service import create_notification
 
 router = APIRouter(prefix="/documents", tags=["documents"])
@@ -38,6 +38,7 @@ def _meta(document: Document, num_chunks: int) -> dict:
         "created_at": document.created_at,
         "has_summary": document.summary is not None,
         "ocr_used": document.ocr_used,
+        "ocr_review_status": document.ocr_review_status or ("needs_review" if document.ocr_used else None),
     }
 
 
@@ -90,8 +91,10 @@ def upload_document(
         db,
         user_id=user.id,
         notification_type="case",
-        title="Document ready",
-        body=f"{document.title} was uploaded and indexed successfully.",
+        title="OCR review required" if document.ocr_review_status == "needs_review" else "Document ready",
+        body=(f"Review {document.title}'s extracted text before AI can use it."
+              if document.ocr_review_status == "needs_review"
+              else f"{document.title} was uploaded and indexed successfully."),
         action_url=f"/documents/{document.id}",
     )
     db.commit()
@@ -124,7 +127,7 @@ def presign_document_upload(
     if ext not in SUPPORTED_EXTENSIONS:
         raise HTTPException(
             status_code=400,
-            detail=f"Unsupported file type '{ext}'. Allowed: .txt, .pdf",
+            detail=f"Unsupported document type '{ext}'. Allowed: {', '.join(sorted(SUPPORTED_EXTENSIONS))}",
         )
     max_bytes = settings.max_s3_upload_mb * 1024 * 1024
     if request.size_bytes > max_bytes:
@@ -175,8 +178,10 @@ def complete_s3_document_upload(
         db,
         user_id=user.id,
         notification_type="case",
-        title="Document ready",
-        body=f"{document.title} was uploaded and indexed successfully.",
+        title="OCR review required" if document.ocr_review_status == "needs_review" else "Document ready",
+        body=(f"Review {document.title}'s extracted text before AI can use it."
+              if document.ocr_review_status == "needs_review"
+              else f"{document.title} was uploaded and indexed successfully."),
         action_url=f"/documents/{document.id}",
     )
     db.commit()
@@ -186,6 +191,8 @@ def complete_s3_document_upload(
 class DocumentUpdate(BaseModel):
     case_id: int | None = None
     title: str | None = None
+    text: str | None = Field(default=None, max_length=500_000)
+    confirm_ocr: bool = False
 
 
 @router.patch("/{document_id}", response_model=DocumentMeta)
@@ -204,6 +211,13 @@ def update_document(
     if request.title is not None and request.title.strip() != document.title:
         document.title = request.title.strip()
         changes.append("title")
+    if request.text is not None:
+        if not document.ocr_used:
+            raise HTTPException(status_code=400, detail="Only OCR-extracted text can be corrected here.")
+        if not request.confirm_ocr:
+            raise HTTPException(status_code=400, detail="Confirm the OCR review before saving corrected text.")
+        replace_and_verify_ocr_text(db, document, request.text)
+        changes.append("reviewed OCR text")
     if changes:
         create_notification(
             db,
@@ -266,6 +280,8 @@ def document_timeline(
     user: User = Depends(get_current_user),
 ):
     document = _get_owned_document(db, document_id, user)
+    if document.ocr_used and document.ocr_review_status != "verified":
+        raise HTTPException(status_code=409, detail="Review and verify the OCR text before generating a timeline.")
     events = extract_events(document.text)
     return {
         "events": [
@@ -282,6 +298,8 @@ def document_citations(
     user: User = Depends(get_current_user),
 ):
     document = _get_owned_document(db, document_id, user)
+    if document.ocr_used and document.ocr_review_status != "verified":
+        return {"citations": []}
     return {"citations": [citation.__dict__ for citation in extract_citations(document.text)]}
 
 
@@ -292,6 +310,8 @@ def summarize_document(
     user: User = Depends(get_current_user),
 ):
     document = _get_owned_document(db, document_id, user)
+    if document.ocr_used and document.ocr_review_status != "verified":
+        raise HTTPException(status_code=409, detail="Review and verify the OCR text before generating an AI summary.")
     created = document.summary is None
     if document.summary is None:
         document.summary = summarize(document.text)

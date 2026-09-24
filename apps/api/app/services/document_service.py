@@ -22,7 +22,7 @@ def _validate_filename(filename: str) -> str:
     if ext not in SUPPORTED_EXTENSIONS:
         raise HTTPException(
             status_code=400,
-            detail=f"Unsupported file type '{ext}'. Allowed: .txt, .pdf",
+            detail=f"Unsupported document type '{ext}'. Allowed: {', '.join(sorted(SUPPORTED_EXTENSIONS))}",
         )
     return clean_name
 
@@ -38,6 +38,15 @@ def _validate_size(size_bytes: int, *, max_mb: int) -> None:
 def _extract_with_ocr_fallback(source_path: Path) -> tuple[str, bool]:
     """Extract text, falling back to OCR for PDFs with too little embedded
     text. Returns (cleaned_text, ocr_used)."""
+    if source_path.suffix.lower() in {".png", ".jpg", ".jpeg", ".webp", ".tif", ".tiff"}:
+        from ai.preprocessing.ocr import ocr_image
+        try:
+            text = clean_text(ocr_image(source_path))
+        except OcrUnavailableError as error:
+            raise HTTPException(status_code=422, detail=f"Image OCR is unavailable: {error}") from error
+        if len(text.split()) < settings.ocr_min_words:
+            raise HTTPException(status_code=422, detail="This image has too little readable text for AI document search. Upload it as case evidence instead.")
+        return text, True
     try:
         raw = extract_text(source_path)
     except Exception as error:  # corrupt PDF etc.
@@ -98,9 +107,17 @@ def _index_extracted_document(
         size_bytes=size_bytes,
         text=text,
         ocr_used=ocr_used,
+        ocr_review_status="needs_review" if ocr_used else None,
     )
     db.add(document)
     db.flush()  # assign document.id
+
+    # OCR is evidence-derived text, not authoritative text. Do not place it in
+    # legal retrieval until a person has reviewed and confirmed it.
+    if ocr_used:
+        db.commit()
+        db.refresh(document)
+        return document
 
     # Adaptive chunking: the number and size of chunks are derived from this
     # document's extracted length; there is no fixed arbitrary chunk count.
@@ -137,6 +154,41 @@ def _index_extracted_document(
     return document
 
 
+def replace_and_verify_ocr_text(db: Session, document: Document, text: str) -> Document:
+    """Replace uncertain OCR, rebuild chunks/vectors, then mark it verified."""
+    cleaned = clean_text(text)
+    if len(cleaned.split()) < settings.ocr_min_words:
+        raise HTTPException(status_code=422, detail="Reviewed text is too short to index for AI search.")
+
+    old_chunk_ids = [chunk.id for chunk in document.chunks]
+    vector_index.delete_chunks(old_chunk_ids)
+    for chunk in list(document.chunks):
+        db.delete(chunk)
+    db.flush()
+
+    document.text = cleaned
+    document.summary = None
+    document.ocr_review_status = "verified"
+    pieces = chunk_text(cleaned)
+    chunks = [Chunk(document_id=document.id, position=piece.position, text=piece.text) for piece in pieces]
+    db.add_all(chunks)
+    db.flush()
+    try:
+        vector_index.add_chunks(
+            [chunk.id for chunk in chunks],
+            [chunk.text for chunk in chunks],
+            owner_id=document.owner_id,
+            document_id=document.id,
+            document_title=document.title,
+        )
+        db.commit()
+    except Exception as error:
+        db.rollback()
+        raise HTTPException(status_code=503, detail=f"Corrected text could not be indexed: {error}") from error
+    db.refresh(document)
+    return document
+
+
 def ingest_upload(db: Session, file: UploadFile, owner_id: int) -> Document:
     """Local/development multipart upload. Kept intentionally smaller than S3."""
     filename = _validate_filename(file.filename or "")
@@ -145,13 +197,12 @@ def ingest_upload(db: Session, file: UploadFile, owner_id: int) -> Document:
 
     destination = settings.upload_dir / f"{uuid4().hex}_{filename}"
     destination.write_bytes(content)
-    return _index_extracted_document(
-        db,
-        source_path=destination,
-        filename=filename,
-        owner_id=owner_id,
-        size_bytes=len(content),
-    )
+    try:
+        return _index_extracted_document(
+            db, source_path=destination, filename=filename, owner_id=owner_id, size_bytes=len(content),
+        )
+    finally:
+        destination.unlink(missing_ok=True)
 
 
 def ingest_s3_object(

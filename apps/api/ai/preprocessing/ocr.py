@@ -15,6 +15,9 @@ tesseract binary and is too slow for a fast test suite.
 """
 from __future__ import annotations
 
+import os
+import shutil
+from statistics import mean
 from pathlib import Path
 
 from app.config import settings
@@ -23,6 +26,64 @@ from app.config import settings
 class OcrUnavailableError(RuntimeError):
     """Raised when OCR was needed but tesseract/poppler aren't available,
     or when OCR ran but produced no usable text."""
+
+
+def _configure_tesseract(pytesseract) -> str:
+    """Locate the native executable, including standard Windows installs."""
+    configured = settings.tesseract_cmd.strip()
+    candidates = [configured] if configured else []
+    executable = shutil.which("tesseract")
+    if executable:
+        candidates.append(executable)
+    for variable in ("ProgramFiles", "ProgramFiles(x86)", "LOCALAPPDATA"):
+        base = os.environ.get(variable)
+        if base:
+            candidates.append(str(Path(base) / "Tesseract-OCR" / "tesseract.exe"))
+    for candidate in candidates:
+        if candidate and Path(candidate).is_file():
+            try:
+                pytesseract.pytesseract.tesseract_cmd = candidate
+            except AttributeError as exc:
+                raise OcrUnavailableError("The pytesseract installation is incomplete.") from exc
+            return candidate
+    if configured:
+        raise OcrUnavailableError(f"TESSERACT_CMD points to a missing file: {configured}")
+    raise OcrUnavailableError(
+        "Tesseract executable was not found. Install Tesseract OCR, add it to PATH, "
+        "or set TESSERACT_CMD in .env (usually C:\\Program Files\\Tesseract-OCR\\tesseract.exe)."
+    )
+
+
+def _check_tesseract(pytesseract) -> None:
+    _configure_tesseract(pytesseract)
+    try:
+        pytesseract.get_tesseract_version()
+    except Exception as exc:
+        raise OcrUnavailableError("Tesseract was found but could not be started.") from exc
+
+
+def _check_languages(pytesseract) -> None:
+    """Fail clearly instead of silently reading Urdu with the English model."""
+    requested = {lang.strip() for lang in settings.ocr_language.split("+") if lang.strip()}
+    try:
+        installed = set(pytesseract.get_languages(config=""))
+    except Exception as exc:
+        raise OcrUnavailableError("Tesseract language models could not be checked.") from exc
+    missing = requested - installed
+    if missing:
+        names = ", ".join(sorted(missing))
+        hint = (
+            "Install the Urdu language data (urd.traineddata) in Tesseract's tessdata folder. "
+            "On Windows, rerun the Tesseract installer and select Urdu under Additional language data."
+            if "urd" in missing
+            else "Install the missing Tesseract traineddata file(s)."
+        )
+        raise OcrUnavailableError(f"Missing Tesseract OCR language model(s): {names}. {hint}")
+
+
+def _prepare_tesseract(pytesseract) -> None:
+    _check_tesseract(pytesseract)
+    _check_languages(pytesseract)
 
 
 def _fake_ocr(path: Path) -> str:
@@ -37,6 +98,58 @@ def _fake_ocr(path: Path) -> str:
     )
 
 
+def _enhance_for_urdu(image):
+    """Upscale and clean a phone scan while preserving Nastaliq strokes."""
+    from PIL import Image as PILImage
+    from PIL import ImageEnhance, ImageFilter, ImageOps
+
+    image = ImageOps.exif_transpose(image).convert("L")
+    scale = min(3.0, max(1.0, 2200 / max(image.width, 1)))
+    if scale > 1.05:
+        image = image.resize(
+            (round(image.width * scale), round(image.height * scale)),
+            PILImage.Resampling.LANCZOS,
+        )
+    image = ImageOps.autocontrast(image, cutoff=1)
+    image = ImageEnhance.Contrast(image).enhance(1.25)
+    return image.filter(ImageFilter.UnsharpMask(radius=1.4, percent=150, threshold=3))
+
+
+def _ocr_confidence(pytesseract, image, config: str) -> float:
+    """Return mean word confidence; malformed/empty confidence data scores zero."""
+    try:
+        data = pytesseract.image_to_data(
+            image,
+            lang=settings.ocr_language,
+            config=config,
+            output_type=pytesseract.Output.DICT,
+        )
+        values = [float(value) for value in data.get("conf", []) if float(value) >= 0]
+        words = [word for word in data.get("text", []) if str(word).strip()]
+        return (mean(values) if values else 0.0) + min(len(words), 100) * 0.03
+    except (AttributeError, TypeError, ValueError):
+        return 0.0
+
+
+def _ocr_page(pytesseract, image) -> str:
+    """Try raw and Urdu-friendly variants, then OCR the most confident one."""
+    enhanced = _enhance_for_urdu(image)
+    candidates = (
+        (image, "--oem 1 --psm 3 -c preserve_interword_spaces=1"),
+        (enhanced, "--oem 1 --psm 3 -c preserve_interword_spaces=1"),
+        (enhanced, "--oem 1 --psm 6 -c preserve_interword_spaces=1"),
+    )
+    best_image, best_config = max(
+        candidates,
+        key=lambda candidate: _ocr_confidence(pytesseract, candidate[0], candidate[1]),
+    )
+    return pytesseract.image_to_string(
+        best_image,
+        lang=settings.ocr_language,
+        config=best_config,
+    ).strip()
+
+
 def ocr_available() -> bool:
     """Best-effort check that the OCR dependencies are actually usable,
     without raising. Used to give a clear pre-flight error message."""
@@ -45,7 +158,7 @@ def ocr_available() -> bool:
     try:
         import pytesseract
 
-        pytesseract.get_tesseract_version()
+        _prepare_tesseract(pytesseract)
     except Exception:
         return False
     try:
@@ -73,11 +186,9 @@ def ocr_pdf(path: Path) -> str:
         ) from exc
 
     try:
-        pytesseract.get_tesseract_version()
-    except Exception as exc:
-        raise OcrUnavailableError(
-            "The tesseract-ocr system package is not installed or not on PATH"
-        ) from exc
+        _prepare_tesseract(pytesseract)
+    except OcrUnavailableError:
+        raise
 
     try:
         images = convert_from_path(
@@ -88,13 +199,37 @@ def ocr_pdf(path: Path) -> str:
     except Exception as exc:
         raise OcrUnavailableError(f"Could not render PDF pages for OCR: {exc}") from exc
 
-    pages_text = [
-        pytesseract.image_to_string(image, lang=settings.ocr_language)
-        for image in images
-    ]
+    pages_text = [_ocr_page(pytesseract, image) for image in images]
     text = "\n".join(pages_text).strip()
 
     if not text:
         raise OcrUnavailableError("OCR completed but found no readable text on any page")
 
     return text
+
+
+def ocr_image(path: Path) -> str:
+    """Read text in an image, with the same local OCR requirement as PDFs."""
+    if settings.fake_ocr:
+        return _fake_ocr(path)
+    try:
+        import pytesseract
+        from PIL import Image, UnidentifiedImageError
+    except ImportError as exc:
+        raise OcrUnavailableError("Image OCR Python packages are missing; reinstall backend requirements.") from exc
+    try:
+        _prepare_tesseract(pytesseract)
+        try:
+            with Image.open(path) as image:
+                image.verify()
+        except (OSError, UnidentifiedImageError) as exc:
+            raise OcrUnavailableError("The uploaded file is not a readable image or is corrupted.") from exc
+        with Image.open(path) as image:
+            text = _ocr_page(pytesseract, image)
+        if not text:
+            raise OcrUnavailableError("OCR ran successfully but found no readable text in this image. Upload it as Evidence instead.")
+        return text
+    except OcrUnavailableError:
+        raise
+    except Exception as exc:
+        raise OcrUnavailableError(f"Tesseract could not read this image: {type(exc).__name__}") from exc

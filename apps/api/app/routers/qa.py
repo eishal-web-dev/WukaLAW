@@ -5,16 +5,108 @@ from sqlalchemy import and_, select
 from sqlalchemy.orm import Session
 
 from ai.qa import rag
+from ai.rag.conversation import contextualize_query, to_turns
 from ai.retrieval import index as vector_index
 from app.auth import get_current_user
 from app.config import settings
 from app.db import get_db
-from app.models import Chunk, Document, User
+from app.models import Case, CaseEvent, Chunk, Document, User
 from app.routers.search import OVERFETCH_FACTOR, chunks_to_sources
 from app.schemas import AskRequest, AskResponse
 
 router = APIRouter(tags=["qa"])
 logger = logging.getLogger(__name__)
+
+
+def _verified_document_filter():
+    return (Document.ocr_used.is_(False)) | (Document.ocr_review_status == "verified")
+
+
+def _selected_case(db: Session, user: User, case_id: int | None) -> Case | None:
+    """Return the selected client case after enforcing ownership."""
+    if user.role != "client" or case_id is None:
+        return None
+
+    from app.routers.cases import _get_owned_case
+
+    return _get_owned_case(db, case_id, user)
+
+
+def _selected_case_context(case: Case | None, db: Session | None = None) -> str | None:
+    """Build private AI context from the selected client's real case record."""
+    if case is None:
+        return None
+    fields = [
+        f"case number: {case.case_number}",
+        f"case title: {case.title}",
+        f"case type: {case.case_type}",
+        f"current status: {case.status}",
+        f"priority: {case.priority}",
+    ]
+    if case.description and case.description.strip():
+        fields.append(f"case description: {case.description.strip().rstrip('.')}")
+    if case.deadline:
+        fields.append(f"next recorded deadline: {case.deadline}")
+    else:
+        fields.append("no upcoming deadline is recorded")
+    if db is not None:
+        entries = db.scalars(select(CaseEvent).where(CaseEvent.case_id == case.id).order_by(CaseEvent.event_date.desc()).limit(12)).all()
+        for entry in entries:
+            linked = db.get(Document, entry.document_id) if entry.document_id else None
+            title = f" (linked document: {linked.title})" if linked and linked.case_id == case.id else ""
+            fields.append(f"client timeline update {entry.event_date}: {entry.text}{title}")
+    # Keep this as one compact passage so the extractive fallback cannot drop
+    # the description while selecting individual sentences.
+    return "Selected case record — " + "; ".join(fields) + "."
+
+
+def _friendly_case_guidance(case: Case, question: str, history: list[dict], db: Session | None = None) -> str:
+    """Useful, non-predictive guidance when only the case record is available."""
+    description = (case.description or "No case description has been added yet.").strip()
+    deadline = (
+        f"The next recorded deadline is {case.deadline}."
+        if case.deadline
+        else "No deadline is currently recorded, so confirm the next filing or hearing date with your lawyer."
+    )
+    clarification = ""
+    normalized = question.strip()
+    previous_user_messages = [
+        turn["content"].strip()
+        for turn in history
+        if turn.get("role") == "user" and turn.get("content", "").strip()
+    ]
+    remembered = previous_user_messages[-1] if previous_user_messages else None
+    latest_update = None
+    if db is not None:
+        latest_update = db.scalar(
+            select(CaseEvent).where(CaseEvent.case_id == case.id).order_by(CaseEvent.event_date.desc(), CaseEvent.id.desc()).limit(1)
+        )
+    if normalized.casefold() not in {
+        "what is my case about?",
+        "what happens next in my case?",
+        "what happens next?",
+    }:
+        clarification = (
+            f"\n\nI understand your latest clarification as: “{normalized}” "
+            "This is your account of events and should be supported with evidence where possible."
+        )
+    if remembered and remembered.casefold() != normalized.casefold():
+        clarification += (
+            f"\n\nFrom our earlier conversation, I also understand that you said: “{remembered}” "
+            "I am treating this as your statement, not as a verified fact."
+        )
+    return (
+        f"I understand your case is currently marked {case.status}. "
+        f"The issue recorded in your case is: {description}{clarification}\n\n"
+        + (f"Your latest recorded update ({latest_update.event_date}) says: {latest_update.text}\n\n" if latest_update else "")
+        + "Useful next steps:\n"
+        "1. Write a dated timeline of what happened, including payments, property, conversations, and handovers.\n"
+        "2. Collect supporting evidence such as bank statements, receipts, messages, photographs, ownership records, and witness details.\n"
+        "3. Keep the original files unchanged and give copies to your lawyer.\n"
+        f"4. {deadline}\n"
+        "5. Ask your lawyer which reply, application, or evidence must be filed next; the saved case details alone do not show the court's next order.\n\n"
+        "I can also help you turn your facts into a clear timeline or evidence checklist."
+    )
 
 
 def _repair_missing_document_vectors(
@@ -30,7 +122,7 @@ def _repair_missing_document_vectors(
     is uploaded again.  Rebuilding only the current user's accessible chunks
     keeps the repair private and bounded.
     """
-    query = select(Chunk, Document.owner_id).join(Document, Chunk.document_id == Document.id)
+    query = select(Chunk, Document.owner_id).join(Document, Chunk.document_id == Document.id).where(_verified_document_filter())
     if allowed_document_ids is not None:
         query = query.where(Document.id.in_(allowed_document_ids))
     else:
@@ -66,7 +158,7 @@ def _documents_containing_terms(
         scope = Document.owner_id == search_owner_id
     rows = db.scalars(
         select(Document.title)
-        .where(and_(scope, *conditions))
+        .where(and_(scope, _verified_document_filter(), *conditions))
         .order_by(Document.created_at.desc())
     ).all()
     return list(rows)
@@ -101,7 +193,7 @@ def _resolve_search_scope(db: Session, user: User, case_id: int | None) -> tuple
     from app.routers.cases import _get_owned_case
 
     case = _get_owned_case(db, case_id, user)
-    document_ids = set(db.scalars(select(Document.id).where(Document.case_id == case.id)).all())
+    document_ids = set(db.scalars(select(Document.id).where(Document.case_id == case.id, _verified_document_filter())).all())
     owner_ids = {user.id}
     if case.owner_id is not None:
         owner_ids.add(case.owner_id)
@@ -142,11 +234,16 @@ def ask(
 
 def _ask_impl(request: AskRequest, db: Session, user: User) -> dict:
     search_owner_ids, allowed_document_ids = _resolve_search_scope(db, user, request.case_id)
+    selected_case = _selected_case(db, user, request.case_id)
+    case_context = _selected_case_context(selected_case, db)
+    history = [turn.model_dump() for turn in request.history]
+    conversation_turns = to_turns(history)
+    retrieval_question = contextualize_query(conversation_turns, request.question)
 
     if rag.is_library_question(request.question):
         return _library_answer(db, user, allowed_document_ids)
 
-    kind = rag.classify_query(request.question)
+    kind = rag.classify_query(retrieval_question)
 
     if kind == "vague":
         return {
@@ -168,7 +265,7 @@ def _ask_impl(request: AskRequest, db: Session, user: User) -> dict:
     for owner_id in search_owner_ids:
         hits.extend(
             vector_index.search(
-                request.question,
+                retrieval_question,
                 settings.top_k * OVERFETCH_FACTOR,
                 owner_id=owner_id,
             )
@@ -184,7 +281,7 @@ def _ask_impl(request: AskRequest, db: Session, user: User) -> dict:
         for owner_id in search_owner_ids:
             hits.extend(
                 vector_index.search(
-                    request.question,
+                    retrieval_question,
                     settings.top_k * OVERFETCH_FACTOR,
                     owner_id=owner_id,
                 )
@@ -223,9 +320,24 @@ def _ask_impl(request: AskRequest, db: Session, user: User) -> dict:
             "model": "lookup",
         }
 
+    # Only retrieved document passages carry similarity scores. The case
+    # record is useful background, but it must never inflate confidence.
+    answer_contexts = [(source.text, source.score) for source in sources]
     answer_text, level, reason, model = rag.answer(
-        request.question, [(source.text, source.score) for source in sources]
+        request.question,
+        answer_contexts,
+        background_context=case_context,
+        history=history,
+        search_question=retrieval_question,
     )
+    if selected_case is not None and not sources:
+        answer_text = _friendly_case_guidance(selected_case, request.question, history, db)
+        level = "low"
+        reason = (
+            "General guidance from the selected case record and conversation only; "
+            "no supporting document passage was retrieved."
+        )
+        model = "case-guidance"
     if answer_text == rag.NOT_ENOUGH:
         sources = []
     return {
@@ -255,6 +367,9 @@ def _library_answer(db: Session, user: User, allowed_document_ids: set[int] | No
     else:
         lines = []
         for document in documents:
+            if document.ocr_used and document.ocr_review_status != "verified":
+                lines.append(f"• {document.title} — OCR text needs review before AI can use it")
+                continue
             if document.summary and document.summary.get("short_summary"):
                 about = rag._truncate_words(document.summary["short_summary"], 25)
             else:

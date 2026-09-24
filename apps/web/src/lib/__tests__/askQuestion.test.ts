@@ -37,6 +37,7 @@ describe('askQuestion — authenticated document API', () => {
     }))
     expect(JSON.parse((fetchMock.mock.calls[0][1] as RequestInit).body as string)).toEqual({
       question: 'Was bail granted?',
+      history: [],
     })
   })
 

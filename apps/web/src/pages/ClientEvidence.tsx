@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { FileText, Sparkles, AlertCircle, RefreshCw } from 'lucide-react'
-import { listCases, listCaseDocuments, errorMessage } from '../lib/api'
-import type { Case, DocumentMeta } from '../lib/api'
+import { FileText, Sparkles, AlertCircle, RefreshCw, Upload, Download } from 'lucide-react'
+import { listCases, listCaseDocuments, listEvidenceFiles, uploadEvidenceFile, downloadEvidenceFile, errorMessage } from '../lib/api'
+import type { Case, DocumentMeta, EvidenceFile } from '../lib/api'
 import { formatBytes, formatDate } from '../lib/format'
 import { Card, Badge, G } from '../components/design'
 import ErrorAlert from '../components/ErrorAlert'
@@ -22,6 +22,8 @@ export default function ClientEvidence() {
   const [cases, setCases] = useState<Case[]>([])
   const [selectedId, setSelectedId] = useState<number | null>(null)
   const [docs, setDocs] = useState<DocumentMeta[]>([])
+  const [media, setMedia] = useState<EvidenceFile[]>([])
+  const [uploading, setUploading] = useState(false)
   const [loadingCases, setLoadingCases] = useState(true)
   const [loadingDocs, setLoadingDocs] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -49,9 +51,11 @@ export default function ClientEvidence() {
     if (selectedId === null) return
     let cancelled = false
     setLoadingDocs(true)
-    listCaseDocuments(selectedId)
-      .then((res) => {
-        if (!cancelled) setDocs(res.items)
+    setDocs([])
+    setMedia([])
+    Promise.all([listCaseDocuments(selectedId), listEvidenceFiles(selectedId)])
+      .then(([documents, files]) => {
+        if (!cancelled) { setDocs(documents.items); setMedia(files.items) }
       })
       .catch((err) => {
         if (!cancelled) setError(errorMessage(err))
@@ -65,6 +69,17 @@ export default function ClientEvidence() {
   }, [selectedId])
 
   const selected = cases.find((c) => c.id === selectedId) ?? null
+
+  async function addEvidence(file: File) {
+    if (selectedId === null) return
+    setUploading(true)
+    setError(null)
+    try {
+      await uploadEvidenceFile(selectedId, file)
+      setMedia((await listEvidenceFiles(selectedId)).items)
+    } catch (err) { setError(errorMessage(err)) }
+    finally { setUploading(false) }
+  }
 
   if (loadingCases) {
     return (
@@ -119,13 +134,30 @@ export default function ClientEvidence() {
 
       {error && <ErrorAlert message={error} />}
 
+      {selectedId !== null && <Card className="p-5 space-y-3">
+        <h2 className="font-semibold text-foreground">Upload case evidence</h2>
+        <p className="text-sm text-muted-foreground">Add photographs, screenshots, recordings, videos, PDFs, Word files or text files. Evidence files are private to this case and are not automatically analyzed by AI. Maximum 100 MB each.</p>
+        <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-black" style={{ background: G }}>
+          <Upload size={15} /> {uploading ? 'Uploading…' : 'Choose evidence file'}
+          <input type="file" disabled={uploading} accept=".png,.jpg,.jpeg,.webp,.pdf,.doc,.docx,.txt,.mp3,.wav,.m4a,.ogg,.mp4,.mov,.webm" className="sr-only" onChange={(e) => { const file = e.target.files?.[0]; if (file) void addEvidence(file); e.target.value = '' }} />
+        </label>
+      </Card>}
+
+      {media.length > 0 && <div className="space-y-2">
+        <h2 className="font-semibold text-foreground">Evidence files</h2>
+        {media.map((item) => <Card key={item.id} className="p-4 flex items-center justify-between gap-3">
+          <div className="min-w-0"><p className="text-sm font-medium text-foreground truncate">{item.filename}</p><p className="text-xs text-muted-foreground">{formatBytes(item.size_bytes)} · {formatDate(item.created_at)}</p></div>
+          <button type="button" aria-label={`Download ${item.filename}`} onClick={() => { if (selectedId !== null) void downloadEvidenceFile(selectedId, item).catch((err) => setError(errorMessage(err))) }} className="text-xs flex items-center gap-1 shrink-0" style={{ color: G }}><Download size={14} /> Download</button>
+        </Card>)}
+      </div>}
+
       {cases.length === 0 ? (
         <Card className="p-10 text-center text-sm text-muted-foreground">
           No cases assigned yet — evidence will appear here once you have a case with documents.
         </Card>
       ) : loadingDocs ? (
         <div className="py-10 flex justify-center"><Spinner label="Loading documents…" /></div>
-      ) : docs.length === 0 ? (
+      ) : docs.length === 0 && media.length === 0 ? (
         <Card className="p-10 text-center text-sm text-muted-foreground">
           No documents have been added to this case yet.
         </Card>

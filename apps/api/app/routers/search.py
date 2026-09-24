@@ -43,6 +43,8 @@ def chunks_to_sources(
         chunk = db.get(Chunk, chunk_id)
         if chunk is None:
             continue
+        if chunk.document.ocr_used and chunk.document.ocr_review_status != "verified":
+            continue
         if allowed_document_ids is not None:
             if chunk.document_id not in allowed_document_ids:
                 continue

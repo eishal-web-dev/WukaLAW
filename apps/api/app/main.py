@@ -17,7 +17,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.auth import ADMIN_EMAIL, sync_configured_admin
 from app.config import settings
 from app.db import Base, SessionLocal, engine
-from app.routers import admin, auth_routes, case_pathway, cases, documents, legal_intelligence, notifications, precedent_briefs, qa, rag, reports, search, similar_cases
+from app.routers import admin, auth_routes, case_pathway, cases, documents, evidence_files, legal_intelligence, notifications, precedent_briefs, qa, rag, reports, search, similar_cases
 
 app = FastAPI(
     title="WukaLAW API",
@@ -54,6 +54,9 @@ with engine.connect() as connection:
     columns = [row[1] for row in connection.execute(text("PRAGMA table_info(documents)"))]
     if columns and "case_id" not in columns:
         connection.execute(text("ALTER TABLE documents ADD COLUMN case_id INTEGER"))
+    if columns and "ocr_review_status" not in columns:
+        connection.execute(text("ALTER TABLE documents ADD COLUMN ocr_review_status VARCHAR(32)"))
+        connection.execute(text("UPDATE documents SET ocr_review_status = 'needs_review' WHERE ocr_used = 1"))
     user_columns = [row[1] for row in connection.execute(text("PRAGMA table_info(users)"))]
     if user_columns and "notifications_enabled" not in user_columns:
         connection.execute(text("ALTER TABLE users ADD COLUMN notifications_enabled BOOLEAN NOT NULL DEFAULT 1"))
@@ -129,6 +132,7 @@ api.include_router(cases.router)
 api.include_router(precedent_briefs.router)
 api.include_router(case_pathway.router)
 api.include_router(documents.router)
+api.include_router(evidence_files.router)
 api.include_router(search.router)
 api.include_router(qa.router)
 api.include_router(reports.router)

@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 from typing import Literal
 
 from pydantic import BaseModel, Field
@@ -75,6 +75,7 @@ class DocumentMeta(BaseModel):
     created_at: datetime
     has_summary: bool
     ocr_used: bool = False
+    ocr_review_status: str | None = None
 
 
 class DocumentOut(DocumentMeta):
@@ -141,9 +142,15 @@ class SummarizeResponse(BaseModel):
     summary: SummaryOut
 
 
+class ChatTurnInput(BaseModel):
+    role: Literal["user", "ai", "assistant"]
+    content: str = Field(min_length=1, max_length=10000)
+
+
 class AskRequest(BaseModel):
     question: str = Field(min_length=3, max_length=2000)
     case_id: int | None = None
+    history: list[ChatTurnInput] = Field(default_factory=list, max_length=40)
 
 
 class Source(BaseModel):
@@ -179,8 +186,21 @@ class TimelineEventOut(BaseModel):
     date: str
     date_text: str
     text: str
-    document_id: int
-    document_title: str
+    document_id: int | None = None
+    document_title: str | None = None
+    event_id: int | None = None
+
+
+class CaseEventCreate(BaseModel):
+    date: date
+    text: str = Field(min_length=3, max_length=5000)
+    document_id: int | None = None
+
+
+class CaseEventUpdate(BaseModel):
+    date: date
+    text: str = Field(min_length=3, max_length=5000)
+    document_id: int | None = None
 
 
 class TimelineResponse(BaseModel):

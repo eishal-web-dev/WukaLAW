@@ -223,5 +223,5 @@ function Topbar() {
 
 export default function FigmaAppShell() {
   const [collapsed, setCollapsed] = useState(false)
-  return <div className="flex h-screen overflow-hidden bg-background" style={{ fontFamily: 'Inter, sans-serif' }}><Sidebar collapsed={collapsed} onToggle={() => setCollapsed((value) => !value)} /><div className="flex flex-col flex-1 min-w-0 overflow-hidden"><Topbar /><main className="flex-1 overflow-hidden bg-background"><Outlet /></main></div></div>
+  return <div className="flex h-screen overflow-hidden bg-background" style={{ fontFamily: 'Inter, sans-serif' }}><Sidebar collapsed={collapsed} onToggle={() => setCollapsed((value) => !value)} /><div className="flex flex-col flex-1 min-w-0 min-h-0 overflow-hidden"><Topbar /><main className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden bg-background"><Outlet /></main></div></div>
 }

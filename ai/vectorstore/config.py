@@ -5,7 +5,21 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 
+from dotenv import dotenv_values
+
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
+
+
+def _config_value(name: str, default: str = "") -> str:
+    """Use process overrides, then the API or repository .env used for local runs."""
+    if name in os.environ:
+        return os.environ[name]
+    for filename in (PROJECT_ROOT / "apps" / "api" / ".env", PROJECT_ROOT / ".env"):
+        if filename.is_file():
+            value = dotenv_values(filename).get(name)
+            if value is not None:
+                return value
+    return default
 
 
 def _bool(value: str | None) -> bool:
@@ -13,7 +27,7 @@ def _bool(value: str | None) -> bool:
 
 
 def _local_path_from_env() -> Path | None:
-    raw = os.getenv("QDRANT_LOCAL_PATH")
+    raw = _config_value("QDRANT_LOCAL_PATH")
     if not raw:
         return None
     path = Path(raw).expanduser()
@@ -34,11 +48,11 @@ class QdrantSettings:
     @classmethod
     def from_env(cls, **overrides):
         values = {
-            "url": os.getenv("QDRANT_URL", "http://localhost:6333"),
-            "api_key": os.getenv("QDRANT_API_KEY") or None,
-            "collection": os.getenv("QDRANT_COLLECTION", "wakulaw_legal_chunks"),
-            "timeout": int(os.getenv("QDRANT_TIMEOUT", "30")),
-            "prefer_grpc": _bool(os.getenv("QDRANT_PREFER_GRPC")),
+            "url": _config_value("QDRANT_URL", "http://localhost:6333"),
+            "api_key": _config_value("QDRANT_API_KEY") or None,
+            "collection": _config_value("QDRANT_COLLECTION", "wakulaw_legal_chunks"),
+            "timeout": int(_config_value("QDRANT_TIMEOUT", "30")),
+            "prefer_grpc": _bool(_config_value("QDRANT_PREFER_GRPC")),
             "local_path": _local_path_from_env(),
         }
         values.update({key: value for key, value in overrides.items() if value is not None})

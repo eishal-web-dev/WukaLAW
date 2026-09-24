@@ -9,6 +9,7 @@ vi.mock('../../lib/api', () => ({
   getDocument: vi.fn(),
   summarizeDocument: vi.fn(),
   getDocumentCitations: vi.fn(),
+  updateDocument: vi.fn(),
   errorMessage: (err: unknown) =>
     err instanceof Error ? err.message : 'Something went wrong.',
 }))
@@ -22,6 +23,7 @@ const DOC: Document = {
   created_at: '2026-02-01T09:00:00Z',
   has_summary: false,
   ocr_used: false,
+  ocr_review_status: null,
   text: 'Full extracted text…',
   summary: null,
 }
