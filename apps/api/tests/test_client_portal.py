@@ -209,6 +209,31 @@ def test_client_ai_question_requires_case_id(client):
     assert response.status_code == 400
 
 
+def test_client_can_delete_a_case_document_and_its_chunks(client):
+    headers = register_user(client, email="delete-doc@example.com")
+    _make_client("delete-doc@example.com")
+    case = client.post("/api/v1/cases/request", json={
+        "title": "Deletion case", "case_type": "Civil",
+        "description": "A case used to verify secure document deletion.",
+    }, headers=headers)
+    case_id = case.json()["id"]
+    uploaded = client.post(
+        "/api/v1/documents/upload",
+        data={"case_id": str(case_id)},
+        files={"file": ("remove-me.txt", b"This document contains enough searchable legal case text to create chunks before it is deliberately deleted. " * 6, "text/plain")},
+        headers=headers,
+    )
+    assert uploaded.status_code == 201, uploaded.text
+    document_id = uploaded.json()["id"]
+    assert uploaded.json()["num_chunks"] > 0
+
+    deleted = client.delete(f"/api/v1/documents/{document_id}", headers=headers)
+    assert deleted.status_code == 204, deleted.text
+    assert client.get(f"/api/v1/documents/{document_id}", headers=headers).status_code == 404
+    remaining = client.get(f"/api/v1/cases/{case_id}/documents", headers=headers).json()
+    assert all(item["id"] != document_id for item in remaining["items"])
+
+
 def test_client_ai_question_cannot_use_another_clients_case(client):
     lawyer = register_user(client, email="lawyer7@example.com")
     other_client_headers = register_user(client, email="client7@example.com")
