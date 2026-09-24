@@ -175,6 +175,21 @@ def test_client_can_upload_image_and_word_documents_for_search(client):
                         files={"file": ("scan.png", b"fake test image", "image/png")}, headers=headers)
     assert image.status_code == 201, image.text
     assert image.json()["ocr_used"] is True
+    assert image.json()["ocr_review_status"] == "needs_review"
+    assert image.json()["num_chunks"] == 0
+
+    document_id = image.json()["id"]
+    corrected = " ".join(["درست عدالتی دستاویز کا تصدیق شدہ متن"] * 12)
+    verified = client.patch(
+        f"/api/v1/documents/{document_id}",
+        json={"text": corrected, "confirm_ocr": True},
+        headers=headers,
+    )
+    assert verified.status_code == 200, verified.text
+    assert verified.json()["ocr_review_status"] == "verified"
+    assert verified.json()["num_chunks"] > 0
+    detail = client.get(f"/api/v1/documents/{document_id}", headers=headers).json()
+    assert detail["text"] == corrected
 
     word = WordDocument()
     word.add_paragraph("The landlord kept the deposit after the tenant returned the keys and delivered the signed receipt. " * 5)
