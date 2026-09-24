@@ -54,6 +54,9 @@ with engine.connect() as connection:
     columns = [row[1] for row in connection.execute(text("PRAGMA table_info(documents)"))]
     if columns and "case_id" not in columns:
         connection.execute(text("ALTER TABLE documents ADD COLUMN case_id INTEGER"))
+    if columns and "ocr_review_status" not in columns:
+        connection.execute(text("ALTER TABLE documents ADD COLUMN ocr_review_status VARCHAR(32)"))
+        connection.execute(text("UPDATE documents SET ocr_review_status = 'needs_review' WHERE ocr_used = 1"))
     user_columns = [row[1] for row in connection.execute(text("PRAGMA table_info(users)"))]
     if user_columns and "notifications_enabled" not in user_columns:
         connection.execute(text("ALTER TABLE users ADD COLUMN notifications_enabled BOOLEAN NOT NULL DEFAULT 1"))
