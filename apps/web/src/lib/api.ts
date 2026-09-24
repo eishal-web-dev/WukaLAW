@@ -465,6 +465,11 @@ export function getDocument(id: number | string): Promise<Document> {
   return request<Document>(`/documents/${id}`)
 }
 
+/** DELETE /documents/{id} — removes the document, chunks and AI index entries. */
+export function deleteDocument(id: number | string): Promise<void> {
+  return del(`/documents/${id}`)
+}
+
 /** POST /documents/{id}/summarize */
 export function summarizeDocument(
   id: number | string,
