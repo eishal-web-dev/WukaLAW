@@ -75,6 +75,7 @@ class DocumentMeta(BaseModel):
     created_at: datetime
     has_summary: bool
     ocr_used: bool = False
+    ocr_review_status: str | None = None
 
 
 class DocumentOut(DocumentMeta):
