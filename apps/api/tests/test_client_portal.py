@@ -430,6 +430,33 @@ def test_client_can_access_pathway_intelligence_for_their_own_case(client):
     assert response.json()["source_case"]["id"] == case_id
 
 
+def test_pathway_uses_case_title_and_active_status_when_order_stage_is_unknown(client):
+    lawyer = register_user(client, email="mehr-pathway@example.com")
+    created = client.post(
+        "/api/v1/cases",
+        json={
+            "title": "Haq meher case",
+            "case_type": "Civil",
+            "status": "Review",
+            "priority": "Medium",
+            "description": "My husband disputes the money and property claimed in the case.",
+        },
+        headers=lawyer,
+    )
+
+    response = client.get(
+        f"/api/v1/cases/{created.json()['id']}/pathway-intelligence",
+        headers=lawyer,
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["current_stage"]["key"] == "ongoing_unconfirmed"
+    assert data["current_stage"]["label"].startswith("Currently Going On")
+    assert data["next_generic_stage"]["key"] == "confirm_latest_order"
+    assert any(issue["issue"] == "Dower / Mehr" for issue in data["detected_issues"])
+
+
 def test_pathway_intelligence_still_enforces_ownership_for_unrelated_clients(client):
     lawyer = register_user(client, email="lawyer11@example.com")
     other_client_headers = register_user(client, email="client11@example.com")
