@@ -74,4 +74,28 @@ describe('ClientCourtPrediction', () => {
     expect(screen.getByText('Strong documentary evidence')).toBeInTheDocument()
     expect(screen.getByText('This is an estimate, not legal advice.')).toBeInTheDocument()
   })
+
+  it('renders an evidence-grounded assessment without inventing a percentage', async () => {
+    vi.mocked(api.listCases).mockResolvedValue({ items: [makeCase({})], total: 1 })
+    vi.mocked(api.getCasePrediction).mockResolvedValue({
+      available: true,
+      assessment_type: 'ai_scenario_analysis',
+      model: 'fake/test',
+      assessment: 'Your documents support the recorded chronology, but the opposing account is not available.',
+      generated_at: '2026-09-25T00:00:00Z',
+      probability: null,
+      factors: [],
+      supporting_factors: ['One verified document is available.'],
+      missing_information: ['Add the opposing party response.'],
+      readiness: true,
+      disclaimer: 'Decision-support only. No win percentage is shown.',
+    })
+
+    render(<ClientCourtPrediction />)
+    expect(await screen.findByText('Evidence-grounded assessment')).toBeInTheDocument()
+    expect(screen.getByText(/documents support the recorded chronology/i)).toBeInTheDocument()
+    expect(screen.getByText(/One verified document/i)).toBeInTheDocument()
+    expect(screen.getByText(/Add the opposing party response/i)).toBeInTheDocument()
+    expect(screen.queryByText(/%/)).not.toBeInTheDocument()
+  })
 })
