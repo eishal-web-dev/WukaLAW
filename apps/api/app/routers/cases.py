@@ -21,6 +21,7 @@ from app.schemas import (
     TimelineResponse,
 )
 from app.services.notification_service import create_notification
+from app.services.case_intelligence_service import build_case_intelligence_profile
 
 router = APIRouter(prefix="/cases", tags=["cases"])
 
@@ -504,3 +505,18 @@ def case_prediction(case_id: int, db: Session = Depends(get_db), user: User = De
             "input among many, not a determination of how your case will go."
         ),
     }
+
+
+@router.get("/{case_id}/intelligence-profile")
+def case_intelligence_profile(
+    case_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Return the labelled, auditable input used for assisted case analysis.
+
+    This is deliberately a profile, not a court-outcome prediction. Ownership
+    is enforced before any private case material is assembled.
+    """
+    case = _get_owned_case(db, case_id, user)
+    return build_case_intelligence_profile(db, case)
