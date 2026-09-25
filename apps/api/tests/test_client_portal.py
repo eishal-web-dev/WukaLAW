@@ -334,7 +334,7 @@ def test_client_cannot_claim_a_case(client):
     assert response.status_code == 403
 
 
-def test_case_prediction_honestly_reports_unavailable(client):
+def test_case_prediction_returns_honest_evidence_assessment_without_fake_percentage(client, monkeypatch):
     lawyer = register_user(client, email="lawyer8@example.com")
 
     r = client.post(
@@ -344,13 +344,22 @@ def test_case_prediction_honestly_reports_unavailable(client):
     )
     case_id = r.json()["id"]
 
+    monkeypatch.setattr(
+        "ai.qa.rag._generate_answer",
+        lambda *args, **kwargs: (
+            "The current record is limited. Add verified documents before drawing an outcome scenario.",
+            "fake/test",
+        ),
+    )
     response = client.get(f"/api/v1/cases/{case_id}/prediction", headers=lawyer)
     assert response.status_code == 200
     data = response.json()
-    assert data["available"] is False
+    assert data["available"] is True
     assert data["probability"] is None
     assert data["factors"] == []
-    assert "not been generated" in data["disclaimer"].lower()
+    assert data["assessment_type"] == "ai_scenario_analysis"
+    assert "limited" in data["assessment"].lower()
+    assert "no win percentage" in data["disclaimer"].lower()
 
 
 def test_case_prediction_enforces_the_same_ownership_rules(client):
