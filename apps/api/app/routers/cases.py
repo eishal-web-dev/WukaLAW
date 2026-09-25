@@ -59,6 +59,55 @@ CASE_TYPE_HINTS = {
 }
 
 
+def _historical_outcome_summary(results: list[dict]) -> dict:
+    """Summarise explicit dispositions without claiming a win probability."""
+    buckets = {"favourable": 0, "unfavourable": 0, "partial_or_mixed": 0, "unclear": 0}
+    seen: set[str] = set()
+    favourable_rows: list[dict] = []
+    for row in results:
+        document_id = str(row.get("document_id") or row.get("canonical_chunk_id") or "")
+        if document_id and document_id in seen:
+            continue
+        if document_id:
+            seen.add(document_id)
+        outcome = str(row.get("explicit_outcome_phrase") or "").casefold()
+        if not outcome:
+            buckets["unclear"] += 1
+        elif any(term in outcome for term in ("partly allowed", "partially allowed", "partly decreed", "modified")):
+            buckets["partial_or_mixed"] += 1
+        elif any(term in outcome for term in ("dismissed", "rejected", "declined", "disallowed")):
+            buckets["unfavourable"] += 1
+        elif any(term in outcome for term in ("allowed", "accepted", "decreed", "granted")):
+            buckets["favourable"] += 1
+            favourable_rows.append(row)
+        else:
+            buckets["unclear"] += 1
+
+    known = buckets["favourable"] + buckets["unfavourable"] + buckets["partial_or_mixed"]
+    signals: list[str] = []
+    for row in favourable_rows:
+        for factor in row.get("matching_factors") or []:
+            label, value = str(factor.get("factor") or ""), str(factor.get("value") or "")
+            if label == "same_specific_issue" and value:
+                signals.append(f"The same specific legal issue: {value.replace('_', ' ')}")
+            elif label == "shared_section" and value:
+                signals.append(f"A shared statutory reference: Section {value}")
+        for law in (row.get("laws_cited") or [])[:2]:
+            signals.append(f"Law appearing in a favourable matched judgment: {law}")
+
+    return {
+        "matched_cases": len(seen) if seen else len(results),
+        "outcomes_available": known,
+        **buckets,
+        "favourable_ratio": round((buckets["favourable"] / known) * 100) if known else None,
+        "successful_case_signals": list(dict.fromkeys(signals))[:6],
+        "meaning": (
+            "Share of outcome-known matched judgments favourable to the plaintiff, petitioner or appellant. "
+            "It is not this user's probability of winning."
+        ),
+    }
+
+
 def _get_owned_case(db: Session, case_id: int, user: User) -> Case:
     """A case is accessible to the lawyer who owns it, the client it is
     assigned to, or -- for a still-unclaimed client case request -- any
@@ -197,6 +246,8 @@ def _run_similar_search(
         }
     else:
         result["corpus_available"] = True
+
+    result["historical_outcomes"] = _historical_outcome_summary(result.get("results") or [])
 
     result["source_case"] = {
         "id": case.id,
