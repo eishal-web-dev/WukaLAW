@@ -680,6 +680,11 @@ export interface CasePrediction {
   supporting_factors?: string[]
   missing_information?: string[]
   readiness?: boolean
+  matter?: string
+  case_stage?: string
+  next_steps?: string[]
+  preparation_checklist?: string[]
+  needs_confirmation?: string[]
   disclaimer: string
 }
 
