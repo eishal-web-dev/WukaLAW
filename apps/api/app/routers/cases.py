@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -20,8 +22,11 @@ from app.schemas import (
     DocumentList,
     TimelineResponse,
 )
+from app.services.case_intelligence_service import (
+    build_case_intelligence_profile,
+    render_case_intelligence_profile,
+)
 from app.services.notification_service import create_notification
-from app.services.case_intelligence_service import build_case_intelligence_profile
 
 router = APIRouter(prefix="/cases", tags=["cases"])
 
@@ -140,18 +145,15 @@ def _run_similar_search(
 ) -> dict:
     situation = _similar_case_seed(case, documents, focus=focus)
     try:
-        from ai.vectorstore.config import QdrantSettings
+        from ai.vectorstore.config import QdrantSettings, resolve_legal_collection
         from ai.vectorstore.qdrant_client import get_shared_qdrant_client
 
         corpus = QdrantSettings.from_env()
-        if not get_shared_qdrant_client(corpus).client.collection_exists(corpus.collection):
-            raise HTTPException(
-                status_code=503,
-                detail=f"Pakistani judgments collection '{corpus.collection}' is missing. Check QDRANT_COLLECTION and QDRANT_LOCAL_PATH in your .env, or import the legal corpus before searching similar cases.",
-            )
+        qdrant = get_shared_qdrant_client(corpus)
+        resolved_collection, _ = resolve_legal_collection(qdrant, corpus)
         from app.routers.similar_cases import get_similar_case_pipeline
 
-        result = get_similar_case_pipeline().run(
+        result = get_similar_case_pipeline(resolved_collection).run(
             SimilarCaseRequest(
                 situation=situation,
                 top_k=top_k,
@@ -491,28 +493,67 @@ def case_documents(case_id: int, db: Session = Depends(get_db), user: User = Dep
 
 @router.get("/{case_id}/prediction")
 def case_prediction(case_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    """Court-outcome prediction contract for a case.
+    """Evidence-grounded scenario assessment without an invented percentage."""
+    case = _get_owned_case(db, case_id, user)
+    profile = build_case_intelligence_profile(db, case)
+    documents = db.scalars(
+        select(Document).where(Document.case_id == case.id).order_by(Document.created_at.desc())
+    ).all()
+    verified = [
+        document for document in documents
+        if not document.ocr_used or document.ocr_review_status == "verified"
+    ]
+    contexts = [
+        f"Document: {document.title}\nVerified excerpt: {' '.join((document.text or '').split())[:3000]}"
+        for document in verified[:4]
+        if (document.text or "").strip()
+    ]
 
-    There is no prediction engine implemented anywhere in this codebase --
-    no model, no training data, no scoring logic. This endpoint exists so
-    the frontend has a real, honest contract to call rather than showing a
-    fabricated percentage: available is always false right now, and the
-    frontend must render that as 'Not generated', never a fake number.
-    When a real prediction engine is built, this is the endpoint it should
-    populate -- the shape (available, generated_at, probability, factors,
-    disclaimer) is what a real result would look like.
-    """
-    _get_owned_case(db, case_id, user)  # enforces the same ownership/visibility rules
+    from ai.qa import rag as qa_rag
+
+    generated, model = qa_rag._generate_answer(
+        (
+            "Assess this case without giving a win percentage. Explain what currently supports the user's "
+            "position, what the opposing side may dispute, what is missing, and realistic procedural or "
+            "evidentiary scenarios. Use short headings. Do not invent Pakistani law, court orders, facts or outcomes."
+        ),
+        contexts,
+        render_case_intelligence_profile(profile),
+        [],
+    )
+
+    supporting_factors = []
+    if profile["verified_documents"]:
+        supporting_factors.append(
+            f"{len(profile['verified_documents'])} verified searchable document(s) are available for analysis."
+        )
+    if profile["timeline"]:
+        supporting_factors.append(f"{len(profile['timeline'])} dated timeline update(s) provide chronology.")
+    if profile["evidence_inventory"]:
+        supporting_factors.append(
+            f"{len(profile['evidence_inventory'])} additional evidence file(s) are recorded but their contents are not yet verified."
+        )
+    if case.deadline:
+        supporting_factors.append(f"The next recorded deadline is {case.deadline}.")
+
     return {
-        "available": False,
-        "generated_at": None,
+        "available": True,
+        "assessment_type": "ai_scenario_analysis" if generated else "evidence_readiness",
+        "model": model,
+        "assessment": generated or (
+            "WukaLAW can assess this case record's completeness, but no configured AI provider produced a "
+            "scenario analysis. Add the missing information below and confirm legal strategy with your lawyer."
+        ),
+        "generated_at": datetime.now(timezone.utc).isoformat(),
         "probability": None,
         "factors": [],
+        "supporting_factors": supporting_factors,
+        "missing_information": profile["readiness"]["missing_information"],
+        "readiness": profile["readiness"]["ready_for_assisted_analysis"],
         "disclaimer": (
-            "Court outcome prediction has not been generated for this case. "
-            "This feature estimates a rough likelihood based on case documents "
-            "and is not legal advice -- when available, always treat it as one "
-            "input among many, not a determination of how your case will go."
+            "Decision-support only, not legal advice or a court prediction. No win percentage is shown because "
+            "WukaLAW does not yet have a validated, calibrated Pakistani outcome model. Verify documents, law, "
+            "citations and strategy with a qualified lawyer."
         ),
     }
 
