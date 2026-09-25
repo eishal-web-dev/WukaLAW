@@ -98,4 +98,30 @@ describe('ClientCourtPrediction', () => {
     expect(screen.getByText(/Add the opposing party response/i)).toBeInTheDocument()
     expect(screen.queryByText(/%/)).not.toBeInTheDocument()
   })
+
+  it('shows an active child-custody roadmap and preparation checklist', async () => {
+    vi.mocked(api.listCases).mockResolvedValue({ items: [makeCase({ case_type: 'Family', status: 'Currently Going On' })], total: 1 })
+    vi.mocked(api.getCasePrediction).mockResolvedValue({
+      available: true,
+      assessment_type: 'evidence_readiness',
+      assessment: 'This is an active child custody matter.',
+      generated_at: '2026-09-25T00:00:00Z',
+      probability: null,
+      factors: [],
+      case_stage: 'Currently Going On',
+      matter: 'Child custody / guardianship',
+      next_steps: ['Check the latest court order and next hearing.'],
+      preparation_checklist: ["Child's B-Form and school records."],
+      needs_confirmation: ['Whether an interim order already exists.'],
+      disclaimer: 'Decision-support only, not legal advice.',
+    })
+
+    render(<ClientCourtPrediction />)
+    expect(await screen.findByText('What is likely to happen next')).toBeInTheDocument()
+    expect(screen.getByText('Currently Going On')).toBeInTheDocument()
+    expect(screen.getByText('Child custody / guardianship')).toBeInTheDocument()
+    expect(screen.getByText(/B-Form and school records/i)).toBeInTheDocument()
+    expect(screen.getByText('Confirm from the latest order')).toBeInTheDocument()
+    expect(screen.queryByText(/%/)).not.toBeInTheDocument()
+  })
 })
