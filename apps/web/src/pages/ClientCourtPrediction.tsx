@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Scale, AlertTriangle, CheckCircle2, ListChecks } from 'lucide-react'
+import { Scale, AlertTriangle, CheckCircle2, ListChecks, CalendarClock, BriefcaseBusiness } from 'lucide-react'
 import { listCases, getCasePrediction, errorMessage } from '../lib/api'
 import type { Case, CasePrediction } from '../lib/api'
 import { Card, G } from '../components/design'
@@ -125,7 +125,37 @@ export default function ClientCourtPrediction() {
               <h2 className="text-sm font-bold text-foreground">Evidence-grounded assessment</h2>
             </div>
             <p className="text-sm text-muted-foreground whitespace-pre-line leading-relaxed">{prediction.assessment}</p>
+            {(prediction.case_stage || prediction.matter) && (
+              <div className="mt-4 flex flex-wrap gap-2 text-xs">
+                {prediction.case_stage && <span className="rounded-full bg-primary/10 px-3 py-1 font-semibold text-primary">{prediction.case_stage}</span>}
+                {prediction.matter && <span className="rounded-full bg-muted px-3 py-1 text-foreground">{prediction.matter}</span>}
+              </div>
+            )}
           </Card>
+          {(prediction.next_steps?.length ?? 0) > 0 && (
+            <Card className="p-5">
+              <h3 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2"><CalendarClock size={15} style={{ color: G }} /> What is likely to happen next</h3>
+              <ol className="space-y-3 text-sm text-muted-foreground">
+                {prediction.next_steps?.map((item, index) => <li key={item} className="flex gap-3"><span className="font-bold text-primary">{index + 1}.</span><span>{item}</span></li>)}
+              </ol>
+            </Card>
+          )}
+          {(prediction.preparation_checklist?.length ?? 0) > 0 && (
+            <Card className="p-5">
+              <h3 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2"><BriefcaseBusiness size={15} className="text-emerald-400" /> What you should prepare now</h3>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                {prediction.preparation_checklist?.map((item) => <li key={item} className="flex gap-2"><span className="text-emerald-400">✓</span><span>{item}</span></li>)}
+              </ul>
+            </Card>
+          )}
+          {(prediction.needs_confirmation?.length ?? 0) > 0 && (
+            <Card className="p-5 border-amber-400/20">
+              <h3 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2"><AlertTriangle size={15} className="text-amber-400" /> Confirm from the latest order</h3>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                {prediction.needs_confirmation?.map((item) => <li key={item}>• {item}</li>)}
+              </ul>
+            </Card>
+          )}
           {(prediction.supporting_factors?.length ?? 0) > 0 && (
             <Card className="p-5">
               <h3 className="text-xs font-bold text-foreground mb-3 flex items-center gap-2"><CheckCircle2 size={14} className="text-emerald-400" /> Information currently available</h3>
