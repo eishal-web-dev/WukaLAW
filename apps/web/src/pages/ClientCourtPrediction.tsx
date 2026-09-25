@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Scale, AlertTriangle } from 'lucide-react'
+import { Scale, AlertTriangle, CheckCircle2, ListChecks } from 'lucide-react'
 import { listCases, getCasePrediction, errorMessage } from '../lib/api'
 import type { Case, CasePrediction } from '../lib/api'
 import { Card, G } from '../components/design'
@@ -90,7 +90,7 @@ export default function ClientCourtPrediction() {
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-2">
           <Scale size={18} style={{ color: G }} />
-          <h1 className="text-xl font-bold text-foreground tracking-tight">Court Prediction</h1>
+          <h1 className="text-xl font-bold text-foreground tracking-tight">AI Case Assessment</h1>
         </div>
         <select
           value={selectedCaseId ?? ''}
@@ -117,6 +117,33 @@ export default function ClientCourtPrediction() {
           <h2 className="text-base font-semibold text-foreground">Not generated</h2>
           <p className="text-sm text-muted-foreground max-w-sm mx-auto">{prediction.disclaimer}</p>
         </Card>
+      ) : prediction && prediction.available && prediction.probability === null ? (
+        <div className="space-y-4">
+          <Card className="p-6">
+            <div className="flex items-center gap-2 mb-3">
+              <Scale size={17} style={{ color: G }} />
+              <h2 className="text-sm font-bold text-foreground">Evidence-grounded assessment</h2>
+            </div>
+            <p className="text-sm text-muted-foreground whitespace-pre-line leading-relaxed">{prediction.assessment}</p>
+          </Card>
+          {(prediction.supporting_factors?.length ?? 0) > 0 && (
+            <Card className="p-5">
+              <h3 className="text-xs font-bold text-foreground mb-3 flex items-center gap-2"><CheckCircle2 size={14} className="text-emerald-400" /> Information currently available</h3>
+              <ul className="space-y-2 text-xs text-muted-foreground">
+                {prediction.supporting_factors?.map((item) => <li key={item}>• {item}</li>)}
+              </ul>
+            </Card>
+          )}
+          {(prediction.missing_information?.length ?? 0) > 0 && (
+            <Card className="p-5">
+              <h3 className="text-xs font-bold text-foreground mb-3 flex items-center gap-2"><ListChecks size={14} className="text-amber-400" /> Improve this assessment</h3>
+              <ul className="space-y-2 text-xs text-muted-foreground">
+                {prediction.missing_information?.map((item) => <li key={item}>• {item}</li>)}
+              </ul>
+            </Card>
+          )}
+          <p className="text-xs text-muted-foreground text-center">{prediction.disclaimer}</p>
+        </div>
       ) : prediction && prediction.available ? (
         <div className="space-y-4">
           <Card className="p-6 text-center">
