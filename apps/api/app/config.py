@@ -46,6 +46,16 @@ class Settings(BaseSettings):
     ollama_base_url: str = "http://localhost:11434"
     ollama_model: str = "qwen2.5:3b"
 
+    # Answer generation for both RAG endpoints. ``auto`` uses the first
+    # configured provider and falls through when a provider is unavailable.
+    rag_llm_provider: str = "auto"
+    rag_llm_fallback_order: str = "gemini,groq,openai,ollama"
+    gemini_model: str = "gemini-3.6-flash"
+    groq_api_key: str = ""
+    groq_model: str = "llama-3.3-70b-versatile"
+    openai_api_key: str = ""
+    openai_model: str = "gpt-4.1-mini"
+
     # auth — override SECRET_KEY in .env for anything beyond local development
     secret_key: str = "dev-only-change-me"
     token_expire_hours: int = 24 * 7
