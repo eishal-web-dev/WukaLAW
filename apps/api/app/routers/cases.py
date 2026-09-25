@@ -540,10 +540,10 @@ def case_prediction(case_id: int, db: Session = Depends(get_db), user: User = De
 
     return {
         "available": True,
-        "assessment_type": "ai_scenario_analysis" if generated else "evidence_readiness",
+        "assessment_type": "ai_scenario_analysis" if generated else "procedural_guidance",
         "model": model,
         "assessment": generated or (
-            f"This is an active {pathway['matter'].lower()} matter. The roadmap below explains the usual "
+            f"This {pathway['matter'].lower()} matter is recorded as {pathway['case_stage']}. The roadmap below explains the usual "
             "preparation stages suggested by the saved case details. Confirm the exact next step against the "
             "latest court order with your lawyer, because the record does not establish what the court has "
             "already directed."
