@@ -25,7 +25,17 @@ from app.services.case_intelligence_service import build_case_intelligence_profi
 
 router = APIRouter(prefix="/cases", tags=["cases"])
 
-ALLOWED_STATUS = {"Active", "Review", "On Hold", "Closed"}
+ALLOWED_STATUS = {
+    # Current, user-friendly case stages.
+    "Started",
+    "Currently Going On",
+    "Case Complete",
+    # Legacy values remain valid so existing case records can still be edited.
+    "Active",
+    "Review",
+    "On Hold",
+    "Closed",
+}
 ALLOWED_PRIORITY = {"Low", "Medium", "High", "Critical"}
 
 # Case-management labels provide only a BROAD legal-domain hint. Specific
@@ -240,7 +250,7 @@ def request_case(
         case_number=f"WL-{year}-{count + 1:03d}",
         title=request.title.strip(),
         case_type=request.case_type.strip(),
-        status="Review",
+        status="Started",
         priority="Medium",
         description=request.description.strip(),
     )
