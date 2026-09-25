@@ -55,6 +55,9 @@ export function Btn({
 export function Badge({ label, variant = 'default' }: { label: string; variant?: string }) {
   const v: Record<string, string> = {
     Active: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+    Started: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
+    'Currently Going On': 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+    'Case Complete': 'bg-gray-500/10 text-gray-400 border-gray-500/20',
     Review: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
     'On Hold': 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20',
     Closed: 'bg-gray-500/10 text-gray-400 border-gray-500/20',
