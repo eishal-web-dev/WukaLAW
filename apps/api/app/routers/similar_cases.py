@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field, model_validator
 from ai.embeddings.model_provider import create_provider
 from ai.retrieval import LegalRetriever
 from ai.similar_cases import SimilarCasePipeline, SimilarCaseRequest
-from ai.vectorstore.config import QdrantSettings
+from ai.vectorstore.config import QdrantSettings, resolve_legal_collection
 from ai.vectorstore.qdrant_client import get_shared_qdrant_client
 
 router = APIRouter(prefix="/api/cases", tags=["similar-cases"])
@@ -36,16 +36,17 @@ class SimilarCasesRequest(BaseModel):
         return self
 
 
-@lru_cache(maxsize=1)
-def get_similar_case_pipeline():
+@lru_cache(maxsize=8)
+def get_similar_case_pipeline(collection: str | None = None):
     settings = QdrantSettings.from_env()
     client = get_shared_qdrant_client(settings)
+    resolved_collection = collection or resolve_legal_collection(client, settings)[0]
     provider = create_provider(
         os.getenv("EMBEDDING_MODEL", "BAAI/bge-m3"),
         os.getenv("EMBEDDING_DEVICE", "auto"),
     )
     return SimilarCasePipeline(
-        LegalRetriever(client, settings.collection, provider)
+        LegalRetriever(client, resolved_collection, provider)
     )
 
 
