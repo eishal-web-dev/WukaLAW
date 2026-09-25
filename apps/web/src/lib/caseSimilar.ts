@@ -33,6 +33,7 @@ export interface SimilarJudgment {
 }
 
 export interface CaseSimilarResponse {
+  corpus_available?: boolean
   normalized_query: string
   total_candidates: number
   results: SimilarJudgment[]
