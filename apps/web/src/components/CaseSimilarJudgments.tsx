@@ -287,6 +287,19 @@ export default function CaseSimilarJudgments({ caseId }: { caseId: number | stri
 
       {!loading && !error && data && (
         <motion.div initial={enter} animate={animate} transition={{ duration: 0.25 }} className="space-y-4">
+          {data.corpus_available === false ? (
+            <Card className="p-6 border-amber-500/20 bg-amber-500/[0.03]">
+              <div className="flex items-start gap-3">
+                <Database size={18} className="text-amber-400 mt-0.5 flex-shrink-0" />
+                <div>
+                  <h3 className="text-sm font-semibold text-foreground">Pakistani judgment matching is being set up</h3>
+                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                    Your case details and procedural guidance still work. Judgment matches will appear here after the legal judgment library is installed on this server.
+                  </p>
+                </div>
+              </div>
+            </Card>
+          ) : <>
           <div className="grid grid-cols-2 gap-3 max-w-sm">
             <motion.div whileHover={reduceMotion ? undefined : { y: -2 }}>
               <Card className="p-4 h-full">
@@ -408,6 +421,7 @@ export default function CaseSimilarJudgments({ caseId }: { caseId: number | stri
               )}
             </>
           )}
+          </>}
         </motion.div>
       )}
     </div>
