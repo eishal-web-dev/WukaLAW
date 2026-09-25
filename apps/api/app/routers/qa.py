@@ -322,7 +322,10 @@ def _ask_impl(request: AskRequest, db: Session, user: User) -> dict:
 
     # Only retrieved document passages carry similarity scores. The case
     # record is useful background, but it must never inflate confidence.
-    answer_contexts = [(source.text, source.score) for source in sources]
+    answer_contexts = [
+        (f"Document: {source.document_title}\nPassage: {source.text}", source.score)
+        for source in sources
+    ]
     answer_text, level, reason, model = rag.answer(
         request.question,
         answer_contexts,
@@ -330,7 +333,7 @@ def _ask_impl(request: AskRequest, db: Session, user: User) -> dict:
         history=history,
         search_question=retrieval_question,
     )
-    if selected_case is not None and not sources:
+    if selected_case is not None and (not sources or answer_text == rag.NOT_ENOUGH):
         answer_text = _friendly_case_guidance(selected_case, request.question, history, db)
         level = "low"
         reason = (
