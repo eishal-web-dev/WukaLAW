@@ -478,6 +478,70 @@ def test_client_ai_question_uses_selected_case_description_without_documents(cli
     assert body["model"] == "case-guidance"
 
 
+def test_client_ai_synthesizes_selected_case_background_and_document_evidence(client, monkeypatch):
+    client_headers = register_user(client, email="casesynthesis@example.com")
+    _make_client("casesynthesis@example.com")
+    created = client.post(
+        "/api/v1/cases/request",
+        json={
+            "title": "Dowry property dispute",
+            "case_type": "Family",
+            "description": "I say my husband retained my dowry and has made a false money claim against me.",
+        },
+        headers=client_headers,
+    )
+    case_id = created.json()["id"]
+    uploaded = client.post(
+        "/api/v1/documents/upload",
+        files={
+            "file": (
+                "receipt.txt",
+                b"A dated receipt lists jewellery and household property delivered at marriage. " * 12,
+                "text/plain",
+            )
+        },
+        data={"case_id": str(case_id)},
+        headers=client_headers,
+    )
+    assert uploaded.status_code == 201, uploaded.text
+
+    captured = {}
+
+    def fake_generate(question, contexts, background_context, history):
+        captured.update(
+            question=question,
+            contexts=contexts,
+            background_context=background_context,
+            history=history,
+        )
+        return (
+            "Your position is that the money allegation is false and your dowry was retained. "
+            "The receipt may support what property was delivered; preserve the original and ask your lawyer "
+            "how it should be filed. The current material does not prove who retained each item.",
+            "fake/test",
+        )
+
+    monkeypatch.setattr("ai.qa.rag._generate_answer", fake_generate)
+    response = client.post(
+        "/api/v1/ask",
+        json={
+            "question": "How should I respond to his allegation?",
+            "case_id": case_id,
+            "history": [{"role": "user", "content": "He says I took his money."}],
+        },
+        headers=client_headers,
+    )
+
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["model"] == "fake/test"
+    assert body["answer"].startswith("Your position is")
+    assert "case description" in captured["background_context"]
+    assert "false money claim" in captured["background_context"]
+    assert captured["history"][0]["content"] == "He says I took his money."
+    assert any("Document: receipt" in passage for passage in captured["contexts"])
+
+
 def test_client_can_edit_description_and_manage_dated_updates(client):
     headers = register_user(client, email="journal@example.com")
     _make_client("journal@example.com")
