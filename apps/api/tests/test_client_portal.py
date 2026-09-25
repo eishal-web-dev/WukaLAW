@@ -538,6 +538,46 @@ def test_client_ai_question_uses_selected_case_description_without_documents(cli
     assert "security deposit" in body["answer"].lower()
     assert "useful next steps" in body["answer"].lower()
     assert "bank statements" in body["answer"].lower()
+
+
+def test_ai_receives_unverified_ocr_as_labelled_working_material(client, monkeypatch):
+    headers = register_user(client, email="ocr-working-context@example.com")
+    _make_client("ocr-working-context@example.com")
+    created = client.post(
+        "/api/v1/cases/request",
+        json={
+            "title": "Haq meher case",
+            "case_type": "Family",
+            "description": "I dispute the other party's money allegation and seek return of my property.",
+        },
+        headers=headers,
+    )
+    case_id = created.json()["id"]
+    uploaded = client.post(
+        "/api/v1/documents/upload",
+        data={"case_id": str(case_id)},
+        files={"file": ("court-order.png", b"fake image", "image/png")},
+        headers=headers,
+    )
+    assert uploaded.status_code == 201
+    assert uploaded.json()["ocr_review_status"] == "needs_review"
+
+    captured = {}
+
+    def fake_generate(question, contexts, background_context, history):
+        captured["background"] = background_context
+        return ("I deny the allegation as recorded and rely on the documents listed below, subject to OCR verification.", "fake/test")
+
+    monkeypatch.setattr("ai.qa.rag._generate_answer", fake_generate)
+    response = client.post(
+        "/api/v1/ask",
+        json={"question": "Write a response on my behalf.", "case_id": case_id},
+        headers=headers,
+    )
+
+    assert response.status_code == 200
+    assert "UNVERIFIED OCR WORKING MATERIAL" in captured["background"]
+    assert "court-order" in captured["background"]
     assert body["confidence"]["level"] == "low"
     assert "case" in body["confidence"]["reason"].lower()
     assert body["model"] == "case-guidance"
