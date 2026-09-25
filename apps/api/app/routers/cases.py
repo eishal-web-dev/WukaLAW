@@ -145,6 +145,7 @@ def _run_similar_search(
     focus: str | None = None,
 ) -> dict:
     situation = _similar_case_seed(case, documents, focus=focus)
+    corpus_unavailable: str | None = None
     try:
         from ai.vectorstore.config import QdrantSettings, resolve_legal_collection
         from ai.vectorstore.qdrant_client import get_shared_qdrant_client
@@ -167,13 +168,35 @@ def _run_similar_search(
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     except RuntimeError as exc:
-        raise HTTPException(status_code=503, detail=f"Similar-case service unavailable: {exc}") from exc
+        message = str(exc)
+        if "collection" in message.lower() and ("not found" in message.lower() or "missing" in message.lower()):
+            corpus_unavailable = message
+        else:
+            raise HTTPException(status_code=503, detail=f"Similar-case service unavailable: {exc}") from exc
     except Exception as exc:
         if "not found" in str(exc).lower() and "collection" in str(exc).lower():
-            raise HTTPException(status_code=503, detail="Pakistani judgments collection is missing. Check QDRANT_COLLECTION and QDRANT_LOCAL_PATH in your .env, or import the legal corpus.") from exc
+            corpus_unavailable = str(exc)
         if "connection" in str(exc).lower() or "refused" in str(exc).lower():
             raise HTTPException(status_code=503, detail="Cannot reach the legal corpus. Set QDRANT_LOCAL_PATH to your indexed local collection or start the configured Qdrant server.") from exc
-        raise
+        if corpus_unavailable is None:
+            raise
+
+    if corpus_unavailable is not None:
+        # Missing infrastructure is not a malformed client case. Return a
+        # stable empty state so the pathway remains useful and the UI does not
+        # expose Qdrant collection names or configuration instructions.
+        result = {
+            "normalized_query": situation,
+            "total_candidates": 0,
+            "results": [],
+            "warnings": [
+                "The Pakistani judgments library has not been installed on this server yet. Your case details and pathway are still available."
+            ],
+            "processing_time_ms": 0,
+            "corpus_available": False,
+        }
+    else:
+        result["corpus_available"] = True
 
     result["source_case"] = {
         "id": case.id,
