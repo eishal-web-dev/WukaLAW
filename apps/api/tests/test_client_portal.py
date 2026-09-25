@@ -270,7 +270,7 @@ def test_client_can_request_a_new_case(client):
     )
     assert response.status_code == 201, response.text
     data = response.json()
-    assert data["status"] == "Review"
+    assert data["status"] == "Started"
     assert data["lawyer_name"] is None  # unclaimed -- no lawyer assigned yet
 
     # It should belong to the requesting client.
