@@ -379,6 +379,34 @@ def test_case_prediction_enforces_the_same_ownership_rules(client):
     assert response.status_code == 404
 
 
+def test_child_custody_prediction_has_actionable_fallback_without_ai_provider(client, monkeypatch):
+    lawyer = register_user(client, email="custody-roadmap@example.com")
+    created = client.post(
+        "/api/v1/cases",
+        json={
+            "title": "Child custody and visitation",
+            "case_type": "Family",
+            "status": "Active",
+            "priority": "High",
+            "description": "The child lives with me and the other parent is asking for custody.",
+        },
+        headers=lawyer,
+    )
+    case_id = created.json()["id"]
+    monkeypatch.setattr("ai.qa.rag._generate_answer", lambda *args, **kwargs: (None, None))
+
+    response = client.get(f"/api/v1/cases/{case_id}/prediction", headers=lawyer)
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["probability"] is None
+    assert data["case_stage"] == "Currently Going On"
+    assert data["matter"] == "Child custody / guardianship"
+    assert any("interim custody or visitation" in item for item in data["next_steps"])
+    assert any("B-Form" in item for item in data["preparation_checklist"])
+    assert any("court order" in item.lower() for item in data["needs_confirmation"])
+
+
 def test_client_can_access_pathway_intelligence_for_their_own_case(client):
     """Regression test: pathway_intelligence had its own local ownership
     check that only ever allowed case.owner_id == user.id, meaning a
