@@ -23,6 +23,7 @@ from app.schemas import (
     TimelineResponse,
 )
 from app.services.case_intelligence_service import (
+    build_case_pathway_guidance,
     build_case_intelligence_profile,
     render_case_intelligence_profile,
 )
@@ -496,6 +497,7 @@ def case_prediction(case_id: int, db: Session = Depends(get_db), user: User = De
     """Evidence-grounded scenario assessment without an invented percentage."""
     case = _get_owned_case(db, case_id, user)
     profile = build_case_intelligence_profile(db, case)
+    pathway = build_case_pathway_guidance(case)
     documents = db.scalars(
         select(Document).where(Document.case_id == case.id).order_by(Document.created_at.desc())
     ).all()
@@ -541,8 +543,10 @@ def case_prediction(case_id: int, db: Session = Depends(get_db), user: User = De
         "assessment_type": "ai_scenario_analysis" if generated else "evidence_readiness",
         "model": model,
         "assessment": generated or (
-            "WukaLAW can assess this case record's completeness, but no configured AI provider produced a "
-            "scenario analysis. Add the missing information below and confirm legal strategy with your lawyer."
+            f"This is an active {pathway['matter'].lower()} matter. The roadmap below explains the usual "
+            "preparation stages suggested by the saved case details. Confirm the exact next step against the "
+            "latest court order with your lawyer, because the record does not establish what the court has "
+            "already directed."
         ),
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "probability": None,
@@ -550,6 +554,7 @@ def case_prediction(case_id: int, db: Session = Depends(get_db), user: User = De
         "supporting_factors": supporting_factors,
         "missing_information": profile["readiness"]["missing_information"],
         "readiness": profile["readiness"]["ready_for_assisted_analysis"],
+        **pathway,
         "disclaimer": (
             "Decision-support only, not legal advice or a court prediction. No win percentage is shown because "
             "WukaLAW does not yet have a validated, calibrated Pakistani outcome model. Verify documents, law, "
