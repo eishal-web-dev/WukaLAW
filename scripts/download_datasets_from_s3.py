@@ -47,6 +47,7 @@ def parser() -> argparse.ArgumentParser:
     value.add_argument("--destination", type=Path, default=PROJECT_ROOT / "datasets" / "raw")
     value.add_argument("--force", action="store_true")
     value.add_argument("--dry-run", action="store_true")
+    value.add_argument("--verbose", action="store_true")
     return value
 
 
@@ -93,10 +94,12 @@ def main(argv=None) -> int:
                 target = _safe_destination(destination, key, prefix)
                 if target.is_file() and target.stat().st_size == size and not args.force:
                     skipped += 1
-                    print(f"SKIP {target} ({size:,} bytes)")
+                    if args.verbose:
+                        print(f"SKIP {target} ({size:,} bytes)")
                     continue
                 if args.dry_run:
-                    print(f"WOULD DOWNLOAD s3://{bucket}/{key} -> {target} ({size:,} bytes)")
+                    if args.verbose:
+                        print(f"WOULD DOWNLOAD s3://{bucket}/{key} -> {target} ({size:,} bytes)")
                     continue
                 target.parent.mkdir(parents=True, exist_ok=True)
                 print(f"DOWNLOAD s3://{bucket}/{key} -> {target} ({size:,} bytes)")
