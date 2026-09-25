@@ -356,6 +356,7 @@ def test_case_prediction_returns_honest_evidence_assessment_without_fake_percent
     data = response.json()
     assert data["available"] is True
     assert data["probability"] is None
+    assert data["assessment_type"] == "procedural_guidance"
     assert data["factors"] == []
     assert data["assessment_type"] == "ai_scenario_analysis"
     assert "limited" in data["assessment"].lower()
