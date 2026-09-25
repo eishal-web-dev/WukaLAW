@@ -671,7 +671,7 @@ export interface CasePredictionFactor {
 
 export interface CasePrediction {
   available: boolean
-  assessment_type?: 'ai_scenario_analysis' | 'evidence_readiness'
+  assessment_type?: 'ai_scenario_analysis' | 'procedural_guidance' | 'evidence_readiness'
   model?: string
   assessment?: string
   generated_at: string | null
