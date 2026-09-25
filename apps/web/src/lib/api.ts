@@ -149,7 +149,14 @@ export interface SimilarCasesResponse {
   results: Source[]
 }
 
-export type CaseStatus = 'Active' | 'Review' | 'On Hold' | 'Closed'
+export type CaseStatus =
+  | 'Started'
+  | 'Currently Going On'
+  | 'Case Complete'
+  | 'Active'
+  | 'Review'
+  | 'On Hold'
+  | 'Closed'
 export type CasePriority = 'Low' | 'Medium' | 'High' | 'Critical'
 
 export interface Case {
