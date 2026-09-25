@@ -33,6 +33,18 @@ export interface SimilarJudgment {
 }
 
 export interface CaseSimilarResponse {
+  corpus_available?: boolean
+  historical_outcomes?: {
+    matched_cases: number
+    outcomes_available: number
+    favourable: number
+    unfavourable: number
+    partial_or_mixed: number
+    unclear: number
+    favourable_ratio: number | null
+    successful_case_signals: string[]
+    meaning: string
+  }
   normalized_query: string
   total_candidates: number
   results: SimilarJudgment[]

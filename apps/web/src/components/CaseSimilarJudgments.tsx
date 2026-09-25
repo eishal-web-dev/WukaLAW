@@ -287,6 +287,47 @@ export default function CaseSimilarJudgments({ caseId }: { caseId: number | stri
 
       {!loading && !error && data && (
         <motion.div initial={enter} animate={animate} transition={{ duration: 0.25 }} className="space-y-4">
+          {data.corpus_available === false ? (
+            <Card className="p-6 border-amber-500/20 bg-amber-500/[0.03]">
+              <div className="flex items-start gap-3">
+                <Database size={18} className="text-amber-400 mt-0.5 flex-shrink-0" />
+                <div>
+                  <h3 className="text-sm font-semibold text-foreground">Pakistani judgment matching is being set up</h3>
+                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                    Your case details and procedural guidance still work. Judgment matches will appear here after the legal judgment library is installed on this server.
+                  </p>
+                </div>
+              </div>
+            </Card>
+          ) : <>
+          {data.historical_outcomes && data.historical_outcomes.outcomes_available > 0 && (
+            <Card className="p-5 border-[#D4AF37]/15">
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div className="max-w-xl">
+                  <h3 className="text-sm font-semibold text-foreground">What happened in the matched cases</h3>
+                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{data.historical_outcomes.meaning}</p>
+                </div>
+                <div className="text-right">
+                  <div className="text-3xl font-bold tabular-nums" style={{ color: G }}>{data.historical_outcomes.favourable_ratio}%</div>
+                  <div className="text-[10px] text-muted-foreground">favourable to initiating party</div>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-4 text-center">
+                <div className="rounded-lg bg-emerald-500/[0.05] p-3"><div className="font-bold text-emerald-400">{data.historical_outcomes.favourable}</div><div className="text-[10px] text-muted-foreground">Allowed / granted</div></div>
+                <div className="rounded-lg bg-red-500/[0.05] p-3"><div className="font-bold text-red-400">{data.historical_outcomes.unfavourable}</div><div className="text-[10px] text-muted-foreground">Dismissed / rejected</div></div>
+                <div className="rounded-lg bg-amber-500/[0.05] p-3"><div className="font-bold text-amber-400">{data.historical_outcomes.partial_or_mixed}</div><div className="text-[10px] text-muted-foreground">Partial / mixed</div></div>
+                <div className="rounded-lg bg-white/[0.025] p-3"><div className="font-bold text-foreground">{data.historical_outcomes.unclear}</div><div className="text-[10px] text-muted-foreground">Outcome unclear</div></div>
+              </div>
+              {data.historical_outcomes.successful_case_signals.length > 0 && (
+                <div className="mt-4 border-t border-white/[0.06] pt-4">
+                  <div className="text-xs font-semibold text-foreground mb-2">Factors seen in favourable matched cases</div>
+                  <ul className="space-y-1.5 text-xs text-muted-foreground">
+                    {data.historical_outcomes.successful_case_signals.map((signal) => <li key={signal}>• {signal}</li>)}
+                  </ul>
+                </div>
+              )}
+            </Card>
+          )}
           <div className="grid grid-cols-2 gap-3 max-w-sm">
             <motion.div whileHover={reduceMotion ? undefined : { y: -2 }}>
               <Card className="p-4 h-full">
@@ -408,6 +449,7 @@ export default function CaseSimilarJudgments({ caseId }: { caseId: number | stri
               )}
             </>
           )}
+          </>}
         </motion.div>
       )}
     </div>

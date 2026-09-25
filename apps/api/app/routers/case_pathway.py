@@ -33,9 +33,32 @@ def pathway_intelligence(
 
     result = analyze_case_pathway(
         case_type=case.case_type,
-        description=case.description or "",
+        # The title often contains the clearest issue label (for example
+        # "Haq meher case"), so it must participate in issue detection.
+        description="\n".join(part for part in (case.title, case.description) if part),
         documents=[{"title": document.title, "text": document.text or ""} for document in documents],
     )
+    if result["current_stage"]["key"] == "unknown" and case.status in {
+        "Active", "Review", "Currently Going On",
+    }:
+        result["current_stage"] = {
+            "key": "ongoing_unconfirmed",
+            "label": "Currently Going On — exact court stage needs confirmation",
+            "progress": 0,
+            "evidence_terms": [f"case status: {case.status}"],
+        }
+        result["next_generic_stage"] = {
+            "key": "confirm_latest_order",
+            "label": "Check the latest court order and next hearing",
+        }
+        result["stage_confidence"] = "moderate"
+        result["warnings"] = [
+            warning for warning in result["warnings"]
+            if not warning.startswith("No reliable procedural-stage phrase")
+        ]
+        result["warnings"].append(
+            "The case is marked as ongoing, but the precise court stage must be confirmed from the latest order."
+        )
     result["source_case"] = {
         "id": case.id,
         "case_number": case.case_number,

@@ -334,7 +334,7 @@ def test_client_cannot_claim_a_case(client):
     assert response.status_code == 403
 
 
-def test_case_prediction_honestly_reports_unavailable(client):
+def test_case_prediction_returns_honest_evidence_assessment_without_fake_percentage(client, monkeypatch):
     lawyer = register_user(client, email="lawyer8@example.com")
 
     r = client.post(
@@ -344,13 +344,23 @@ def test_case_prediction_honestly_reports_unavailable(client):
     )
     case_id = r.json()["id"]
 
+    monkeypatch.setattr(
+        "ai.qa.rag._generate_answer",
+        lambda *args, **kwargs: (
+            "The current record is limited. Add verified documents before drawing an outcome scenario.",
+            "fake/test",
+        ),
+    )
     response = client.get(f"/api/v1/cases/{case_id}/prediction", headers=lawyer)
     assert response.status_code == 200
     data = response.json()
-    assert data["available"] is False
+    assert data["available"] is True
     assert data["probability"] is None
+    assert data["assessment_type"] == "procedural_guidance"
     assert data["factors"] == []
-    assert "not been generated" in data["disclaimer"].lower()
+    assert data["assessment_type"] == "ai_scenario_analysis"
+    assert "limited" in data["assessment"].lower()
+    assert "no win percentage" in data["disclaimer"].lower()
 
 
 def test_case_prediction_enforces_the_same_ownership_rules(client):
@@ -368,6 +378,34 @@ def test_case_prediction_enforces_the_same_ownership_rules(client):
 
     response = client.get(f"/api/v1/cases/{case_id}/prediction", headers=other_client_headers)
     assert response.status_code == 404
+
+
+def test_child_custody_prediction_has_actionable_fallback_without_ai_provider(client, monkeypatch):
+    lawyer = register_user(client, email="custody-roadmap@example.com")
+    created = client.post(
+        "/api/v1/cases",
+        json={
+            "title": "Child custody and visitation",
+            "case_type": "Family",
+            "status": "Active",
+            "priority": "High",
+            "description": "The child lives with me and the other parent is asking for custody.",
+        },
+        headers=lawyer,
+    )
+    case_id = created.json()["id"]
+    monkeypatch.setattr("ai.qa.rag._generate_answer", lambda *args, **kwargs: (None, None))
+
+    response = client.get(f"/api/v1/cases/{case_id}/prediction", headers=lawyer)
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["probability"] is None
+    assert data["case_stage"] == "Currently Going On"
+    assert data["matter"] == "Child custody / guardianship"
+    assert any("interim custody or visitation" in item for item in data["next_steps"])
+    assert any("B-Form" in item for item in data["preparation_checklist"])
+    assert any("court order" in item.lower() for item in data["needs_confirmation"])
 
 
 def test_client_can_access_pathway_intelligence_for_their_own_case(client):
@@ -390,6 +428,33 @@ def test_client_can_access_pathway_intelligence_for_their_own_case(client):
     response = client.get(f"/api/v1/cases/{case_id}/pathway-intelligence", headers=client_headers)
     assert response.status_code == 200
     assert response.json()["source_case"]["id"] == case_id
+
+
+def test_pathway_uses_case_title_and_active_status_when_order_stage_is_unknown(client):
+    lawyer = register_user(client, email="mehr-pathway@example.com")
+    created = client.post(
+        "/api/v1/cases",
+        json={
+            "title": "Haq meher case",
+            "case_type": "Civil",
+            "status": "Review",
+            "priority": "Medium",
+            "description": "My husband disputes the money and property claimed in the case.",
+        },
+        headers=lawyer,
+    )
+
+    response = client.get(
+        f"/api/v1/cases/{created.json()['id']}/pathway-intelligence",
+        headers=lawyer,
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["current_stage"]["key"] == "ongoing_unconfirmed"
+    assert data["current_stage"]["label"].startswith("Currently Going On")
+    assert data["next_generic_stage"]["key"] == "confirm_latest_order"
+    assert any(issue["issue"] == "Dower / Mehr" for issue in data["detected_issues"])
 
 
 def test_pathway_intelligence_still_enforces_ownership_for_unrelated_clients(client):
@@ -473,6 +538,46 @@ def test_client_ai_question_uses_selected_case_description_without_documents(cli
     assert "security deposit" in body["answer"].lower()
     assert "useful next steps" in body["answer"].lower()
     assert "bank statements" in body["answer"].lower()
+
+
+def test_ai_receives_unverified_ocr_as_labelled_working_material(client, monkeypatch):
+    headers = register_user(client, email="ocr-working-context@example.com")
+    _make_client("ocr-working-context@example.com")
+    created = client.post(
+        "/api/v1/cases/request",
+        json={
+            "title": "Haq meher case",
+            "case_type": "Family",
+            "description": "I dispute the other party's money allegation and seek return of my property.",
+        },
+        headers=headers,
+    )
+    case_id = created.json()["id"]
+    uploaded = client.post(
+        "/api/v1/documents/upload",
+        data={"case_id": str(case_id)},
+        files={"file": ("court-order.png", b"fake image", "image/png")},
+        headers=headers,
+    )
+    assert uploaded.status_code == 201
+    assert uploaded.json()["ocr_review_status"] == "needs_review"
+
+    captured = {}
+
+    def fake_generate(question, contexts, background_context, history):
+        captured["background"] = background_context
+        return ("I deny the allegation as recorded and rely on the documents listed below, subject to OCR verification.", "fake/test")
+
+    monkeypatch.setattr("ai.qa.rag._generate_answer", fake_generate)
+    response = client.post(
+        "/api/v1/ask",
+        json={"question": "Write a response on my behalf.", "case_id": case_id},
+        headers=headers,
+    )
+
+    assert response.status_code == 200
+    assert "UNVERIFIED OCR WORKING MATERIAL" in captured["background"]
+    assert "court-order" in captured["background"]
     assert body["confidence"]["level"] == "low"
     assert "case" in body["confidence"]["reason"].lower()
     assert body["model"] == "case-guidance"

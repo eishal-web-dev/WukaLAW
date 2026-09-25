@@ -14,6 +14,7 @@ from app.models import Case, CaseEvent, Chunk, Document, User
 from app.routers.search import OVERFETCH_FACTOR, chunks_to_sources
 from app.schemas import AskRequest, AskResponse
 from app.services.case_intelligence_service import (
+    build_case_pathway_guidance,
     build_case_intelligence_profile,
     render_case_intelligence_profile,
 )
@@ -41,7 +42,29 @@ def _selected_case_context(case: Case | None, db: Session | None = None) -> str 
     if case is None:
         return None
     if db is not None:
-        return render_case_intelligence_profile(build_case_intelligence_profile(db, case))
+        profile_text = render_case_intelligence_profile(build_case_intelligence_profile(db, case))
+        documents = db.scalars(
+            select(Document)
+            .where(Document.case_id == case.id)
+            .order_by(Document.created_at.desc())
+            .limit(6)
+        ).all()
+        working_material: list[str] = []
+        for document in documents:
+            excerpt = " ".join((document.text or "").split())[:1800]
+            if not excerpt:
+                continue
+            if document.ocr_used and document.ocr_review_status != "verified":
+                label = "UNVERIFIED OCR WORKING MATERIAL — may contain recognition errors"
+            else:
+                label = "VERIFIED/SEARCHABLE DOCUMENT MATERIAL"
+            working_material.append(f"[{label}] {document.title}: {excerpt}")
+        if working_material:
+            profile_text += (
+                "\n\nDocument working material for synthesis. Do not quote uncertain OCR as exact text "
+                "or present it as proven fact:\n" + "\n".join(working_material)
+            )
+        return profile_text
     fields = [
         f"case number: {case.case_number}",
         f"case title: {case.title}",
@@ -101,17 +124,29 @@ def _friendly_case_guidance(case: Case, question: str, history: list[dict], db: 
             f"\n\nFrom our earlier conversation, I also understand that you said: “{remembered}” "
             "I am treating this as your statement, not as a verified fact."
         )
+    pathway = build_case_pathway_guidance(case)
+    documents = [] if db is None else list(db.scalars(
+        select(Document).where(Document.case_id == case.id).order_by(Document.created_at.desc()).limit(6)
+    ).all())
+    document_lines = "\n".join(
+        f"• {document.title} — "
+        + ("OCR needs review before its wording can be relied on." if document.ocr_used and document.ocr_review_status != "verified" else "available as supporting material.")
+        for document in documents
+    )
+    position = (
+        "My position, based on the saved case account, is that "
+        + description[0].lower() + description[1:] if description else "My full position still needs to be recorded."
+    )
     return (
-        f"I understand your case is currently marked {case.status}. "
-        f"The issue recorded in your case is: {description}{clarification}\n\n"
+        f"Your case is recorded as {pathway['case_stage']} and appears to concern {pathway['matter']}.\n\n"
+        f"Draft position on your behalf\n{position}{clarification}\n\n"
+        + (f"Documents considered\n{document_lines}\n\n" if document_lines else "")
         + (f"Your latest recorded update ({latest_update.event_date}) says: {latest_update.text}\n\n" if latest_update else "")
-        + "Useful next steps:\n"
-        "1. Write a dated timeline of what happened, including payments, property, conversations, and handovers.\n"
-        "2. Collect supporting evidence such as bank statements, receipts, messages, photographs, ownership records, and witness details.\n"
-        "3. Keep the original files unchanged and give copies to your lawyer.\n"
-        f"4. {deadline}\n"
-        "5. Ask your lawyer which reply, application, or evidence must be filed next; the saved case details alone do not show the court's next order.\n\n"
-        "I can also help you turn your facts into a clear timeline or evidence checklist."
+        + "What to prepare now\n"
+        + "\n".join(f"{index}. {item}" for index, item in enumerate(pathway["preparation_checklist"], 1))
+        + f"\n\n{deadline}\n\n"
+        "This is a working draft from your account, not a claim that every disputed fact has been proved. "
+        "A configured AI provider is required for a fully rewritten, document-by-document legal narrative."
     )
 
 
