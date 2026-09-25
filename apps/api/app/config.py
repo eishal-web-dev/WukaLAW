@@ -32,6 +32,9 @@ class Settings(BaseSettings):
     ocr_language: str = "eng+urd"
     ocr_max_pages: int = 50  # safety cap so a huge scanned PDF can't hang an upload request
     tesseract_cmd: str = ""  # optional full path, useful on Windows when Tesseract is not on PATH
+    ocr_provider: str = "tesseract"  # tesseract (offline) or gemini (vision OCR)
+    ocr_gemini_model: str = "gemini-3.6-flash"
+    gemini_api_key: str = ""
 
     # AWS/S3. boto3 uses its standard credential chain: IAM task/instance role
     # in AWS, and AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY for local development.
@@ -42,6 +45,16 @@ class Settings(BaseSettings):
 
     ollama_base_url: str = "http://localhost:11434"
     ollama_model: str = "qwen2.5:3b"
+
+    # Answer generation for both RAG endpoints. ``auto`` uses the first
+    # configured provider and falls through when a provider is unavailable.
+    rag_llm_provider: str = "auto"
+    rag_llm_fallback_order: str = "gemini,groq,openai,ollama"
+    gemini_model: str = "gemini-3.6-flash"
+    groq_api_key: str = ""
+    groq_model: str = "llama-3.3-70b-versatile"
+    openai_api_key: str = ""
+    openai_model: str = "gpt-4.1-mini"
 
     # auth — override SECRET_KEY in .env for anything beyond local development
     secret_key: str = "dev-only-change-me"

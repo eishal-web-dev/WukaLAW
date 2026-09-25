@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import {
-  ArrowLeft, Calendar, FileText, User, Send, AlertCircle, RefreshCw, Sparkles, Clock,
+  ArrowLeft, Calendar, FileText, User, Send, AlertCircle, RefreshCw, Sparkles, Clock, Trash2,
 } from 'lucide-react'
 import {
-  getCase, listCaseDocuments, getCaseTimeline, askCaseQuestion, updateCase, errorMessage,
+  getCase, listCaseDocuments, getCaseTimeline, askCaseQuestion, updateCase, deleteDocument, errorMessage,
 } from '../lib/api'
 import type { Case, DocumentMeta, TimelineEvent, AskResponse } from '../lib/api'
 import { formatDate, excerpt } from '../lib/format'
@@ -33,6 +33,7 @@ export default function ClientWorkspace() {
   const [descriptionDraft, setDescriptionDraft] = useState('')
   const [descriptionError, setDescriptionError] = useState<string | null>(null)
   const [savingDescription, setSavingDescription] = useState(false)
+  const [deletingDocumentId, setDeletingDocumentId] = useState<number | null>(null)
 
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [input, setInput] = useState('')
@@ -66,6 +67,20 @@ export default function ClientWorkspace() {
       setLoading(false)
     }
   }, [caseId])
+
+  const removeDocument = async (document: DocumentMeta) => {
+    if (!window.confirm(`Delete "${document.title}"? This removes it from your case and AI search. This cannot be undone.`)) return
+    setDeletingDocumentId(document.id)
+    setError(null)
+    try {
+      await deleteDocument(document.id)
+      await load()
+    } catch (err) {
+      setError(errorMessage(err))
+    } finally {
+      setDeletingDocumentId(null)
+    }
+  }
 
   useEffect(() => {
     void load()
@@ -257,17 +272,28 @@ export default function ClientWorkspace() {
           <p className="p-5 text-sm text-muted-foreground">No documents have been added to this case yet.</p>
         ) : (
           documents.map((d) => (
-            <button
+            <div
               key={d.id}
-              onClick={() => navigate(`/documents/${d.id}`)}
               className="w-full text-left flex items-center gap-3 px-5 py-3 border-b border-border last:border-0 hover:bg-sidebar-accent transition-colors"
             >
-              <FileText size={15} className="text-muted-foreground flex-shrink-0" />
-              <div className="min-w-0 flex-1">
-                <div className="text-sm text-foreground truncate">{d.title}</div>
-                <div className="text-xs text-muted-foreground">{formatDate(d.created_at)}</div>
-              </div>
-            </button>
+              <button onClick={() => navigate(`/documents/${d.id}`)} className="flex items-center gap-3 min-w-0 flex-1 text-left">
+                <FileText size={15} className="text-muted-foreground flex-shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <div className="text-sm text-foreground truncate">{d.title}</div>
+                  <div className="text-xs text-muted-foreground">{formatDate(d.created_at)}</div>
+                </div>
+              </button>
+              <button
+                type="button"
+                title="Delete document"
+                aria-label={`Delete ${d.title}`}
+                disabled={deletingDocumentId === d.id}
+                onClick={() => void removeDocument(d)}
+                className="p-2 rounded-lg text-muted-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-50"
+              >
+                <Trash2 size={15} />
+              </button>
+            </div>
           ))
         )}
       </Card>

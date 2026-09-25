@@ -28,6 +28,41 @@ class OcrUnavailableError(RuntimeError):
     or when OCR ran but produced no usable text."""
 
 
+def _ocr_with_gemini(path: Path, mime_type: str) -> str:
+    """Strict transcription with vision; never ask the model for legal analysis."""
+    if not settings.gemini_api_key.strip():
+        raise OcrUnavailableError("OCR_PROVIDER=gemini requires GEMINI_API_KEY in apps/api/.env.")
+    try:
+        from google import genai
+        from google.genai import types
+    except ImportError as exc:
+        raise OcrUnavailableError("Gemini OCR requires the google-genai Python package.") from exc
+
+    prompt = """Transcribe this Pakistani legal document exactly.
+Preserve Urdu Nastaliq, English words, dates, phone numbers, amounts, headings,
+numbered paragraphs, and page order. Do not translate, summarize, correct legal
+wording, or invent missing text. Write [ناقابلِ مطالعہ] wherever characters are
+genuinely unreadable. Return only the transcription as plain text, with no
+Markdown fences and no commentary."""
+    try:
+        client = genai.Client(api_key=settings.gemini_api_key.strip())
+        response = client.models.generate_content(
+            model=settings.ocr_gemini_model,
+            contents=[
+                types.Part.from_bytes(data=path.read_bytes(), mime_type=mime_type),
+                prompt,
+            ],
+        )
+    except Exception as exc:
+        raise OcrUnavailableError(f"Gemini vision OCR failed: {type(exc).__name__}") from exc
+    text = str(getattr(response, "text", "") or "").strip()
+    if text.startswith("```") and text.endswith("```"):
+        text = text.split("\n", 1)[-1].rsplit("```", 1)[0].strip()
+    if not text:
+        raise OcrUnavailableError("Gemini vision OCR returned no text.")
+    return text
+
+
 def _configure_tesseract(pytesseract) -> str:
     """Locate the native executable, including standard Windows installs."""
     configured = settings.tesseract_cmd.strip()
@@ -155,6 +190,12 @@ def ocr_available() -> bool:
     without raising. Used to give a clear pre-flight error message."""
     if settings.fake_ocr:
         return True
+    if settings.ocr_provider.casefold() == "gemini":
+        try:
+            from google import genai  # noqa: F401
+        except ImportError:
+            return False
+        return bool(settings.gemini_api_key.strip())
     try:
         import pytesseract
 
@@ -176,6 +217,8 @@ def ocr_pdf(path: Path) -> str:
     """
     if settings.fake_ocr:
         return _fake_ocr(path)
+    if settings.ocr_provider.casefold() == "gemini":
+        return _ocr_with_gemini(path, "application/pdf")
 
     try:
         import pytesseract
@@ -212,6 +255,12 @@ def ocr_image(path: Path) -> str:
     """Read text in an image, with the same local OCR requirement as PDFs."""
     if settings.fake_ocr:
         return _fake_ocr(path)
+    if settings.ocr_provider.casefold() == "gemini":
+        mime_types = {
+            ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
+            ".webp": "image/webp", ".tif": "image/tiff", ".tiff": "image/tiff",
+        }
+        return _ocr_with_gemini(path, mime_types.get(path.suffix.lower(), "image/jpeg"))
     try:
         import pytesseract
         from PIL import Image, UnidentifiedImageError
