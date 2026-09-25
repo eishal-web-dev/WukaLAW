@@ -103,7 +103,7 @@ describe('ClientCourtPrediction', () => {
     vi.mocked(api.listCases).mockResolvedValue({ items: [makeCase({ case_type: 'Family', status: 'Currently Going On' })], total: 1 })
     vi.mocked(api.getCasePrediction).mockResolvedValue({
       available: true,
-      assessment_type: 'evidence_readiness',
+      assessment_type: 'procedural_guidance',
       assessment: 'This is an active child custody matter.',
       generated_at: '2026-09-25T00:00:00Z',
       probability: null,
