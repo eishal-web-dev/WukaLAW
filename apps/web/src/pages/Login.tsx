@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { Scale, Star, Mail, Lock, Sun, Moon } from 'lucide-react'
+import { Star, Mail, Lock, Sun, Moon } from 'lucide-react'
 import { useAuth } from '../lib/auth'
 import { errorMessage } from '../lib/api'
 import { usePublicTokens } from '../components/PublicShell'
@@ -9,6 +9,7 @@ import ErrorAlert from '../components/ErrorAlert'
 import PortalSelector from '../components/PortalSelector'
 import { isPortal, portalHome, PORTAL_LABELS } from '../lib/portals'
 import type { Portal } from '../lib/portals'
+import { wukaIcon } from '../figma/assets'
 
 const ADMIN_EMAIL = 'admin@gmail.com'
 
@@ -61,10 +62,8 @@ export default function Login() {
       {/* Left panel */}
       <div className="hidden lg:flex flex-col justify-between w-[45%] p-12 border-r" style={{ backgroundColor: SURF, borderColor: BD }}>
         <button onClick={() => navigate('/')} className="flex items-center gap-3" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: GA }}>
-            <Scale size={16} color={dark ? '#0D1117' : '#FFFFFF'} />
-          </div>
-          <span style={{ color: TX, fontWeight: 700 }}>WukaLAW</span>
+          <img src={wukaIcon} alt="wukaLAW logo" className="w-10 h-10 object-contain" />
+          <span style={{ color: TX, fontWeight: 700 }}>wukaLAW</span>
         </button>
         <div>
           <div className="flex mb-3 gap-1">
@@ -73,7 +72,7 @@ export default function Login() {
             ))}
           </div>
           <blockquote style={{ fontSize: 20, fontWeight: 500, color: TX, lineHeight: 1.6, marginBottom: 24 }}>
-            "WukaLAW's explainable AI gives us the evidence trail we need to trust an answer before we act on it."
+            "wukaLAW's explainable AI gives us the evidence trail we need to trust an answer before we act on it."
           </blockquote>
           <div className="flex items-center gap-3">
             <Avatar name="Legal Research Team" size="md" />
@@ -90,10 +89,8 @@ export default function Login() {
       <div className="flex-1 flex items-center justify-center p-8" style={{ backgroundColor: BG }}>
         <div className="w-full max-w-sm">
           <div className="lg:hidden flex items-center gap-3 mb-8 justify-center">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: GA }}>
-              <Scale size={16} color={dark ? '#0D1117' : '#FFFFFF'} />
-            </div>
-            <span style={{ color: TX, fontWeight: 700, fontSize: 18 }}>WukaLAW</span>
+            <img src={wukaIcon} alt="wukaLAW logo" className="w-10 h-10 object-contain" />
+            <span style={{ color: TX, fontWeight: 700, fontSize: 18 }}>wukaLAW</span>
           </div>
           <h2 style={{ fontSize: 24, fontWeight: 700, color: TX, marginBottom: 4 }}>Welcome back</h2>
           <p style={{ color: TX2, fontSize: 14, marginBottom: 32 }}>Choose your portal, then sign in to your account.</p>
