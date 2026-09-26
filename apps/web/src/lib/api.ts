@@ -1,5 +1,5 @@
 /**
- * WakuLaw API client.
+ * wukaLAW API client.
  *
  * Base URL comes from VITE_API_BASE_URL. In local development it defaults to
  * /api/v1, which Vite proxies to FastAPI. Using a same-origin path avoids CORS
@@ -307,7 +307,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     })
   } catch {
     throw new ApiError(
-      `Could not reach the WukaLAW API at ${API_BASE_URL}.`,
+      `Could not reach the wukaLAW API at ${API_BASE_URL}.`,
       0,
     )
   }
@@ -361,7 +361,7 @@ async function del(path: string): Promise<void> {
     })
   } catch {
     throw new ApiError(
-      `Could not reach the WukaLAW API at ${API_BASE_URL}.`,
+      `Could not reach the wukaLAW API at ${API_BASE_URL}.`,
       0,
     )
   }
@@ -789,7 +789,7 @@ export function uploadDocument(
     xhr.onerror = () =>
       reject(
         new ApiError(
-          `Could not reach the WukaLAW API at ${API_BASE_URL}.`,
+          `Could not reach the wukaLAW API at ${API_BASE_URL}.`,
           0,
         ),
       )
