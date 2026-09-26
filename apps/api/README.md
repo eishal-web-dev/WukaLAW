@@ -1,5 +1,33 @@
 # WakuLaw API
 
+## Enable real Similar Cases locally
+
+Similar Cases searches a separate Pakistani-judgment collection. User uploads
+in `wakulaw_user_documents` are intentionally never presented as precedent.
+Stop the API first (embedded Qdrant permits only one process to open its local
+storage). From the repository root, activate the virtual environment and run:
+
+```powershell
+python scripts\bootstrap_similar_cases.py --limit 5000 --device cpu
+```
+
+This downloads public Supreme Court of Pakistan judgment records from
+`Ibtehaj10/supreme-court-of-pak-judgments`, runs the existing cleaning,
+chunking and embedding pipeline, then creates and fills
+`wakulaw_real_5000`. The first run downloads the embedding model and can take
+significant time on CPU. For a quick end-to-end check use `--limit 25`.
+
+Keep these values in the root `.env`, restart the API, and open Similar Cases:
+
+```dotenv
+QDRANT_COLLECTION=wakulaw_real_5000
+QDRANT_LOCAL_PATH=datasets/processed/qdrant_real_5000
+```
+
+Review the source dataset and model card for licensing and fitness before
+deploying or redistributing the corpus. Search results are research leads, not
+verified legal advice or a personal probability of winning.
+
 FastAPI backend + AI modules (preprocessing, embeddings, FAISS retrieval, extractive summarization, RAG Q&A). Runs fully local and free.
 
 ## Setup
