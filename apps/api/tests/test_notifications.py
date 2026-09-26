@@ -10,7 +10,7 @@ def test_notification_lifecycle_and_real_case_event(client):
     assert initial.status_code == 200
     assert initial.json()["total"] == 1
     assert initial.json()["unread"] == 1
-    assert initial.json()["items"][0]["title"] == "Welcome to WukaLAW"
+    assert initial.json()["items"][0]["title"] == "Welcome to wukaLAW"
 
     created_case = client.post(
         "/api/v1/cases",
