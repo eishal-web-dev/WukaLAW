@@ -126,7 +126,7 @@ export function CPLayout({ nav, current, children, rightPanel, navigate }: {
 
 export function CPDashboardPageV2({ navigate }: NavProps) {
   const { user } = useAuth();
-  const displayName = user?.name?.trim() || "WukaLAW User";
+  const displayName = user?.name?.trim() || "wukaLAW User";
   const displayEmail = user?.email?.trim();
   const recentActivity = [
     { icon: <Brain size={13} color={P} />, text: "AI prediction updated: 85% win probability", time: "2m ago", bg: `${P}15` },
@@ -700,7 +700,7 @@ export function CPWorkspacePage({ navigate }: NavProps) {
             <Sparkles size={14} color="#fff" />
           </div>
           <div>
-            <div className="text-xs font-bold text-foreground">WukaLAW AI</div>
+            <div className="text-xs font-bold text-foreground">wukaLAW AI</div>
             <div className="text-[10px] text-muted-foreground flex items-center gap-1">
               <div className="w-1.5 h-1.5 rounded-full bg-green-400" /> Online · WL-2024-003
             </div>
@@ -1172,7 +1172,7 @@ export function CPExplainablePage({ navigate }: NavProps) {
         <AIBadge text="Transparent Decisions" />
       </div>
       <div className="bg-card border border-border rounded-2xl p-5 mb-4">
-        <div className="font-bold text-foreground mb-2">Why does WukaLAW predict 85% win probability?</div>
+        <div className="font-bold text-foreground mb-2">Why does wukaLAW predict 85% win probability?</div>
         <p className="text-sm text-muted-foreground leading-relaxed mb-4">Our AI analyzed 47 similar cases and 6 evidence categories. Here's exactly what's driving the prediction:</p>
         <div className="flex flex-col gap-3">
           {[
@@ -1198,7 +1198,7 @@ export function CPExplainablePage({ navigate }: NavProps) {
       <div className="bg-card border border-border rounded-2xl p-5">
         <div className="font-bold text-foreground mb-3">Model Transparency</div>
         <div className="grid grid-cols-3 gap-4 text-center text-xs">
-          {[["Training Cases","200,000+"],["Model Version","WukaLAW-Predict v4.2"],["Last Retrained","Mar 1, 2024"],["Validation Accuracy","94.2%"],["Confidence Interval","±4.1%"],["Data Sources","SC, 4 HCs, District Courts"]].map(([k,v])=>(
+          {[["Training Cases","200,000+"],["Model Version","wukaLAW-Predict v4.2"],["Last Retrained","Mar 1, 2024"],["Validation Accuracy","94.2%"],["Confidence Interval","±4.1%"],["Data Sources","SC, 4 HCs, District Courts"]].map(([k,v])=>(
             <div key={k} className="p-3 bg-sidebar-accent rounded-xl">
               <div className="text-muted-foreground mb-1">{k}</div>
               <div className="font-bold text-foreground">{v}</div>
