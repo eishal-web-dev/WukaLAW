@@ -41,12 +41,7 @@ function LogoMark() {
     <img
       src={wukaIcon}
       alt="wukaLAW logo"
-      style={{
-        width: 32,
-        height: 32,
-        objectFit: 'contain',
-        display: 'block',
-      }}
+      style={{ width: 32, height: 32, objectFit: 'contain', display: 'block' }}
     />
   )
 }
