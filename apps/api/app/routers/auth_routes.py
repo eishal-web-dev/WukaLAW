@@ -30,7 +30,7 @@ def register(request: RegisterRequest, db: Session = Depends(get_db)):
         db,
         user_id=user.id,
         notification_type="system",
-        title="Welcome to WukaLAW",
+        title="Welcome to wukaLAW",
         body="Your secure legal workspace is ready. Create a case or upload a document to get started.",
         action_url="/client" if user.role == "client" else "/dashboard",
     )
