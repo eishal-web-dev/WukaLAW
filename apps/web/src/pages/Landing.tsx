@@ -61,7 +61,7 @@ export default function Landing() {
       {/* ══ HERO ══ */}
       <section style={{ position: 'relative', zIndex: 1, padding: '40px 24px 80px' }}>
         <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, textAlign: 'center', fontSize: 'min(22vw, 260px)', fontWeight: 900, color: WMK, lineHeight: 0.85, letterSpacing: '-0.05em', pointerEvents: 'none', userSelect: 'none', overflow: 'hidden', zIndex: 0 }}>
-          WAKULAW
+          wukaLAW
         </div>
 
         <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', userSelect: 'none', overflow: 'hidden', zIndex: 0 }}>
@@ -92,7 +92,7 @@ export default function Landing() {
               </h1>
 
               <p style={{ fontSize: 16, color: TX2, lineHeight: 1.8, maxWidth: 440 }}>
-                From Pakistan's Supreme Court to High Courts nationwide — WakuLaw combines decades of legal expertise with AI intelligence to deliver outcomes that matter.
+                From Pakistan's Supreme Court to High Courts nationwide — wukaLAW combines decades of legal expertise with AI intelligence to deliver outcomes that matter.
               </p>
             </div>
 
@@ -476,12 +476,12 @@ export default function Landing() {
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: 64 }}>
             <h2 style={{ fontSize: 'clamp(26px, 3.5vw, 44px)', fontWeight: 800, color: TX, letterSpacing: '-0.03em' }}>
-              Pakistan's top attorneys trust WakuLaw.
+              Pakistan's top attorneys trust wukaLAW.
             </h2>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }}>
             {[
-              { name: 'Justice (R) Fakhruddin', role: 'Former Supreme Court Judge, Karachi', text: "The AI prediction model's accuracy on constitutional matters is exceptional. WakuLaw represents the future of Pakistani legal practice.", avatar: 'FG', color: GA },
+              { name: 'Justice (R) Fakhruddin', role: 'Former Supreme Court Judge, Karachi', text: "The AI prediction model's accuracy on constitutional matters is exceptional. wukaLAW represents the future of Pakistani legal practice.", avatar: 'FG', color: GA },
               { name: 'Barrister Ayesha Mirza', role: 'Managing Partner, Mirza Law Associates', text: 'As a woman in Pakistani law, having AI-backed data on judicial patterns has transformed how we prepare our cases before the High Court.', avatar: 'AM', color: dark ? '#4F8EF7' : '#3070D0' },
               { name: 'Advocate Tariq Hussain', role: 'Senior Counsel, Lahore Bar', text: 'The similar case search found a Lahore High Court ruling from 2019 that our opponent had no idea about. That precedent won us the case.', avatar: 'TH', color: '#A78BFA' },
             ].map((t) => (
