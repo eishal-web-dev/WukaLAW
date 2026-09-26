@@ -1,6 +1,3 @@
-Warning: truncated output (original token count: 50773)
-Total output lines: 2607
-
 // @ts-nocheck -- faithfully imported Figma Make presentation components
 /* oxlint-disable -- preserve generated Figma Make source without semantic rewrites */
 import React, { useState, useRef, useEffect } from "react";
@@ -1339,7 +1336,52 @@ export function PricingPage({ navigate, dark, toggleDark }: { navigate: (p: Page
       desc: "Large firms and corporate legal departments",
       recommended: false,
       features: [
-        { label: "Active cases", va…773 tokens truncated…ck={() => setAnnual(a => !a)}
+        { label: "Active cases", value: "Unlimited" },
+        { label: "AI court prediction", value: true },
+        { label: "Case workspace", value: true },
+        { label: "Document storage", value: "Unlimited" },
+        { label: "Dedicated CSM", value: true },
+        { label: "Similar case search", value: true },
+        { label: "Team seats", value: "Custom" },
+        { label: "API access", value: true },
+        { label: "White-label", value: true },
+      ],
+    },
+  ];
+
+  const faqs = [
+    { q: "How accurate is wukaLAW's AI prediction?", a: "Our AI achieves 94.2% accuracy verified against historical Pakistani court cases spanning 2010–2024." },
+    { q: "Is my client data secure?", a: "Zero-knowledge architecture. AES-256 + TLS 1.3. Your data is never used to train our models — ever." },
+    { q: "Does it work for all Pakistani courts?", a: "Supreme Court, all 4 High Courts, Federal Shariat Court, and district courts across all provinces including AJK and GB." },
+    { q: "How quickly can I get started?", a: "Most firms onboard in under 30 minutes. Solo practitioners self-serve in minutes with guided setup." },
+    { q: "Can I import existing cases?", a: "Yes — PDF, DOCX, Excel/Sheets, CSV. Plus direct integrations with Clio, Thomson Reuters, and LexisNexis." },
+    { q: "Is there a free trial?", a: "14-day free trial on all plans. No credit card required. Enterprise trials available with a demo call." },
+  ];
+
+  const price = (monthly: number | null) => {
+    if (monthly === null) return "Custom";
+    const v = annual ? Math.round(monthly * 0.8) : monthly;
+    return `PKR ${v.toLocaleString()}`;
+  };
+
+  return (
+    <div style={{ minHeight: "100vh", backgroundColor: BG, fontFamily: "Inter, sans-serif" }}>
+      <PublicNav navigate={navigate} dark={dark} toggleDark={toggleDark} current="pricing" />
+
+      {/* Hero */}
+      <section style={{ padding: "80px 24px 60px", textAlign: "center" as const }}>
+        <div style={{ maxWidth: 640, margin: "0 auto" }}>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "5px 16px", borderRadius: 999, backgroundColor: `${GA}15`, marginBottom: 24 }}>
+            <div style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: GA }} />
+            <span style={{ fontSize: 11, color: GA, fontWeight: 700, letterSpacing: "0.08em" }}>14-DAY FREE TRIAL · NO CREDIT CARD</span>
+          </div>
+          <h1 style={{ fontSize: "clamp(32px, 5vw, 60px)", fontWeight: 900, color: TX, letterSpacing: "-0.04em", lineHeight: 1.08, marginBottom: 20 }}>Simple, transparent pricing</h1>
+          <p style={{ fontSize: 18, color: TX2, marginBottom: 40, lineHeight: 1.6 }}>Start free, scale as you grow. Every plan includes full AI capabilities.</p>
+
+          {/* Monthly/Annual Toggle */}
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 12, padding: "6px 6px 6px 16px", borderRadius: 999, border: `1px solid ${BD}`, backgroundColor: CARDBG }}>
+            <span style={{ fontSize: 13, fontWeight: 600, color: annual ? TX2 : TX }}>Monthly</span>
+            <button onClick={() => setAnnual(a => !a)}
               style={{ width: 48, height: 26, borderRadius: 999, border: "none", cursor: "pointer", position: "relative", backgroundColor: annual ? GA : dark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.1)", transition: "background-color 0.2s" }}>
               <div style={{ width: 20, height: 20, borderRadius: "50%", backgroundColor: "#FFFFFF", position: "absolute", top: 3, left: annual ? 25 : 3, transition: "left 0.2s" }} />
             </button>
