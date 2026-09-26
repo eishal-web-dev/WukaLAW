@@ -89,7 +89,9 @@ export default function Login() {
       <div className="flex-1 flex items-center justify-center p-8" style={{ backgroundColor: BG }}>
         <div className="w-full max-w-sm">
           <div className="lg:hidden flex items-center gap-3 mb-8 justify-center">
-            <img src={wukaIcon} alt="wukaLAW logo" className="w-10 h-10 object-contain" />
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: GA }}>
+              <Scale size={16} color={dark ? '#0D1117' : '#FFFFFF'} />
+            </div>
             <span style={{ color: TX, fontWeight: 700, fontSize: 18 }}>wukaLAW</span>
           </div>
           <h2 style={{ fontSize: 24, fontWeight: 700, color: TX, marginBottom: 4 }}>Welcome back</h2>
