@@ -109,7 +109,7 @@ export default function Explainable() {
           <Card className="p-5">
             <div className="text-sm font-semibold text-foreground mb-3">Model Info</div>
             <div className="space-y-2 text-xs">
-              {[['Model Version', 'WakuLaw v4.2'], ['Training Cases', '50,247'], ['Accuracy', '94.2%'], ['Last Update', 'Mar 1, 2024'], ['Method', 'Bayesian + BERT'], ['Confidence Interval', '74%–89%']].map(([k, v]) => (
+              {[['Model Version', 'wukaLAW v4.2'], ['Training Cases', '50,247'], ['Accuracy', '94.2%'], ['Last Update', 'Mar 1, 2024'], ['Method', 'Bayesian + BERT'], ['Confidence Interval', '74%–89%']].map(([k, v]) => (
                 <div key={String(k)} className="flex justify-between">
                   <span className="text-muted-foreground">{k}</span>
                   <span className="text-foreground font-medium">{v}</span>

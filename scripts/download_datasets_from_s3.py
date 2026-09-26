@@ -1,4 +1,4 @@
-"""Restore WukaLAW's private legal corpus from S3-compatible storage.
+"""Restore wukaLAW's private legal corpus from S3-compatible storage.
 
 Only objects below ``datasets/raw/`` are downloaded by default. User-upload
 objects are outside that prefix and are never touched. Equal-size local files
@@ -38,7 +38,7 @@ def _safe_destination(destination: Path, key: str, prefix: str) -> Path:
 
 def parser() -> argparse.ArgumentParser:
     value = argparse.ArgumentParser(
-        description="Download the WukaLAW legal source corpus from private S3-compatible storage"
+        description="Download the wukaLAW legal source corpus from private S3-compatible storage"
     )
     value.add_argument("--bucket", default=os.getenv("AWS_S3_BUCKET"))
     value.add_argument("--region", default=os.getenv("AWS_REGION", "ap-south-1"))
@@ -67,7 +67,7 @@ def main(argv=None) -> int:
         import boto3
     except ImportError:
         print(
-            "boto3 is not installed in this Python environment. Activate the WukaLAW virtual environment "
+            "boto3 is not installed in this Python environment. Activate the wukaLAW virtual environment "
             "and run: python -m pip install -r apps/api/requirements.txt"
         )
         return 2

@@ -5,6 +5,7 @@
  */
 import { useNavigate } from 'react-router-dom'
 import { useTheme } from '../lib/theme'
+import { wukaIcon } from '../figma/assets'
 
 export interface PublicTokens {
   BG: string
@@ -35,34 +36,13 @@ export function usePublicTokens(): PublicTokens & { dark: boolean; toggleDark: (
   }
 }
 
-function LogoMark({ dark, GA }: { dark: boolean; GA: string }) {
+function LogoMark() {
   return (
-    <div
-      style={{
-        width: 32,
-        height: 32,
-        borderRadius: 10,
-        backgroundColor: GA,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
-    >
-      <svg
-        width="16"
-        height="16"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke={dark ? '#0D1117' : '#FFFFFF'}
-        strokeWidth="2.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <path d="M12 2L2 7l10 5 10-5-10-5z" />
-        <path d="M2 17l10 5 10-5" />
-        <path d="M2 12l10 5 10-5" />
-      </svg>
-    </div>
+    <img
+      src={wukaIcon}
+      alt="wukaLAW logo"
+      style={{ width: 32, height: 32, objectFit: 'contain', display: 'block' }}
+    />
   )
 }
 
@@ -104,8 +84,8 @@ export function PublicNav({ current }: { current?: string }) {
           onClick={() => navigate('/')}
           style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'none', border: 'none', cursor: 'pointer' }}
         >
-          <LogoMark dark={dark} GA={GA} />
-          <span style={{ color: TX, fontWeight: 800, fontSize: 18, letterSpacing: '-0.03em' }}>WakuLaw</span>
+          <LogoMark />
+          <span style={{ color: TX, fontWeight: 800, fontSize: 18, letterSpacing: '-0.03em' }}>wukaLAW</span>
           <span
             style={{
               fontSize: 10,
@@ -228,7 +208,7 @@ export function PublicFooter() {
                 <path d="M2 12l10 5 10-5" />
               </svg>
             </div>
-            <span style={{ color: TX, fontWeight: 800, fontSize: 16 }}>WakuLaw</span>
+            <span style={{ color: TX, fontWeight: 800, fontSize: 16 }}>wukaLAW</span>
           </div>
           <p style={{ fontSize: 13, color: TX2, lineHeight: 1.7, maxWidth: 260 }}>
             Pakistan's premier AI legal intelligence platform. Serving advocates since 2024.
@@ -268,7 +248,7 @@ export function PublicFooter() {
           alignItems: 'center',
         }}
       >
-        <span style={{ fontSize: 12, color: TX2 }}>© 2024 WakuLaw Inc. · Karachi, Pakistan</span>
+        <span style={{ fontSize: 12, color: TX2 }}>© 2024 wukaLAW Inc. · Karachi, Pakistan</span>
         <span style={{ fontSize: 12, color: TX2 }}>Built for Pakistan's legal community</span>
       </div>
     </footer>

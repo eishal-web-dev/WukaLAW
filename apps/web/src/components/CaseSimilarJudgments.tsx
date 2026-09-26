@@ -198,7 +198,7 @@ export default function CaseSimilarJudgments({ caseId }: { caseId: number | stri
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <div className="text-sm font-semibold text-foreground">Find cases like mine</div>
-              <div className="text-xs text-muted-foreground mt-1">Let WukaLAW choose the details, or tell it exactly what matters.</div>
+              <div className="text-xs text-muted-foreground mt-1">Let wukaLAW choose the details, or tell it exactly what matters.</div>
             </div>
             <div className="flex gap-2 rounded-xl bg-white/[0.025] p-1 border border-white/[0.06]">
               <motion.button whileTap={reduceMotion ? undefined : { scale: 0.97 }} onClick={() => switchMode('auto')} className={`px-3 py-2 rounded-lg text-xs font-medium transition-colors ${mode === 'auto' ? 'bg-[#D4AF37]/12 text-foreground border border-[#D4AF37]/35' : 'text-muted-foreground border border-transparent hover:text-foreground'}`}>
@@ -428,7 +428,7 @@ export default function CaseSimilarJudgments({ caseId }: { caseId: number | stri
 
                                   <div className="rounded-lg border border-sky-500/15 bg-sky-500/[0.025] p-3 flex items-start gap-2">
                                     <Database size={13} className="text-sky-400 mt-0.5 flex-shrink-0" />
-                                    <div className="text-[10px] text-muted-foreground leading-relaxed">This match comes from WukaLAW's indexed Pakistani case library. Open the full case story only if you need deeper research.</div>
+                                    <div className="text-[10px] text-muted-foreground leading-relaxed">This match comes from wukaLAW's indexed Pakistani case library. Open the full case story only if you need deeper research.</div>
                                   </div>
                                   <PrecedentBrief caseId={caseId} documentId={item.document_id} />
                                 </div>

@@ -117,7 +117,7 @@ def _answer_prompt(
     )
     conversation_block = f"\n\nConversation so far:\n{history_block}" if history_block else ""
     return (
-        "You are WukaLAW's client-facing legal information assistant. Give a direct, "
+        "You are wukaLAW's client-facing legal information assistant. Give a direct, "
         "plain-language answer to the user's actual question. Synthesize the material; "
         "NEVER copy or merely repeat the case description or document passages. Address "
         "the user as 'you' and, when helpful, give concrete next steps or an evidence checklist.\n\n"

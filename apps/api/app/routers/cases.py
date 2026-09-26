@@ -631,7 +631,7 @@ def case_prediction(case_id: int, db: Session = Depends(get_db), user: User = De
         **pathway,
         "disclaimer": (
             "Decision-support only, not legal advice or a court prediction. No win percentage is shown because "
-            "WukaLAW does not yet have a validated, calibrated Pakistani outcome model. Verify documents, law, "
+            "wukaLAW does not yet have a validated, calibrated Pakistani outcome model. Verify documents, law, "
             "citations and strategy with a qualified lawyer."
         ),
     }
