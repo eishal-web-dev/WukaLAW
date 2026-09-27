@@ -46,10 +46,10 @@ class Settings(BaseSettings):
     ollama_base_url: str = "http://localhost:11434"
     ollama_model: str = "qwen2.5:3b"
 
-    # Answer generation for both RAG endpoints. ``auto`` uses the first
-    # configured provider and falls through when a provider is unavailable.
-    rag_llm_provider: str = "auto"
-    rag_llm_fallback_order: str = "gemini,groq,openai,ollama"
+    # Answer generation defaults to local Ollama so a Gemini key used for OCR
+    # cannot silently change the assistant model. Set ``auto`` deliberately.
+    rag_llm_provider: str = "ollama"
+    rag_llm_fallback_order: str = "ollama,groq,gemini,openai"
     gemini_model: str = "gemini-3.6-flash"
     groq_api_key: str = ""
     groq_model: str = "llama-3.3-70b-versatile"

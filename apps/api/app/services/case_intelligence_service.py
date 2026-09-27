@@ -41,7 +41,7 @@ def build_case_pathway_guidance(case: Case) -> dict:
             "Names of witnesses with first-hand knowledge of the child's care; avoid coaching the child or altering evidence.",
         ]
         confirmations = [
-            "Whether an interim or final custody/visitation order already exists.",
+            "Whether an interim or final court order for custody or visitation already exists.",
             "Who currently has physical care of the child and whether contact is being allowed.",
             "The child's age, schooling, health or safety needs, and the exact relief requested.",
         ]
