@@ -65,13 +65,15 @@ def download(dataset: str, output: Path, *, limit: int, page_size: int = 100, ti
     config, split = _resolve_config_split(dataset, getter)
     output.mkdir(parents=True, exist_ok=True)
     downloaded = skipped = rejected = offset = 0
-    while downloaded + skipped < limit:
-        length = min(page_size, limit - downloaded - skipped)
+    while offset < limit:
+        # The limit is the number of source rows examined, including rejected
+        # rows. Otherwise a rejected row can be fetched and counted again.
+        length = min(page_size, limit - offset)
         query = urllib.parse.urlencode({"dataset": dataset, "config": config, "split": split, "offset": offset, "length": length})
         rows = getter(f"{DEFAULT_API}/rows?{query}").get("rows") or []
         if not rows:
             break
-        for wrapper in rows:
+        for wrapper in rows[:length]:
             row_index = int(wrapper.get("row_idx", offset))
             row = wrapper.get("row") or {}
             if not isinstance(row, dict):
@@ -87,7 +89,7 @@ def download(dataset: str, output: Path, *, limit: int, page_size: int = 100, ti
             else:
                 target.write_text(text.replace("\x00", ""), encoding="utf-8", newline="\n")
                 downloaded += 1
-        offset += len(rows)
+        offset += min(len(rows), length)
         if len(rows) < length:
             break
         time.sleep(0.05)
