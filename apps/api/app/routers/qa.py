@@ -374,7 +374,10 @@ def _ask_impl(request: AskRequest, db: Session, user: User) -> dict:
         history=history,
         search_question=retrieval_question,
     )
-    if selected_case is not None and (not sources or answer_text == rag.NOT_ENOUGH):
+    # A configured model can synthesize a useful answer from the selected case
+    # profile even when vector search found no high-scoring passage. Preserve
+    # that answer; use the deterministic fallback only when generation failed.
+    if selected_case is not None and (answer_text == rag.NOT_ENOUGH or model in {"none", "extractive-fallback"}):
         answer_text = _friendly_case_guidance(selected_case, request.question, history, db)
         level = "low"
         reason = (
