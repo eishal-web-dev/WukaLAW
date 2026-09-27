@@ -310,6 +310,9 @@ export default function CaseSimilarJudgments({ caseId }: { caseId: number | stri
                 <div className="text-right">
                   <div className="text-3xl font-bold tabular-nums" style={{ color: G }}>{data.historical_outcomes.favourable_ratio}%</div>
                   <div className="text-[10px] text-muted-foreground">favourable to initiating party</div>
+                  <div className="text-[10px] text-muted-foreground mt-0.5">
+                    based on {data.historical_outcomes.outcomes_available} outcome-known matched case{data.historical_outcomes.outcomes_available === 1 ? '' : 's'}
+                  </div>
                 </div>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-4 text-center">
