@@ -39,6 +39,24 @@ documents are read with both models. On Windows, rerun the Tesseract installer,
 select **Additional language data → Urdu**, and restart the API. You can verify
 the installation with `tesseract --list-langs`; it must list both `eng` and `urd`.
 
+### Higher-quality Urdu Nastaliq OCR
+
+Tesseract can be unreliable for dense Nastaliq court documents. WukaLAW can
+instead send the original image/PDF to Gemini's vision model for strict
+transcription. Configure `apps/api/.env`:
+
+```env
+OCR_PROVIDER=gemini
+OCR_GEMINI_MODEL=gemini-3.6-flash
+GEMINI_API_KEY=your-key
+```
+
+This is opt-in because the document leaves the local machine and is processed
+by Google. Obtain the document owner's consent and follow the applicable data
+protection and professional-confidentiality requirements. Regardless of the
+provider, OCR output remains in **Needs review** state and is excluded from AI
+answers until a user verifies it.
+
 Without them, scanned PDFs are still rejected with a clear message rather than the app crashing — OCR is attempted only if `pytesseract` reports the `tesseract` binary is actually available. Set `OCR_ENABLED=false` in `.env` to skip the OCR attempt entirely and go straight to that rejection message.
 
 ## Optional: better Q&A answers with a local LLM
