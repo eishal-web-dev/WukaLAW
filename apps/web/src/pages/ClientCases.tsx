@@ -7,7 +7,10 @@ import { formatDate } from '../lib/format'
 import { Card, Badge, Input, G } from '../components/design'
 import Spinner from '../components/Spinner'
 
-const TABS: (CaseStatus | 'All')[] = ['All', 'Active', 'Review', 'On Hold', 'Closed']
+const TABS: (CaseStatus | 'All')[] = [
+  'All', 'Started', 'Currently Going On', 'Case Complete', 'On Hold',
+  'Active', 'Review', 'Closed',
+]
 
 export default function ClientCases() {
   const navigate = useNavigate()
@@ -67,7 +70,7 @@ export default function ClientCases() {
       (filter === 'All' || c.status === filter) &&
       (c.title.toLowerCase().includes(search.toLowerCase()) || c.case_number.toLowerCase().includes(search.toLowerCase())),
   )
-  const activeCount = items.filter((c) => c.status === 'Active').length
+  const activeCount = items.filter((c) => ['Started', 'Currently Going On', 'Active', 'Review'].includes(c.status)).length
 
   return (
     <div className="p-6 sm:p-8 max-w-5xl mx-auto space-y-5">

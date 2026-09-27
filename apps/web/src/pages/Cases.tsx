@@ -10,7 +10,16 @@ import { Btn, Card, Badge, Input, KPICard, G } from '../components/design'
 import ErrorAlert from '../components/ErrorAlert'
 import Spinner from '../components/Spinner'
 
-const STATUSES: CaseStatus[] = ['Active', 'Review', 'On Hold', 'Closed']
+const STATUSES: CaseStatus[] = [
+  'Started',
+  'Currently Going On',
+  'Case Complete',
+  'On Hold',
+  // Kept visible for existing records created before the stage names changed.
+  'Active',
+  'Review',
+  'Closed',
+]
 const PRIORITIES: CasePriority[] = ['Low', 'Medium', 'High', 'Critical']
 
 interface CaseFormState {
@@ -23,7 +32,7 @@ interface CaseFormState {
 }
 
 const EMPTY_FORM: CaseFormState = {
-  title: '', case_type: '', status: 'Active', priority: 'Medium', description: '', deadline: '',
+  title: '', case_type: '', status: 'Started', priority: 'Medium', description: '', deadline: '',
 }
 
 function selectClass() {
@@ -175,7 +184,7 @@ export default function Cases() {
       (c.title.toLowerCase().includes(search.toLowerCase()) ||
         c.case_number.toLowerCase().includes(search.toLowerCase())),
   )
-  const activeCount = cases.filter((c) => c.status === 'Active').length
+  const activeCount = cases.filter((c) => ['Started', 'Currently Going On', 'Active', 'Review'].includes(c.status)).length
   const upcomingDeadlineCount = cases.filter((c) => c.deadline).length
   const totalDocs = cases.reduce((sum, c) => sum + c.num_documents, 0)
 

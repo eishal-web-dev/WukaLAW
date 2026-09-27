@@ -36,6 +36,20 @@ def test_case_rejects_bad_status(client):
     assert response.status_code == 422
 
 
+def test_case_accepts_user_friendly_lifecycle_stages(client):
+    headers = register_user(client, email="stages@example.com")
+    created = _create_case(client, headers, status="Started")
+    assert created.status_code == 201, created.text
+    case_id = created.json()["id"]
+
+    for stage in ("Currently Going On", "Case Complete"):
+        response = client.patch(
+            f"/api/v1/cases/{case_id}", json={"status": stage}, headers=headers
+        )
+        assert response.status_code == 200, response.text
+        assert response.json()["status"] == stage
+
+
 def test_case_isolation_between_users(client):
     headers_a = register_user(client, email="a@case.com")
     headers_b = register_user(client, email="b@case.com")

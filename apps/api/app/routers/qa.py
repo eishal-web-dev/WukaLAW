@@ -13,6 +13,10 @@ from app.db import get_db
 from app.models import Case, CaseEvent, Chunk, Document, User
 from app.routers.search import OVERFETCH_FACTOR, chunks_to_sources
 from app.schemas import AskRequest, AskResponse
+from app.services.case_intelligence_service import (
+    build_case_intelligence_profile,
+    render_case_intelligence_profile,
+)
 
 router = APIRouter(tags=["qa"])
 logger = logging.getLogger(__name__)
@@ -36,6 +40,8 @@ def _selected_case_context(case: Case | None, db: Session | None = None) -> str 
     """Build private AI context from the selected client's real case record."""
     if case is None:
         return None
+    if db is not None:
+        return render_case_intelligence_profile(build_case_intelligence_profile(db, case))
     fields = [
         f"case number: {case.case_number}",
         f"case title: {case.title}",
@@ -322,7 +328,10 @@ def _ask_impl(request: AskRequest, db: Session, user: User) -> dict:
 
     # Only retrieved document passages carry similarity scores. The case
     # record is useful background, but it must never inflate confidence.
-    answer_contexts = [(source.text, source.score) for source in sources]
+    answer_contexts = [
+        (f"Document: {source.document_title}\nPassage: {source.text}", source.score)
+        for source in sources
+    ]
     answer_text, level, reason, model = rag.answer(
         request.question,
         answer_contexts,
@@ -330,7 +339,7 @@ def _ask_impl(request: AskRequest, db: Session, user: User) -> dict:
         history=history,
         search_question=retrieval_question,
     )
-    if selected_case is not None and not sources:
+    if selected_case is not None and (not sources or answer_text == rag.NOT_ENOUGH):
         answer_text = _friendly_case_guidance(selected_case, request.question, history, db)
         level = "low"
         reason = (
