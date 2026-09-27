@@ -9,6 +9,7 @@ vi.mock('../../lib/api', () => ({
   getCase: vi.fn(),
   listCaseDocuments: vi.fn(),
   analyzeCaseContradictions: vi.fn(),
+  deleteDocument: vi.fn(),
   uploadDocument: vi.fn(),
   errorMessage: (err: unknown) =>
     err instanceof Error ? err.message : 'Something went wrong.',
