@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Calendar, FileText, BookOpen, Sparkles, CalendarClock, GitCompareArrows } from 'lucide-react'
-import { getCase, listCaseDocuments, analyzeCaseContradictions, errorMessage } from '../lib/api'
+import { ArrowLeft, Calendar, FileText, BookOpen, Sparkles, CalendarClock, GitCompareArrows, Trash2 } from 'lucide-react'
+import { getCase, listCaseDocuments, analyzeCaseContradictions, deleteDocument, errorMessage } from '../lib/api'
 import type { Case, DocumentMeta, ContradictionsResponse } from '../lib/api'
 import { formatBytes, formatDate } from '../lib/format'
 import { Btn, Card, Badge, G } from '../components/design'
@@ -21,6 +21,7 @@ export default function CaseDetail() {
   const [analyzing, setAnalyzing] = useState(false)
   const [contradictions, setContradictions] = useState<ContradictionsResponse | null>(null)
   const [analysisError, setAnalysisError] = useState<string | null>(null)
+  const [deletingDocumentId, setDeletingDocumentId] = useState<number | null>(null)
 
   const detectContradictions = async () => {
     if (!id) return
@@ -49,6 +50,20 @@ export default function CaseDetail() {
       setLoading(false)
     }
   }, [id])
+
+  const removeDocument = async (document: DocumentMeta) => {
+    if (!window.confirm(`Delete "${document.title}"? This removes it from the case and AI search. This cannot be undone.`)) return
+    setDeletingDocumentId(document.id)
+    setError(null)
+    try {
+      await deleteDocument(document.id)
+      await refresh()
+    } catch (err) {
+      setError(errorMessage(err))
+    } finally {
+      setDeletingDocumentId(null)
+    }
+  }
 
   useEffect(() => {
     void refresh()
@@ -245,12 +260,10 @@ export default function CaseDetail() {
             {docs.map((d) => (
               <Card
                 key={d.id}
-                className="p-4 hover:border-white/10 transition-all cursor-pointer"
+                className="p-4 hover:border-white/10 transition-all"
               >
-                <button
-                  className="flex items-start gap-4 w-full text-left"
-                  onClick={() => navigate(`/documents/${d.id}`)}
-                >
+                <div className="flex items-start gap-4 w-full">
+                  <button className="flex items-start gap-4 flex-1 min-w-0 text-left" onClick={() => navigate(`/documents/${d.id}`)}>
                   <div className="p-2.5 rounded-xl flex-shrink-0" style={{ backgroundColor: `${G}15` }}>
                     <FileText size={16} style={{ color: G }} />
                   </div>
@@ -270,7 +283,18 @@ export default function CaseDetail() {
                       </span>
                     )}
                   </div>
-                </button>
+                  </button>
+                  <button
+                    type="button"
+                    title="Delete document"
+                    aria-label={`Delete ${d.title}`}
+                    disabled={deletingDocumentId === d.id}
+                    onClick={() => void removeDocument(d)}
+                    className="p-2 rounded-lg text-muted-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-50"
+                  >
+                    <Trash2 size={15} />
+                  </button>
+                </div>
               </Card>
             ))}
           </div>
