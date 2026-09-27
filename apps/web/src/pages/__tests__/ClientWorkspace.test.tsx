@@ -10,6 +10,8 @@ vi.mock('../../lib/api', () => ({
   listCaseDocuments: vi.fn(),
   getCaseTimeline: vi.fn(),
   askCaseQuestion: vi.fn(),
+  updateCase: vi.fn(),
+  deleteDocument: vi.fn(),
   errorMessage: (err: unknown) =>
     err instanceof Error ? err.message : 'Something went wrong.',
 }))
