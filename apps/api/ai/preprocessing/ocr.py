@@ -66,6 +66,8 @@ Markdown fences and no commentary."""
 def _configure_tesseract(pytesseract) -> str:
     """Locate the native executable, including standard Windows installs."""
     configured = settings.tesseract_cmd.strip()
+    if configured and not Path(configured).is_file():
+        raise OcrUnavailableError(f"TESSERACT_CMD points to a missing file: {configured}")
     candidates = [configured] if configured else []
     executable = shutil.which("tesseract")
     if executable:
@@ -81,8 +83,6 @@ def _configure_tesseract(pytesseract) -> str:
             except AttributeError as exc:
                 raise OcrUnavailableError("The pytesseract installation is incomplete.") from exc
             return candidate
-    if configured:
-        raise OcrUnavailableError(f"TESSERACT_CMD points to a missing file: {configured}")
     raise OcrUnavailableError(
         "Tesseract executable was not found. Install Tesseract OCR, add it to PATH, "
         "or set TESSERACT_CMD in .env (usually C:\\Program Files\\Tesseract-OCR\\tesseract.exe)."

@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -20,8 +22,12 @@ from app.schemas import (
     DocumentList,
     TimelineResponse,
 )
+from app.services.case_intelligence_service import (
+    build_case_pathway_guidance,
+    build_case_intelligence_profile,
+    render_case_intelligence_profile,
+)
 from app.services.notification_service import create_notification
-from app.services.case_intelligence_service import build_case_intelligence_profile
 
 router = APIRouter(prefix="/cases", tags=["cases"])
 
@@ -51,6 +57,55 @@ CASE_TYPE_HINTS = {
     "labour": "Pakistani labour and employment-law dispute",
     "employment": "Pakistani labour and employment-law dispute",
 }
+
+
+def _historical_outcome_summary(results: list[dict]) -> dict:
+    """Summarise explicit dispositions without claiming a win probability."""
+    buckets = {"favourable": 0, "unfavourable": 0, "partial_or_mixed": 0, "unclear": 0}
+    seen: set[str] = set()
+    favourable_rows: list[dict] = []
+    for row in results:
+        document_id = str(row.get("document_id") or row.get("canonical_chunk_id") or "")
+        if document_id and document_id in seen:
+            continue
+        if document_id:
+            seen.add(document_id)
+        outcome = str(row.get("explicit_outcome_phrase") or "").casefold()
+        if not outcome:
+            buckets["unclear"] += 1
+        elif any(term in outcome for term in ("partly allowed", "partially allowed", "partly decreed", "modified")):
+            buckets["partial_or_mixed"] += 1
+        elif any(term in outcome for term in ("dismissed", "rejected", "declined", "disallowed")):
+            buckets["unfavourable"] += 1
+        elif any(term in outcome for term in ("allowed", "accepted", "decreed", "granted")):
+            buckets["favourable"] += 1
+            favourable_rows.append(row)
+        else:
+            buckets["unclear"] += 1
+
+    known = buckets["favourable"] + buckets["unfavourable"] + buckets["partial_or_mixed"]
+    signals: list[str] = []
+    for row in favourable_rows:
+        for factor in row.get("matching_factors") or []:
+            label, value = str(factor.get("factor") or ""), str(factor.get("value") or "")
+            if label == "same_specific_issue" and value:
+                signals.append(f"The same specific legal issue: {value.replace('_', ' ')}")
+            elif label == "shared_section" and value:
+                signals.append(f"A shared statutory reference: Section {value}")
+        for law in (row.get("laws_cited") or [])[:2]:
+            signals.append(f"Law appearing in a favourable matched judgment: {law}")
+
+    return {
+        "matched_cases": len(seen) if seen else len(results),
+        "outcomes_available": known,
+        **buckets,
+        "favourable_ratio": round((buckets["favourable"] / known) * 100) if known else None,
+        "successful_case_signals": list(dict.fromkeys(signals))[:6],
+        "meaning": (
+            "Share of outcome-known matched judgments favourable to the plaintiff, petitioner or appellant. "
+            "It is not this user's probability of winning."
+        ),
+    }
 
 
 def _get_owned_case(db: Session, case_id: int, user: User) -> Case:
@@ -139,19 +194,17 @@ def _run_similar_search(
     focus: str | None = None,
 ) -> dict:
     situation = _similar_case_seed(case, documents, focus=focus)
+    corpus_unavailable: str | None = None
     try:
-        from ai.vectorstore.config import QdrantSettings
+        from ai.vectorstore.config import QdrantSettings, resolve_legal_collection
         from ai.vectorstore.qdrant_client import get_shared_qdrant_client
 
         corpus = QdrantSettings.from_env()
-        if not get_shared_qdrant_client(corpus).client.collection_exists(corpus.collection):
-            raise HTTPException(
-                status_code=503,
-                detail=f"Pakistani judgments collection '{corpus.collection}' is missing. Check QDRANT_COLLECTION and QDRANT_LOCAL_PATH in your .env, or import the legal corpus before searching similar cases.",
-            )
+        qdrant = get_shared_qdrant_client(corpus)
+        resolved_collection, _ = resolve_legal_collection(qdrant, corpus)
         from app.routers.similar_cases import get_similar_case_pipeline
 
-        result = get_similar_case_pipeline().run(
+        result = get_similar_case_pipeline(resolved_collection).run(
             SimilarCaseRequest(
                 situation=situation,
                 top_k=top_k,
@@ -164,13 +217,37 @@ def _run_similar_search(
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     except RuntimeError as exc:
-        raise HTTPException(status_code=503, detail=f"Similar-case service unavailable: {exc}") from exc
+        message = str(exc)
+        if "collection" in message.lower() and ("not found" in message.lower() or "missing" in message.lower()):
+            corpus_unavailable = message
+        else:
+            raise HTTPException(status_code=503, detail=f"Similar-case service unavailable: {exc}") from exc
     except Exception as exc:
         if "not found" in str(exc).lower() and "collection" in str(exc).lower():
-            raise HTTPException(status_code=503, detail="Pakistani judgments collection is missing. Check QDRANT_COLLECTION and QDRANT_LOCAL_PATH in your .env, or import the legal corpus.") from exc
+            corpus_unavailable = str(exc)
         if "connection" in str(exc).lower() or "refused" in str(exc).lower():
             raise HTTPException(status_code=503, detail="Cannot reach the legal corpus. Set QDRANT_LOCAL_PATH to your indexed local collection or start the configured Qdrant server.") from exc
-        raise
+        if corpus_unavailable is None:
+            raise
+
+    if corpus_unavailable is not None:
+        # Missing infrastructure is not a malformed client case. Return a
+        # stable empty state so the pathway remains useful and the UI does not
+        # expose Qdrant collection names or configuration instructions.
+        result = {
+            "normalized_query": situation,
+            "total_candidates": 0,
+            "results": [],
+            "warnings": [
+                "The Pakistani judgments library has not been installed on this server yet. Your case details and pathway are still available."
+            ],
+            "processing_time_ms": 0,
+            "corpus_available": False,
+        }
+    else:
+        result["corpus_available"] = True
+
+    result["historical_outcomes"] = _historical_outcome_summary(result.get("results") or [])
 
     result["source_case"] = {
         "id": case.id,
@@ -491,28 +568,71 @@ def case_documents(case_id: int, db: Session = Depends(get_db), user: User = Dep
 
 @router.get("/{case_id}/prediction")
 def case_prediction(case_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    """Court-outcome prediction contract for a case.
+    """Evidence-grounded scenario assessment without an invented percentage."""
+    case = _get_owned_case(db, case_id, user)
+    profile = build_case_intelligence_profile(db, case)
+    pathway = build_case_pathway_guidance(case)
+    documents = db.scalars(
+        select(Document).where(Document.case_id == case.id).order_by(Document.created_at.desc())
+    ).all()
+    verified = [
+        document for document in documents
+        if not document.ocr_used or document.ocr_review_status == "verified"
+    ]
+    contexts = [
+        f"Document: {document.title}\nVerified excerpt: {' '.join((document.text or '').split())[:3000]}"
+        for document in verified[:4]
+        if (document.text or "").strip()
+    ]
 
-    There is no prediction engine implemented anywhere in this codebase --
-    no model, no training data, no scoring logic. This endpoint exists so
-    the frontend has a real, honest contract to call rather than showing a
-    fabricated percentage: available is always false right now, and the
-    frontend must render that as 'Not generated', never a fake number.
-    When a real prediction engine is built, this is the endpoint it should
-    populate -- the shape (available, generated_at, probability, factors,
-    disclaimer) is what a real result would look like.
-    """
-    _get_owned_case(db, case_id, user)  # enforces the same ownership/visibility rules
+    from ai.qa import rag as qa_rag
+
+    generated, model = qa_rag._generate_answer(
+        (
+            "Assess this case without giving a win percentage. Explain what currently supports the user's "
+            "position, what the opposing side may dispute, what is missing, and realistic procedural or "
+            "evidentiary scenarios. Use short headings. Do not invent Pakistani law, court orders, facts or outcomes."
+        ),
+        contexts,
+        render_case_intelligence_profile(profile),
+        [],
+    )
+
+    supporting_factors = []
+    if profile["verified_documents"]:
+        supporting_factors.append(
+            f"{len(profile['verified_documents'])} verified searchable document(s) are available for analysis."
+        )
+    if profile["timeline"]:
+        supporting_factors.append(f"{len(profile['timeline'])} dated timeline update(s) provide chronology.")
+    if profile["evidence_inventory"]:
+        supporting_factors.append(
+            f"{len(profile['evidence_inventory'])} additional evidence file(s) are recorded but their contents are not yet verified."
+        )
+    if case.deadline:
+        supporting_factors.append(f"The next recorded deadline is {case.deadline}.")
+
     return {
-        "available": False,
-        "generated_at": None,
+        "available": True,
+        "assessment_type": "ai_scenario_analysis" if generated else "procedural_guidance",
+        "model": model,
+        "assessment": generated or (
+            f"This {pathway['matter'].lower()} matter is recorded as {pathway['case_stage']}. The roadmap below explains the usual "
+            "preparation stages suggested by the saved case details. Confirm the exact next step against the "
+            "latest court order with your lawyer, because the record does not establish what the court has "
+            "already directed."
+        ),
+        "generated_at": datetime.now(timezone.utc).isoformat(),
         "probability": None,
         "factors": [],
+        "supporting_factors": supporting_factors,
+        "missing_information": profile["readiness"]["missing_information"],
+        "readiness": profile["readiness"]["ready_for_assisted_analysis"],
+        **pathway,
         "disclaimer": (
-            "Court outcome prediction has not been generated for this case. "
-            "This feature estimates a rough likelihood based on case documents "
-            "and is not legal advice -- when available, always treat it as one "
-            "input among many, not a determination of how your case will go."
+            "Decision-support only, not legal advice or a court prediction. No win percentage is shown because "
+            "WukaLAW does not yet have a validated, calibrated Pakistani outcome model. Verify documents, law, "
+            "citations and strategy with a qualified lawyer."
         ),
     }
 

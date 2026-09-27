@@ -671,9 +671,20 @@ export interface CasePredictionFactor {
 
 export interface CasePrediction {
   available: boolean
+  assessment_type?: 'ai_scenario_analysis' | 'procedural_guidance' | 'evidence_readiness'
+  model?: string
+  assessment?: string
   generated_at: string | null
   probability: number | null
   factors: CasePredictionFactor[]
+  supporting_factors?: string[]
+  missing_information?: string[]
+  readiness?: boolean
+  matter?: string
+  case_stage?: string
+  next_steps?: string[]
+  preparation_checklist?: string[]
+  needs_confirmation?: string[]
   disclaimer: string
 }
 

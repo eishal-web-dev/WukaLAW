@@ -45,7 +45,8 @@ def _content_terms(text: str) -> set[str]:
 
 _INTERROGATIVES = frozenset(
     "what who whom whose why how when where which did does do is are was were can "
-    "could should would will shall list explain tell describe compare summarize state".split()
+    "could should would will shall list explain tell describe compare summarize state "
+    "write draft prepare respond reply argue".split()
 )
 
 VAGUE_MESSAGE = (
@@ -120,11 +121,19 @@ def _answer_prompt(
         "plain-language answer to the user's actual question. Synthesize the material; "
         "NEVER copy or merely repeat the case description or document passages. Address "
         "the user as 'you' and, when helpful, give concrete next steps or an evidence checklist.\n\n"
+        "Writing mode:\n"
+        "- If the user asks you to draft, write, reply, explain their position, or answer on their behalf, "
+        "produce a polished first-person working draft they can review with their lawyer.\n"
+        "- Otherwise organise the response under useful headings such as: Direct answer, Your position, "
+        "What supports it, What may be challenged, and What to prepare next. Omit headings that do not help.\n"
+        "- Reason across the documents and case history. Do not output a transcript, raw OCR dump, or generic checklist.\n\n"
         "Evidence rules:\n"
         "- The selected case record, case description, timeline and conversation are the "
         "user's background/account. Attribute disputed facts with phrases such as 'you say' "
         "or 'according to your case record'; do not present them as proven.\n"
-        "- Verified document passages are supporting evidence, but OCR text may contain errors.\n"
+        "- Verified document passages are supporting evidence. Material explicitly labelled UNVERIFIED OCR "
+        "may be used only as a lead or working context: paraphrase cautiously, flag uncertainty, and ask the "
+        "user to verify names, dates, amounts, and exact wording against the image.\n"
         "- Clearly distinguish allegations, document-supported facts, and anything still unknown.\n"
         "- Do not invent facts, Pakistani law, citations, court orders, outcomes or deadlines.\n"
         "- If the material cannot answer a point, identify exactly what is missing and explain "

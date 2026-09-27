@@ -32,7 +32,7 @@ export default function CasePathwayIntelligence({ caseId }: { caseId: number | s
   if (error) return <ErrorAlert message={error} />
   if (!data) return null
 
-  const stageKnown = data.current_stage.key !== 'unknown'
+  const stageKnown = !['unknown', 'ongoing_unconfirmed'].includes(data.current_stage.key)
 
   return (
     <Card className="p-4 border-[#D4AF37]/15">
