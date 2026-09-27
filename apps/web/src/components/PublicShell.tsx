@@ -185,29 +185,13 @@ export function PublicNav({ current }: { current?: string }) {
 
 export function PublicFooter() {
   const navigate = useNavigate()
-  const { dark, TX, TX2, GA, BD, SURF } = usePublicTokens()
+  const { TX, TX2, BD, SURF } = usePublicTokens()
   return (
     <footer style={{ borderTop: `1px solid ${BD}`, backgroundColor: SURF, padding: '48px 24px', fontFamily: 'Inter, sans-serif' }}>
       <div style={{ maxWidth: 1200, margin: '0 auto', display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', gap: 48 }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
-            <div
-              style={{
-                width: 30,
-                height: 30,
-                borderRadius: 9,
-                backgroundColor: GA,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={dark ? '#0D1117' : '#FFFFFF'} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 2L2 7l10 5 10-5-10-5z" />
-                <path d="M2 17l10 5 10-5" />
-                <path d="M2 12l10 5 10-5" />
-              </svg>
-            </div>
+            <LogoMark />
             <span style={{ color: TX, fontWeight: 800, fontSize: 16 }}>wukaLAW</span>
           </div>
           <p style={{ fontSize: 13, color: TX2, lineHeight: 1.7, maxWidth: 260 }}>
