@@ -75,7 +75,7 @@ export const RADAR_DATA = [
 ]
 
 export const INIT_MESSAGES: MockMessage[] = [
-  { id: 1, role: 'ai', text: 'Hello, I am WakuLaw AI. I have analyzed all documents and evidence for WL-2024-003 DataTech LLC IP Dispute. How can I assist you today?', time: '10:32 AM' },
+  { id: 1, role: 'ai', text: 'Hello, I am wukaLAW AI. I have analyzed all documents and evidence for WL-2024-003 DataTech LLC IP Dispute. How can I assist you today?', time: '10:32 AM' },
   { id: 2, role: 'user', text: 'What is the current win probability and what are the main risk factors?', time: '10:33 AM' },
   { id: 3, role: 'ai', text: 'Based on my analysis, the current win probability stands at **82%** — up from 76% after the expert witness report was filed.\n\nThe primary risk factors are:\n1. Prior art challenge from defendant (medium risk)\n2. Judge Wells has ruled against software patents in 3 of last 7 similar cases\n3. DataTech patent filing date predates the industry standard by only 14 days\n\nI recommend focusing on the functional uniqueness argument rather than novelty alone.', time: '10:33 AM' },
 ]

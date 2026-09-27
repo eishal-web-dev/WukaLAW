@@ -1,5 +1,5 @@
 /**
- * WakuLaw API client.
+ * wukaLAW API client.
  *
  * Base URL comes from VITE_API_BASE_URL. In local development it defaults to
  * /api/v1, which Vite proxies to FastAPI. Using a same-origin path avoids CORS
@@ -149,7 +149,14 @@ export interface SimilarCasesResponse {
   results: Source[]
 }
 
-export type CaseStatus = 'Active' | 'Review' | 'On Hold' | 'Closed'
+export type CaseStatus =
+  | 'Started'
+  | 'Currently Going On'
+  | 'Case Complete'
+  | 'Active'
+  | 'Review'
+  | 'On Hold'
+  | 'Closed'
 export type CasePriority = 'Low' | 'Medium' | 'High' | 'Critical'
 
 export interface Case {
@@ -300,7 +307,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     })
   } catch {
     throw new ApiError(
-      `Could not reach the WukaLAW API at ${API_BASE_URL}.`,
+      `Could not reach the wukaLAW API at ${API_BASE_URL}.`,
       0,
     )
   }
@@ -354,7 +361,7 @@ async function del(path: string): Promise<void> {
     })
   } catch {
     throw new ApiError(
-      `Could not reach the WukaLAW API at ${API_BASE_URL}.`,
+      `Could not reach the wukaLAW API at ${API_BASE_URL}.`,
       0,
     )
   }
@@ -664,9 +671,20 @@ export interface CasePredictionFactor {
 
 export interface CasePrediction {
   available: boolean
+  assessment_type?: 'ai_scenario_analysis' | 'procedural_guidance' | 'evidence_readiness'
+  model?: string
+  assessment?: string
   generated_at: string | null
   probability: number | null
   factors: CasePredictionFactor[]
+  supporting_factors?: string[]
+  missing_information?: string[]
+  readiness?: boolean
+  matter?: string
+  case_stage?: string
+  next_steps?: string[]
+  preparation_checklist?: string[]
+  needs_confirmation?: string[]
   disclaimer: string
 }
 
@@ -771,7 +789,7 @@ export function uploadDocument(
     xhr.onerror = () =>
       reject(
         new ApiError(
-          `Could not reach the WukaLAW API at ${API_BASE_URL}.`,
+          `Could not reach the wukaLAW API at ${API_BASE_URL}.`,
           0,
         ),
       )

@@ -220,7 +220,7 @@ export default function Workspace() {
                       <Users size={14} style={{ color: G }} /> Parties
                     </h4>
                     <div className="space-y-3">
-                      {[{ role: 'Plaintiff', name: 'DataTech LLC', rep: 'Sarah Chen, WakuLaw' }, { role: 'Defendant', name: 'NovaTech Systems Inc.', rep: 'Robert Hayes, Hayes & Partners' }].map((p) => (
+                      {[{ role: 'Plaintiff', name: 'DataTech LLC', rep: 'Sarah Chen, wukaLAW' }, { role: 'Defendant', name: 'NovaTech Systems Inc.', rep: 'Robert Hayes, Hayes & Partners' }].map((p) => (
                         <div key={p.role} className="p-3 rounded-lg border border-white/[0.05]">
                           <div className="text-[10px] text-muted-foreground mb-1">{p.role}</div>
                           <div className="text-xs font-semibold text-foreground">{p.name}</div>
@@ -402,7 +402,7 @@ export default function Workspace() {
                     >
                       {m.role === 'ai' && (
                         <div className="flex items-center gap-1.5 mb-1.5 text-[10px] font-semibold" style={{ color: G }}>
-                          <Sparkles size={10} /> WakuLaw AI
+                          <Sparkles size={10} /> wukaLAW AI
                         </div>
                       )}
                       <div className="whitespace-pre-line">{m.text}</div>

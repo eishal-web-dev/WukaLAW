@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""WakuLaw one-command launcher — works on Windows, macOS, and Linux.
+"""wukaLAW one-command launcher — works on Windows, macOS, and Linux.
 
     python run.py            # sets everything up and starts backend + frontend
     python run.py --setup    # only install dependencies, don't start servers
@@ -118,7 +118,7 @@ def start_servers(npm: str) -> None:
 
     print()
     info("=" * 56)
-    info("WakuLaw is running:")
+    info("wukaLAW is running:")
     info("  App:      http://localhost:5173")
     info("  API docs: http://localhost:8000/docs")
     info("Press Ctrl+C to stop both servers.")

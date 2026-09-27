@@ -141,7 +141,7 @@ def test_real_ocr_recovers_text_from_a_scanned_pdf(tmp_path, monkeypatch):
     monkeypatch.setattr(config_module.settings, "fake_ocr", False)
     # This fixture contains English only; Urdu support is checked separately.
     monkeypatch.setattr(config_module.settings, "ocr_language", "eng")
-    pdf_path = _build_scanned_pdf(tmp_path, "WAKULAW COURT ORDER TEST")
+    pdf_path = _build_scanned_pdf(tmp_path, "wukaLAW COURT ORDER TEST")
 
     # Sanity check: pypdf should find nothing, since this PDF is an image
     # with no embedded text layer.
@@ -151,7 +151,7 @@ def test_real_ocr_recovers_text_from_a_scanned_pdf(tmp_path, monkeypatch):
 
     recovered = ocr_module.ocr_pdf(pdf_path)
 
-    assert "WAKULAW" in recovered.upper()
+    assert "wukaLAW" in recovered.upper()
     assert "COURT" in recovered.upper()
 
 

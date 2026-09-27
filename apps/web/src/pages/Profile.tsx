@@ -39,7 +39,7 @@ export default function Profile() {
     }
   }, [])
 
-  const name = user?.name || 'WakuLaw User'
+  const name = user?.name || 'wukaLAW User'
   const initials = name
     .split(' ')
     .map((n) => n[0])
@@ -72,7 +72,7 @@ export default function Profile() {
               <h2 className="text-xl font-bold text-foreground">{name}</h2>
               <Badge label={user?.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : 'Member'} variant="Active" />
             </div>
-            <div className="text-muted-foreground text-sm mb-3">WakuLaw · AI Legal Intelligence</div>
+            <div className="text-muted-foreground text-sm mb-3">wukaLAW · AI Legal Intelligence</div>
             <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
               <span className="flex items-center gap-1.5"><Mail size={13} /> {user?.email ?? '—'}</span>
               <span className="flex items-center gap-1.5"><Hash size={13} /> Account ID {user?.id ?? '—'}</span>

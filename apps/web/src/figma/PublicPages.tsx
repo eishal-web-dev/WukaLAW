@@ -115,9 +115,9 @@ export function PublicNav({ navigate, dark, toggleDark, current }: PubProps) {
       <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 24px", height: 68, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         {/* Logo */}
         <button onClick={() => navigate("landing")} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 10 }}>
-          <img src={wukaIcon} alt="WukaLAW" style={{ width: 38, height: 38, objectFit: "contain" }} />
+          <img src={wukaIcon} alt="wukaLAW" style={{ width: 38, height: 38, objectFit: "contain" }} />
           <div>
-            <div style={{ color: TX, fontWeight: 800, fontSize: 17, letterSpacing: "-0.02em", lineHeight: 1 }}>WukaLAW</div>
+            <div style={{ color: TX, fontWeight: 800, fontSize: 17, letterSpacing: "-0.02em", lineHeight: 1 }}>wukaLAW</div>
             <div style={{ color: GA, fontSize: 9, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", marginTop: 2 }}>AI Legal Intelligence</div>
           </div>
         </button>
@@ -163,9 +163,9 @@ export function PublicFooter({ navigate, dark }: { navigate: (p: Page) => void; 
         <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", gap: 48, marginBottom: 48 }}>
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
-              <img src={wukaIcon} alt="WukaLAW" style={{ width: 40, height: 40, objectFit: "contain" }} />
+              <img src={wukaIcon} alt="wukaLAW" style={{ width: 40, height: 40, objectFit: "contain" }} />
               <div>
-                <div style={{ color: TX, fontWeight: 800, fontSize: 16, letterSpacing: "-0.02em" }}>WukaLAW</div>
+                <div style={{ color: TX, fontWeight: 800, fontSize: 16, letterSpacing: "-0.02em" }}>wukaLAW</div>
                 <div style={{ color: GA, fontSize: 9, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase" }}>AI Legal Intelligence</div>
               </div>
             </div>
@@ -188,7 +188,7 @@ export function PublicFooter({ navigate, dark }: { navigate: (p: Page) => void; 
           ))}
         </div>
         <div style={{ paddingTop: 24, borderTop: `1px solid ${BD}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <span style={{ fontSize: 12, color: TX2 }}>© 2024 WukaLAW Inc. · AI Legal Intelligence. Human Justice.</span>
+          <span style={{ fontSize: 12, color: TX2 }}>© 2024 wukaLAW Inc. · AI Legal Intelligence. Human Justice.</span>
           <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
             <div style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: "#34D399" }} />
             <span style={{ fontSize: 12, color: TX2 }}>All systems operational</span>
@@ -330,7 +330,7 @@ export function LandingPage({ navigate, dark, toggleDark }: { navigate: (p: Page
               ))}
             </div>
             <div style={{ fontSize: 13, color: TX2 }}>
-              <span style={{ fontWeight: 700, color: TX }}>2,400+</span> lawyers trust WukaLAW
+              <span style={{ fontWeight: 700, color: TX }}>2,400+</span> lawyers trust wukaLAW
             </div>
             <div style={{ display: "flex", gap: 2 }}>
               {[1,2,3,4,5].map(s => <div key={s} style={{ width: 12, height: 12, fontSize: 11 }}>⭐</div>)}
@@ -756,12 +756,12 @@ export function LandingPage({ navigate, dark, toggleDark }: { navigate: (p: Page
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
           <div style={{ textAlign: "center", marginBottom: 64 }}>
             <h2 style={{ fontSize: "clamp(26px, 3.5vw, 44px)", fontWeight: 800, color: TX, letterSpacing: "-0.03em" }}>
-              Pakistan's top attorneys trust WukaLAW.
+              Pakistan's top attorneys trust wukaLAW.
             </h2>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20 }}>
             {[
-              { name: "Justice (R) Fakhruddin", role: "Former Supreme Court Judge, Karachi", text: "The AI prediction model's accuracy on constitutional matters is exceptional. WukaLAW represents the future of Pakistani legal practice.", avatar: "FG", color: GA },
+              { name: "Justice (R) Fakhruddin", role: "Former Supreme Court Judge, Karachi", text: "The AI prediction model's accuracy on constitutional matters is exceptional. wukaLAW represents the future of Pakistani legal practice.", avatar: "FG", color: GA },
               { name: "Barrister Ayesha Mirza", role: "Managing Partner, Mirza Law Associates", text: "As a woman in Pakistani law, having AI-backed data on judicial patterns has transformed how we prepare our cases before the High Court.", avatar: "AM", color: dark ? "#4F8EF7" : "#3070D0" },
               { name: "Advocate Tariq Hussain", role: "Senior Counsel, Lahore Bar", text: "The similar case search found a Lahore High Court ruling from 2019 that our opponent had no idea about. That precedent won us the case.", avatar: "TH", color: "#A78BFA" },
             ].map(t => (
@@ -978,7 +978,7 @@ export function LandingProductDemo({ dark, navigate }: { dark: boolean; navigate
         <div style={{ padding: 24, fontFamily: "Inter, sans-serif", display: "flex", flexDirection: "column" as const, height: "100%", gap: 12 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
             <MessageSquare size={16} color="#A78BFA" />
-            <span style={{ fontSize: 14, fontWeight: 700, color: TX }}>WukaLAW AI Assistant</span>
+            <span style={{ fontSize: 14, fontWeight: 700, color: TX }}>wukaLAW AI Assistant</span>
             <span style={{ marginLeft: "auto", fontSize: 11, padding: "3px 10px", borderRadius: 999, backgroundColor: "rgba(167,139,250,0.15)", color: "#A78BFA", fontWeight: 700 }}>Online</span>
           </div>
           {[
@@ -989,7 +989,7 @@ export function LandingProductDemo({ dark, navigate }: { dark: boolean; navigate
           ].map((m, i) => (
             <div key={i} style={{ display: "flex", justifyContent: m.role === "user" ? "flex-end" : "flex-start" }}>
               <div style={{ maxWidth: "85%", padding: "10px 14px", borderRadius: 14, fontSize: 12, lineHeight: 1.6, backgroundColor: m.role === "user" ? "#A78BFA" : dark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)", color: m.role === "user" ? "#FFFFFF" : TX2, border: m.role === "ai" ? `1px solid ${BD}` : "none" }}>
-                {m.role === "ai" && <div style={{ fontSize: 10, fontWeight: 700, color: "#A78BFA", marginBottom: 4, display: "flex", alignItems: "center", gap: 4 }}><Sparkles size={10} /> WukaLAW AI</div>}
+                {m.role === "ai" && <div style={{ fontSize: 10, fontWeight: 700, color: "#A78BFA", marginBottom: 4, display: "flex", alignItems: "center", gap: 4 }}><Sparkles size={10} /> wukaLAW AI</div>}
                 {m.text}
               </div>
             </div>
@@ -1007,7 +1007,7 @@ export function LandingProductDemo({ dark, navigate }: { dark: boolean; navigate
             <div style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: GA }} />
             <span style={{ fontSize: 11, color: GA, fontWeight: 700, letterSpacing: "0.08em" }}>INTERACTIVE DEMO</span>
           </div>
-          <h2 style={{ fontSize: "clamp(28px, 4vw, 48px)", fontWeight: 900, color: TX, letterSpacing: "-0.04em", lineHeight: 1.1, marginBottom: 16 }}>See WukaLAW in action</h2>
+          <h2 style={{ fontSize: "clamp(28px, 4vw, 48px)", fontWeight: 900, color: TX, letterSpacing: "-0.04em", lineHeight: 1.1, marginBottom: 16 }}>See wukaLAW in action</h2>
           <p style={{ fontSize: 17, color: TX2, maxWidth: 480, margin: "0 auto" }}>Every feature designed for Pakistan's legal landscape — explore the platform.</p>
         </div>
 
@@ -1246,11 +1246,11 @@ export function LandingFAQ({ dark }: { dark: boolean }) {
   const CARDBG = dark ? "#1E2530" : "#FFFFFF";
 
   const faqs = [
-    { q: "How accurate is WukaLAW's AI prediction?", a: "Our AI achieves 94.2% accuracy verified against historical Pakistani court cases spanning 2010–2024. The model is trained on over 200,000 case outcomes from the Supreme Court, all four High Courts, and district courts across Pakistan." },
+    { q: "How accurate is wukaLAW's AI prediction?", a: "Our AI achieves 94.2% accuracy verified against historical Pakistani court cases spanning 2010–2024. The model is trained on over 200,000 case outcomes from the Supreme Court, all four High Courts, and district courts across Pakistan." },
     { q: "Is my client data secure?", a: "Absolutely. We use AES-256 encryption at rest and TLS 1.3 in transit. Our zero-knowledge architecture means our team cannot access your case data. Your data is never used to train our models — it's fully isolated per firm." },
-    { q: "Does it work for all Pakistani courts?", a: "Yes. WukaLAW covers the Supreme Court of Pakistan, all four High Courts (Lahore, Sindh, Islamabad, Peshawar), Federal Shariat Court, and district courts across all provinces including AJK and Gilgit-Baltistan." },
+    { q: "Does it work for all Pakistani courts?", a: "Yes. wukaLAW covers the Supreme Court of Pakistan, all four High Courts (Lahore, Sindh, Islamabad, Peshawar), Federal Shariat Court, and district courts across all provinces including AJK and Gilgit-Baltistan." },
     { q: "How quickly can I get started?", a: "Most firms are fully onboarded in under 30 minutes. We offer guided setup, data import tools, and a dedicated onboarding specialist for Firm and Enterprise plans. Solo practitioners can self-serve in minutes." },
-    { q: "Can I import existing cases?", a: "Yes. WukaLAW supports bulk import from PDF, DOCX, Excel/Sheets, and CSV formats. We also offer integrations with Clio, Thomson Reuters, and LexisNexis for seamless migration from existing case management systems." },
+    { q: "Can I import existing cases?", a: "Yes. wukaLAW supports bulk import from PDF, DOCX, Excel/Sheets, and CSV formats. We also offer integrations with Clio, Thomson Reuters, and LexisNexis for seamless migration from existing case management systems." },
     { q: "Is there a free trial?", a: "Yes — all plans come with a 14-day free trial with no credit card required. You get full access to all features in your chosen tier. Enterprise trials are available upon request with a demo call." },
   ];
 
@@ -1259,7 +1259,7 @@ export function LandingFAQ({ dark }: { dark: boolean }) {
       <div style={{ maxWidth: 800, margin: "0 auto" }}>
         <div style={{ textAlign: "center" as const, marginBottom: 52 }}>
           <h2 style={{ fontSize: "clamp(26px, 3.5vw, 42px)", fontWeight: 900, color: TX, letterSpacing: "-0.04em", marginBottom: 14 }}>Frequently asked questions</h2>
-          <p style={{ fontSize: 16, color: TX2 }}>Everything you need to know about WukaLAW.</p>
+          <p style={{ fontSize: 16, color: TX2 }}>Everything you need to know about wukaLAW.</p>
         </div>
         <div style={{ display: "flex", flexDirection: "column" as const, gap: 8 }}>
           {faqs.map((faq, i) => (
@@ -1350,7 +1350,7 @@ export function PricingPage({ navigate, dark, toggleDark }: { navigate: (p: Page
   ];
 
   const faqs = [
-    { q: "How accurate is WukaLAW's AI prediction?", a: "Our AI achieves 94.2% accuracy verified against historical Pakistani court cases spanning 2010–2024." },
+    { q: "How accurate is wukaLAW's AI prediction?", a: "Our AI achieves 94.2% accuracy verified against historical Pakistani court cases spanning 2010–2024." },
     { q: "Is my client data secure?", a: "Zero-knowledge architecture. AES-256 + TLS 1.3. Your data is never used to train our models — ever." },
     { q: "Does it work for all Pakistani courts?", a: "Supreme Court, all 4 High Courts, Federal Shariat Court, and district courts across all provinces including AJK and GB." },
     { q: "How quickly can I get started?", a: "Most firms onboard in under 30 minutes. Solo practitioners self-serve in minutes with guided setup." },
@@ -1505,12 +1505,12 @@ export function LoginPage({ navigate, dark, toggleDark }: { navigate: (p: Page) 
           <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: GA }}>
             <Scale size={16} color={dark ? "#0D1117" : "#FFFFFF"} />
           </div>
-          <span style={{ color: TX, fontWeight: 700 }}>WukaLAW</span>
+          <span style={{ color: TX, fontWeight: 700 }}>wukaLAW</span>
         </div>
         <div>
           <div className="flex mb-3 gap-1">{[...Array(5)].map((_, i) => <Star key={i} size={14} fill={GA} color={GA} />)}</div>
           <blockquote style={{ fontSize: 20, fontWeight: 500, color: TX, lineHeight: 1.6, marginBottom: 24 }}>
-            "WukaLAW has given our firm a decisive edge. The AI predictions have been accurate in 91% of our cases this year."
+            "wukaLAW has given our firm a decisive edge. The AI predictions have been accurate in 91% of our cases this year."
           </blockquote>
           <div className="flex items-center gap-3">
             <Avatar name="Marcus Reid" size="md" />
@@ -1537,10 +1537,10 @@ export function LoginPage({ navigate, dark, toggleDark }: { navigate: (p: Page) 
             <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: GA }}>
               <Scale size={16} color={dark ? "#0D1117" : "#FFFFFF"} />
             </div>
-            <span style={{ color: TX, fontWeight: 700, fontSize: 18 }}>WukaLAW</span>
+            <span style={{ color: TX, fontWeight: 700, fontSize: 18 }}>wukaLAW</span>
           </div>
           <h2 style={{ fontSize: 24, fontWeight: 700, color: TX, marginBottom: 4 }}>Welcome back</h2>
-          <p style={{ color: TX2, fontSize: 14, marginBottom: 32 }}>Sign in to your WukaLAW account</p>
+          <p style={{ color: TX2, fontSize: 14, marginBottom: 32 }}>Sign in to your wukaLAW account</p>
 
           <div className="space-y-4">
             <div>
@@ -1563,7 +1563,7 @@ export function LoginPage({ navigate, dark, toggleDark }: { navigate: (p: Page) 
           </div>
 
           <Btn onClick={() => navigate("dashboard")} className="w-full justify-center mt-6" size="lg">
-            Sign in to WukaLAW
+            Sign in to wukaLAW
           </Btn>
 
           <div className="flex items-center gap-4 my-6">
@@ -1612,7 +1612,7 @@ export function RegisterPage({ navigate, dark, toggleDark }: { navigate: (p: Pag
           <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ backgroundColor: GA }}>
             <Scale size={18} color={dark ? "#0D1117" : "#FFFFFF"} />
           </div>
-          <span style={{ color: TX, fontWeight: 700, fontSize: 20 }}>WukaLAW</span>
+          <span style={{ color: TX, fontWeight: 700, fontSize: 20 }}>wukaLAW</span>
         </div>
         <div style={{ padding: 32, borderRadius: 20, backgroundColor: CARDBG, border: `1px solid ${BD}`, boxShadow: dark ? "0 20px 60px rgba(0,0,0,0.4)" : "0 20px 40px rgba(100,70,0,0.08)" }}>
           <h2 style={{ fontSize: 20, fontWeight: 700, color: TX, marginBottom: 4 }}>Create your account</h2>
@@ -1683,7 +1683,7 @@ export function ContactPage({ navigate, dark, toggleDark }: { navigate: (p: Page
           <div style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "5px 14px", borderRadius: 999, border: `1px solid ${GA}40`, backgroundColor: `${GA}12`, marginBottom: 20 }}>
             <span style={{ fontSize: 11, color: GA, fontWeight: 700, letterSpacing: "0.06em" }}>GET IN TOUCH</span>
           </div>
-          <h1 style={{ fontSize: "clamp(28px, 5vw, 48px)", fontWeight: 900, color: TX, letterSpacing: "-0.04em", marginBottom: 12, lineHeight: 1.1 }}>Contact WukaLAW</h1>
+          <h1 style={{ fontSize: "clamp(28px, 5vw, 48px)", fontWeight: 900, color: TX, letterSpacing: "-0.04em", marginBottom: 12, lineHeight: 1.1 }}>Contact wukaLAW</h1>
           <p style={{ fontSize: 15, color: TX2, lineHeight: 1.7 }}>Have a question about our platform? We'd love to hear from you.</p>
         </div>
 
@@ -1712,7 +1712,7 @@ export function ContactPage({ navigate, dark, toggleDark }: { navigate: (p: Page
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, marginTop: 32 }}>
-          {[["Email", "hello@wukalaw.pk"], ["WhatsApp", "+92 300 WukaLAW"], ["Response", "Within 24 hours"]].map(([l, v]) => (
+          {[["Email", "hello@wukalaw.pk"], ["WhatsApp", "+92 300 wukaLAW"], ["Response", "Within 24 hours"]].map(([l, v]) => (
             <div key={l} style={{ padding: "18px", borderRadius: 16, backgroundColor: CARDBG, border: `1px solid ${BD}`, textAlign: "center" }}>
               <div style={{ fontSize: 11, color: TX2, letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 6 }}>{l}</div>
               <div style={{ fontSize: 13, fontWeight: 600, color: GA }}>{v}</div>
@@ -1809,9 +1809,9 @@ export function CaseStudiesPage({ navigate, dark, toggleDark }: { navigate: (p: 
 
   const studies = [
     { id: 1, category: "IP", title: "DataTech LLC Patent Victory", outcome: "Win", value: "$12M", duration: "14 months", ai: 82, desc: "Successfully defended a landmark software patent infringement case before the Lahore High Court. AI analysis identified 3 overlooked precedents that formed the cornerstone of our winning argument.", year: 2024 },
-    { id: 2, category: "Constitutional", title: "Fundamental Rights Petition", outcome: "Win", value: "N/A", duration: "8 months", ai: 91, desc: "Secured constitutional relief for a media house facing unlawful censorship. The WukaLAW AI mapped 47 relevant SC judgments that established the precedent for our constitutional petition.", year: 2023 },
+    { id: 2, category: "Constitutional", title: "Fundamental Rights Petition", outcome: "Win", value: "N/A", duration: "8 months", ai: 91, desc: "Secured constitutional relief for a media house facing unlawful censorship. The wukaLAW AI mapped 47 relevant SC judgments that established the precedent for our constitutional petition.", year: 2023 },
     { id: 3, category: "Corporate", title: "Cross-border M&A Defence", outcome: "Settled", value: "$8.4M", duration: "6 months", ai: 74, desc: "Navigated a complex cross-border merger dispute between a Pakistani conglomerate and a UAE investor, achieving a favorable settlement through AI-powered evidence analysis.", year: 2024 },
-    { id: 4, category: "Criminal", title: "White-collar Fraud Acquittal", outcome: "Win", value: "N/A", duration: "22 months", ai: 68, desc: "Achieved full acquittal in a high-profile financial fraud case at the Accountability Court. Document analysis by WukaLAW AI revealed exculpatory evidence buried in 3,000 pages of records.", year: 2023 },
+    { id: 4, category: "Criminal", title: "White-collar Fraud Acquittal", outcome: "Win", value: "N/A", duration: "22 months", ai: 68, desc: "Achieved full acquittal in a high-profile financial fraud case at the Accountability Court. Document analysis by wukaLAW AI revealed exculpatory evidence buried in 3,000 pages of records.", year: 2023 },
     { id: 5, category: "Real Estate", title: "Karachi Property Restitution", outcome: "Win", value: "$4.2M", duration: "11 months", ai: 88, desc: "Recovered a prime commercial property in Karachi from an illegal occupant through strategic litigation backed by AI-driven title chain analysis spanning 60 years of records.", year: 2024 },
     { id: 6, category: "Corporate", title: "Startup IP Portfolio Defence", outcome: "Win", value: "$2.1M", duration: "5 months", ai: 79, desc: "Protected a Pakistani fintech startup's IP portfolio from a well-funded competitor, leveraging AI precedent search to craft an aggressive but precise legal strategy.", year: 2023 },
   ];
@@ -1828,7 +1828,7 @@ export function CaseStudiesPage({ navigate, dark, toggleDark }: { navigate: (p: 
           <span style={{ fontSize: 11, color: GA, fontWeight: 700, letterSpacing: "0.06em" }}>CASE STUDIES</span>
         </div>
         <h1 style={{ fontSize: "clamp(32px, 5vw, 60px)", fontWeight: 900, color: TX, letterSpacing: "-0.04em", marginBottom: 16, lineHeight: 1.1 }}>Proven Results,<br />Powered by AI</h1>
-        <p style={{ fontSize: 16, color: TX2, maxWidth: 500, margin: "0 auto" }}>Real cases, real outcomes. See how WukaLAW's AI intelligence delivered decisive results for our clients.</p>
+        <p style={{ fontSize: 16, color: TX2, maxWidth: 500, margin: "0 auto" }}>Real cases, real outcomes. See how wukaLAW's AI intelligence delivered decisive results for our clients.</p>
       </div>
 
       {/* Filters */}
@@ -1907,7 +1907,7 @@ export function AboutPage({ navigate, dark, toggleDark }: { navigate: (p: Page) 
             <span style={dark ? { backgroundImage: "linear-gradient(135deg, #D4AF37, #F0D060)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" } : { color: "#7A5510" }}>Built on Intelligence.</span>
           </h1>
           <p style={{ fontSize: 17, color: TX2, maxWidth: 580, margin: "0 auto", lineHeight: 1.75 }}>
-            WukaLAW was founded in 2024 to bridge the gap between Pakistan's deep legal tradition and the power of modern AI — giving every advocate the edge of a senior partner.
+            wukaLAW was founded in 2024 to bridge the gap between Pakistan's deep legal tradition and the power of modern AI — giving every advocate the edge of a senior partner.
           </p>
         </div>
       </div>
@@ -2283,7 +2283,7 @@ export function FeaturesPage({ navigate, dark, toggleDark }: { navigate: (p: Pag
           <span style={{ color: GA }}>Powered by AI.</span>
         </h1>
         <p style={{ fontSize: 17, color: TX2, maxWidth: 560, margin: "0 auto 48px", lineHeight: 1.75 }}>
-          WukaLAW brings the full power of artificial intelligence to every stage of the legal process — from research to courtroom strategy.
+          wukaLAW brings the full power of artificial intelligence to every stage of the legal process — from research to courtroom strategy.
         </p>
       </div>
       {/* Feature grid */}
@@ -2304,7 +2304,7 @@ export function FeaturesPage({ navigate, dark, toggleDark }: { navigate: (p: Pag
       {/* CTA */}
       <div style={{ background: dark ? "#0F1521" : "#EDE8DF", borderTop: `1px solid ${BD}`, borderBottom: `1px solid ${BD}`, padding: "80px 24px", textAlign: "center" }}>
         <h2 style={{ fontSize: "clamp(28px,4vw,48px)", fontWeight: 800, color: TX, letterSpacing: "-0.03em", marginBottom: 16 }}>Ready to transform your practice?</h2>
-        <p style={{ fontSize: 16, color: TX2, marginBottom: 32 }}>Join 2,400+ Pakistani lawyers already using WukaLAW.</p>
+        <p style={{ fontSize: 16, color: TX2, marginBottom: 32 }}>Join 2,400+ Pakistani lawyers already using wukaLAW.</p>
         <button onClick={() => navigate("register")} style={{ background: `linear-gradient(135deg,${P},${P}CC)`, color: "#fff", fontSize: 15, fontWeight: 700, padding: "14px 36px", borderRadius: 10, border: "none", cursor: "pointer", boxShadow: `0 8px 32px ${P}40` }}>
           Start Free Trial
         </button>
@@ -2336,7 +2336,7 @@ export function SolutionsPage({ navigate, dark, toggleDark }: { navigate: (p: Pa
           Built for every kind of<br /><span style={{ color: P }}>legal professional.</span>
         </h1>
         <p style={{ fontSize: 17, color: TX2, maxWidth: 520, margin: "0 auto 64px", lineHeight: 1.75 }}>
-          Whether you're a solo advocate or a 200-lawyer firm, WukaLAW has a workflow designed specifically for you.
+          Whether you're a solo advocate or a 200-lawyer firm, wukaLAW has a workflow designed specifically for you.
         </p>
       </div>
       <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 24px 96px", display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 24 }}>
@@ -2375,11 +2375,11 @@ export function BlogPage({ navigate, dark, toggleDark }: { navigate: (p: Page) =
   const CARD = dark ? "#0F1521" : "#FFFFFF";
   const posts = [
     { tag: "AI & Law", title: "How AI is Transforming Courtroom Strategy in Pakistan", excerpt: "A deep dive into how predictive analytics is changing how advocates approach Supreme Court hearings.", date: "Jul 28, 2024", read: "8 min", img: "https://images.unsplash.com/photo-1589994965851-a8f479c573a9?w=600&h=340&fit=crop&auto=format" },
-    { tag: "Case Studies", title: "94% Accuracy: How WukaLAW Predicted 47 Consecutive Outcomes", excerpt: "Our AI model's performance analysis across a full quarter of real Pakistani court cases.", date: "Jul 15, 2024", read: "12 min", img: "https://images.unsplash.com/photo-1453945619913-79ec89a82c51?w=600&h=340&fit=crop&auto=format" },
+    { tag: "Case Studies", title: "94% Accuracy: How wukaLAW Predicted 47 Consecutive Outcomes", excerpt: "Our AI model's performance analysis across a full quarter of real Pakistani court cases.", date: "Jul 15, 2024", read: "12 min", img: "https://images.unsplash.com/photo-1453945619913-79ec89a82c51?w=600&h=340&fit=crop&auto=format" },
     { tag: "Legal Tech", title: "The Rise of LegalTech in South Asia: Trends for 2024-2025", excerpt: "How Pakistan, India and Bangladesh are embracing AI tools to modernize their legal systems.", date: "Jul 8, 2024", read: "6 min", img: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=600&h=340&fit=crop&auto=format" },
     { tag: "Product", title: "Introducing AI Strategy Assistant: Your AI Co-Counsel", excerpt: "Today we're launching our most powerful feature yet — a real-time strategic advisor trained on Pakistani case law.", date: "Jun 30, 2024", read: "5 min", img: "https://images.unsplash.com/photo-1677442135703-1787eea5ce01?w=600&h=340&fit=crop&auto=format" },
     { tag: "Research", title: "Understanding Judicial Bias: Patterns Across Pakistan's High Courts", excerpt: "An empirical analysis of 50,000 decisions reveals significant patterns in judicial decision-making across provinces.", date: "Jun 22, 2024", read: "15 min", img: "https://images.unsplash.com/photo-1568992688065-536aad8a12f6?w=600&h=340&fit=crop&auto=format" },
-    { tag: "Tutorial", title: "Getting Started with WukaLAW: A 10-Minute Walkthrough", excerpt: "From case creation to your first AI prediction — everything you need to know to hit the ground running.", date: "Jun 18, 2024", read: "10 min", img: "https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=600&h=340&fit=crop&auto=format" },
+    { tag: "Tutorial", title: "Getting Started with wukaLAW: A 10-Minute Walkthrough", excerpt: "From case creation to your first AI prediction — everything you need to know to hit the ground running.", date: "Jun 18, 2024", read: "10 min", img: "https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=600&h=340&fit=crop&auto=format" },
   ];
   return (
     <div style={{ backgroundColor: BG, fontFamily: "Inter, sans-serif", minHeight: "100vh" }}>
@@ -2390,7 +2390,7 @@ export function BlogPage({ navigate, dark, toggleDark }: { navigate: (p: Page) =
             <BookOpen size={12} color={GA} /><span style={{ fontSize: 11, color: GA, fontWeight: 700, letterSpacing: "0.06em" }}>BLOG & RESOURCES</span>
           </div>
           <h1 style={{ fontSize: "clamp(32px,4.5vw,56px)", fontWeight: 900, color: TX, letterSpacing: "-0.04em", lineHeight: 1.1, marginBottom: 16 }}>Legal AI Insights</h1>
-          <p style={{ fontSize: 16, color: TX2, maxWidth: 480, lineHeight: 1.7 }}>Research, tutorials and product updates from the WukaLAW team.</p>
+          <p style={{ fontSize: 16, color: TX2, maxWidth: 480, lineHeight: 1.7 }}>Research, tutorials and product updates from the wukaLAW team.</p>
         </div>
         {/* Featured */}
         <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 20, overflow: "hidden", display: "grid", gridTemplateColumns: "1fr 1fr", marginBottom: 32 }}>
@@ -2431,16 +2431,16 @@ export function FAQPage({ navigate, dark, toggleDark }: { navigate: (p: Page) =>
   const BD = dark ? "rgba(255,255,255,0.06)" : "rgba(60,30,0,0.08)";
   const CARD = dark ? "#0F1521" : "#FFFFFF";
   const faqs = [
-    { q: "How accurate is WukaLAW's court outcome prediction?", a: "Our AI achieves 94.2% accuracy across verified historical Pakistani court cases (2010-2024), trained on over 200,000 judgments from the Supreme Court, four High Courts, Federal Shariat Court, and district courts across all provinces." },
-    { q: "Which courts and jurisdictions does WukaLAW cover?", a: "WukaLAW covers the Supreme Court of Pakistan, all four provincial High Courts (Lahore, Sindh, Islamabad, Peshawar), the Federal Shariat Court, and district courts across all provinces including AJK and Gilgit-Baltistan." },
+    { q: "How accurate is wukaLAW's court outcome prediction?", a: "Our AI achieves 94.2% accuracy across verified historical Pakistani court cases (2010-2024), trained on over 200,000 judgments from the Supreme Court, four High Courts, Federal Shariat Court, and district courts across all provinces." },
+    { q: "Which courts and jurisdictions does wukaLAW cover?", a: "wukaLAW covers the Supreme Court of Pakistan, all four provincial High Courts (Lahore, Sindh, Islamabad, Peshawar), the Federal Shariat Court, and district courts across all provinces including AJK and Gilgit-Baltistan." },
     { q: "Is my client data secure and confidential?", a: "Absolutely. We employ AES-256 encryption at rest and TLS 1.3 in transit. Your data is stored on Pakistan-based servers, is never used to train our AI models, and is fully compliant with Pakistan's PECA regulations." },
-    { q: "Can I try WukaLAW before committing to a subscription?", a: "Yes. We offer a 14-day free trial with full access to all features including AI prediction, case management, and document drafting. No credit card required." },
-    { q: "Does WukaLAW work for all practice areas?", a: "Yes. WukaLAW supports all major practice areas including criminal, civil, commercial, constitutional, family, property, intellectual property, employment and tax law." },
+    { q: "Can I try wukaLAW before committing to a subscription?", a: "Yes. We offer a 14-day free trial with full access to all features including AI prediction, case management, and document drafting. No credit card required." },
+    { q: "Does wukaLAW work for all practice areas?", a: "Yes. wukaLAW supports all major practice areas including criminal, civil, commercial, constitutional, family, property, intellectual property, employment and tax law." },
     { q: "How does the AI Assistant handle confidential legal matters?", a: "The AI Assistant operates under strict confidentiality protocols. Conversations are encrypted, isolated per workspace, and never shared with third parties or used for model training." },
-    { q: "What languages are supported?", a: "WukaLAW fully supports English and Urdu. Documents can be generated in both languages. Our AI understands mixed-language (Urdu-English) legal text common in Pakistani legal proceedings." },
+    { q: "What languages are supported?", a: "wukaLAW fully supports English and Urdu. Documents can be generated in both languages. Our AI understands mixed-language (Urdu-English) legal text common in Pakistani legal proceedings." },
     { q: "Can multiple lawyers in my firm use one account?", a: "Yes. Our Firm and Enterprise plans support multiple users with role-based access control, shared case libraries, team analytics, and administrative oversight features." },
-    { q: "How do I migrate existing case files to WukaLAW?", a: "We offer a free migration service for Firm and Enterprise customers. Our team will help you import case files, documents, and client data from any existing system or format." },
-    { q: "Is there a mobile app?", a: "A native iOS and Android app is currently in development and expected to launch Q3 2024. In the meantime, WukaLAW is fully responsive and works excellently in mobile browsers." },
+    { q: "How do I migrate existing case files to wukaLAW?", a: "We offer a free migration service for Firm and Enterprise customers. Our team will help you import case files, documents, and client data from any existing system or format." },
+    { q: "Is there a mobile app?", a: "A native iOS and Android app is currently in development and expected to launch Q3 2024. In the meantime, wukaLAW is fully responsive and works excellently in mobile browsers." },
   ];
   return (
     <div style={{ backgroundColor: BG, fontFamily: "Inter, sans-serif", minHeight: "100vh" }}>
@@ -2451,7 +2451,7 @@ export function FAQPage({ navigate, dark, toggleDark }: { navigate: (p: Page) =>
             <HelpCircle size={12} color={GA} /><span style={{ fontSize: 11, color: GA, fontWeight: 700, letterSpacing: "0.06em" }}>FAQ</span>
           </div>
           <h1 style={{ fontSize: "clamp(32px,4.5vw,56px)", fontWeight: 900, color: TX, letterSpacing: "-0.04em", lineHeight: 1.1, marginBottom: 16 }}>Frequently Asked Questions</h1>
-          <p style={{ fontSize: 16, color: TX2, lineHeight: 1.7 }}>Everything you need to know about WukaLAW. Can't find an answer? <button onClick={() => navigate("contact")} style={{ color: GA, background: "none", border: "none", cursor: "pointer", fontWeight: 600, textDecoration: "underline" }}>Talk to our team.</button></p>
+          <p style={{ fontSize: 16, color: TX2, lineHeight: 1.7 }}>Everything you need to know about wukaLAW. Can't find an answer? <button onClick={() => navigate("contact")} style={{ color: GA, background: "none", border: "none", cursor: "pointer", fontWeight: 600, textDecoration: "underline" }}>Talk to our team.</button></p>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           {faqs.map((f, i) => (
@@ -2541,11 +2541,11 @@ export function PrivacyPage({ navigate, dark, toggleDark }: { navigate: (p: Page
   const CARD = dark ? "#0F1521" : "#FFFFFF";
   const sections = [
     { title: "Information We Collect", body: "We collect information you provide directly, including account credentials, case data, documents you upload, and communications. We also collect usage data, device information, and IP addresses through cookies and similar technologies." },
-    { title: "How We Use Your Information", body: "We use your information solely to provide and improve WukaLAW services. Your case data and documents are never used to train our AI models. We do not sell your information to any third parties." },
+    { title: "How We Use Your Information", body: "We use your information solely to provide and improve wukaLAW services. Your case data and documents are never used to train our AI models. We do not sell your information to any third parties." },
     { title: "Data Security", body: "All data is encrypted using AES-256 at rest and TLS 1.3 in transit. We maintain SOC 2 Type II compliance, conduct regular penetration testing, and store all data on Pakistan-based servers." },
     { title: "Data Retention", body: "We retain your data for the duration of your subscription plus 30 days. Upon account deletion, all data is permanently purged within 72 hours. You may export your data at any time from account settings." },
     { title: "Your Rights", body: "You have the right to access, correct, export, and delete your personal data. You may also object to certain processing or restrict it. Contact privacy@wukalaw.com to exercise any of these rights." },
-    { title: "Contact", body: "For privacy inquiries, contact our Data Protection Officer at privacy@wukalaw.com or by post at WukaLAW Inc., Suite 501, Dolmen City Mall, Clifton, Karachi 75600, Pakistan." },
+    { title: "Contact", body: "For privacy inquiries, contact our Data Protection Officer at privacy@wukalaw.com or by post at wukaLAW Inc., Suite 501, Dolmen City Mall, Clifton, Karachi 75600, Pakistan." },
   ];
   return (
     <div style={{ backgroundColor: BG, fontFamily: "Inter, sans-serif", minHeight: "100vh" }}>
@@ -2575,11 +2575,11 @@ export function TermsPage({ navigate, dark, toggleDark }: { navigate: (p: Page) 
   const BD = dark ? "rgba(255,255,255,0.06)" : "rgba(60,30,0,0.08)";
   const CARD = dark ? "#0F1521" : "#FFFFFF";
   const sections = [
-    { title: "1. Acceptance of Terms", body: "By accessing or using WukaLAW, you agree to be bound by these Terms of Service. If you do not agree, you may not use the service. These terms govern your use of all WukaLAW products and services." },
-    { title: "2. Use of Services", body: "WukaLAW is licensed for use by legal professionals. You agree not to use the service for any unlawful purpose, to reverse-engineer our AI models, or to resell the service without written authorization." },
-    { title: "3. AI Predictions Disclaimer", body: "WukaLAW's AI predictions are informational tools, not legal advice. They are provided without warranty of accuracy. All legal decisions remain the sole responsibility of the licensed attorney of record." },
-    { title: "4. Intellectual Property", body: "WukaLAW and its AI models, interfaces, and content are proprietary to WukaLAW Inc. Your case data and documents remain your property. You grant us a limited license to process them solely to provide the service." },
-    { title: "5. Limitation of Liability", body: "To the maximum extent permitted by Pakistani law, WukaLAW's liability is limited to the amount you paid in the 3 months preceding any claim. We are not liable for indirect, incidental, or consequential damages." },
+    { title: "1. Acceptance of Terms", body: "By accessing or using wukaLAW, you agree to be bound by these Terms of Service. If you do not agree, you may not use the service. These terms govern your use of all wukaLAW products and services." },
+    { title: "2. Use of Services", body: "wukaLAW is licensed for use by legal professionals. You agree not to use the service for any unlawful purpose, to reverse-engineer our AI models, or to resell the service without written authorization." },
+    { title: "3. AI Predictions Disclaimer", body: "wukaLAW's AI predictions are informational tools, not legal advice. They are provided without warranty of accuracy. All legal decisions remain the sole responsibility of the licensed attorney of record." },
+    { title: "4. Intellectual Property", body: "wukaLAW and its AI models, interfaces, and content are proprietary to wukaLAW Inc. Your case data and documents remain your property. You grant us a limited license to process them solely to provide the service." },
+    { title: "5. Limitation of Liability", body: "To the maximum extent permitted by Pakistani law, wukaLAW's liability is limited to the amount you paid in the 3 months preceding any claim. We are not liable for indirect, incidental, or consequential damages." },
     { title: "6. Governing Law", body: "These terms are governed by the laws of Pakistan. Any disputes shall be subject to the exclusive jurisdiction of the courts of Karachi, Pakistan. You waive any objection to this jurisdiction." },
   ];
   return (

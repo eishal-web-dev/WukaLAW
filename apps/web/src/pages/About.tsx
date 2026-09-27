@@ -24,7 +24,7 @@ export default function About() {
             </span>
           </h1>
           <p style={{ fontSize: 17, color: TX2, maxWidth: 580, margin: '0 auto', lineHeight: 1.75 }}>
-            WakuLaw was founded in 2024 to bridge the gap between Pakistan's deep legal tradition and the power of modern AI — giving every advocate the edge of a senior partner.
+            wukaLAW was founded in 2024 to bridge the gap between Pakistan's deep legal tradition and the power of modern AI — giving every advocate the edge of a senior partner.
           </p>
         </div>
       </div>

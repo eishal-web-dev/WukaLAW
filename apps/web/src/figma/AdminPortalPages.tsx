@@ -898,7 +898,7 @@ export function APDatasetsV2({ navigate }: NavProps) {
 export function APKnowledgeBasePage({ navigate }: NavProps) {
   const [tab, setTab] = useState("articles");
   const articles = [
-    { id: "kb1", title: "How to File a Case in WukaLAW", category: "Getting Started", views: 1240, status: "Published", updated: "Jul 28" },
+    { id: "kb1", title: "How to File a Case in wukaLAW", category: "Getting Started", views: 1240, status: "Published", updated: "Jul 28" },
     { id: "kb2", title: "Understanding AI Win Probability Scores", category: "AI Features", views: 890, status: "Published", updated: "Jul 25" },
     { id: "kb3", title: "Setting Up Your Client Portal", category: "Onboarding", views: 760, status: "Published", updated: "Jul 20" },
     { id: "kb4", title: "Pakistani Court System Overview for AI Analysis", category: "Legal Context", views: 540, status: "Published", updated: "Jul 15" },
@@ -1483,10 +1483,10 @@ export function APSupportPage({ navigate }: NavProps) {
 
 export function APCMSPage({ navigate }: NavProps) {
   const posts = [
-    { id: "b1", title: "AI is Transforming Pakistani Legal Practice in 2026", category: "AI & Law", author: "WukaLAW Team", status: "Published", date: "Aug 1", views: 2840 },
+    { id: "b1", title: "AI is Transforming Pakistani Legal Practice in 2026", category: "AI & Law", author: "wukaLAW Team", status: "Published", date: "Aug 1", views: 2840 },
     { id: "b2", title: "Top 10 Things Clients Should Know Before Hiring a Lawyer", category: "Legal Tips", author: "Adv. Ahmad Raza", status: "Published", date: "Jul 28", views: 1920 },
     { id: "b3", title: "Supreme Court of Pakistan's New Digital Filing System", category: "News", author: "Editorial", status: "Published", date: "Jul 20", views: 3410 },
-    { id: "b4", title: "Understanding SECP Regulations for Corporate Clients", category: "Corporate Law", author: "WukaLAW Team", status: "Draft", date: "Aug 2", views: 0 },
+    { id: "b4", title: "Understanding SECP Regulations for Corporate Clients", category: "Corporate Law", author: "wukaLAW Team", status: "Draft", date: "Aug 2", views: 0 },
   ];
 
   return (
@@ -1578,7 +1578,7 @@ export function APSettingsV2({ navigate }: NavProps) {
               <div className="rounded-xl border border-border p-5 bg-card">
                 <SectionHead title="Platform Information" />
                 {[
-                  { label: "Platform Name", val: "WukaLAW" },
+                  { label: "Platform Name", val: "wukaLAW" },
                   { label: "Platform URL", val: "https://app.wukalaw.pk" },
                   { label: "Support Email", val: "support@wukalaw.pk" },
                   { label: "Default Language", val: "English (Pakistan)" },

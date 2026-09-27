@@ -1,6 +1,6 @@
-# WakuLaw — Web Frontend
+# wukaLAW — Web Frontend
 
-React frontend for the WakuLaw MVP, rebuilt on the Figma design system:
+React frontend for the wukaLAW MVP, rebuilt on the Figma design system:
 gold/dark legal-intelligence UI with marketing pages, a full app shell
 (sidebar + topbar), live backend integration where the API supports it, and
 clearly-labelled preview screens for features still in development.
@@ -8,7 +8,7 @@ clearly-labelled preview screens for features still in development.
 **Stack:** Vite · React 18 · TypeScript · Tailwind CSS v4 · shadcn/ui ·
 react-router-dom · recharts · lucide-react
 
-> WakuLaw is a decision-support and research tool. It does not provide legal
+> wukaLAW is a decision-support and research tool. It does not provide legal
 > advice.
 
 ## Setup
@@ -23,7 +23,7 @@ The app runs at http://localhost:5173.
 
 ## Configuration
 
-The frontend talks to the WukaLAW API. During local development, requests use
+The frontend talks to the wukaLAW API. During local development, requests use
 `/api` and Vite proxies them to `http://127.0.0.1:8000`. This works even if
 Vite selects a port other than 5173 and avoids browser CORS failures.
 

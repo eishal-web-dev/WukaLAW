@@ -8,9 +8,9 @@ export default function CaseStudies() {
 
   const studies = [
     { id: 1, category: 'IP', title: 'DataTech LLC Patent Victory', outcome: 'Win', value: '$12M', duration: '14 months', ai: 82, desc: 'Successfully defended a landmark software patent infringement case before the Lahore High Court. AI analysis identified 3 overlooked precedents that formed the cornerstone of our winning argument.', year: 2024 },
-    { id: 2, category: 'Constitutional', title: 'Fundamental Rights Petition', outcome: 'Win', value: 'N/A', duration: '8 months', ai: 91, desc: 'Secured constitutional relief for a media house facing unlawful censorship. The WakuLaw AI mapped 47 relevant SC judgments that established the precedent for our constitutional petition.', year: 2023 },
+    { id: 2, category: 'Constitutional', title: 'Fundamental Rights Petition', outcome: 'Win', value: 'N/A', duration: '8 months', ai: 91, desc: 'Secured constitutional relief for a media house facing unlawful censorship. The wukaLAW AI mapped 47 relevant SC judgments that established the precedent for our constitutional petition.', year: 2023 },
     { id: 3, category: 'Corporate', title: 'Cross-border M&A Defence', outcome: 'Settled', value: '$8.4M', duration: '6 months', ai: 74, desc: 'Navigated a complex cross-border merger dispute between a Pakistani conglomerate and a UAE investor, achieving a favorable settlement through AI-powered evidence analysis.', year: 2024 },
-    { id: 4, category: 'Criminal', title: 'White-collar Fraud Acquittal', outcome: 'Win', value: 'N/A', duration: '22 months', ai: 68, desc: 'Achieved full acquittal in a high-profile financial fraud case at the Accountability Court. Document analysis by WakuLaw AI revealed exculpatory evidence buried in 3,000 pages of records.', year: 2023 },
+    { id: 4, category: 'Criminal', title: 'White-collar Fraud Acquittal', outcome: 'Win', value: 'N/A', duration: '22 months', ai: 68, desc: 'Achieved full acquittal in a high-profile financial fraud case at the Accountability Court. Document analysis by wukaLAW AI revealed exculpatory evidence buried in 3,000 pages of records.', year: 2023 },
     { id: 5, category: 'Real Estate', title: 'Karachi Property Restitution', outcome: 'Win', value: '$4.2M', duration: '11 months', ai: 88, desc: 'Recovered a prime commercial property in Karachi from an illegal occupant through strategic litigation backed by AI-driven title chain analysis spanning 60 years of records.', year: 2024 },
     { id: 6, category: 'Corporate', title: 'Startup IP Portfolio Defence', outcome: 'Win', value: '$2.1M', duration: '5 months', ai: 79, desc: "Protected a Pakistani fintech startup's IP portfolio from a well-funded competitor, leveraging AI precedent search to craft an aggressive but precise legal strategy.", year: 2023 },
   ]
@@ -34,7 +34,7 @@ export default function CaseStudies() {
           Proven Results,<br />Powered by AI
         </h1>
         <p style={{ fontSize: 16, color: TX2, maxWidth: 500, margin: '0 auto' }}>
-          Real cases, real outcomes. See how WakuLaw's AI intelligence delivered decisive results for our clients.
+          Real cases, real outcomes. See how wukaLAW's AI intelligence delivered decisive results for our clients.
         </p>
       </div>
 

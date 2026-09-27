@@ -138,7 +138,7 @@ function titleFor(pathname: string): string {
   if (pathname.startsWith('/documents/')) return 'Document Detail'
   const allItems = [...LAWYER_NAV, ...CLIENT_NAV, ...ADMIN_NAV].flatMap((group) => group.items)
   const exact = allItems.find((item) => item.path === pathname)
-  return exact?.label ?? 'WukaLAW'
+  return exact?.label ?? 'wukaLAW'
 }
 
 function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void }) {
@@ -148,13 +148,13 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
   const { unreadCount } = useNotifications()
   const portal = portalForRole(user?.role)
   const accent = PORTAL_COLOR[portal]
-  const displayName = user?.name || 'WukaLAW User'
+  const displayName = user?.name || 'wukaLAW User'
 
   return (
     <aside className={`flex flex-col h-full transition-all duration-300 border-r border-sidebar-border bg-sidebar flex-shrink-0 ${collapsed ? 'w-[60px]' : 'w-[230px]'}`}>
       <button type="button" onClick={() => navigate(portalHome(portal))} className="flex items-center gap-2.5 px-3 py-3.5 border-b border-sidebar-border text-left">
-        <img src={wukaIcon} alt="WukaLAW" className="flex-shrink-0" style={{ width: 46, height: 46, objectFit: 'contain' }} />
-        {!collapsed && <div className="min-w-0"><div className="text-sm font-bold text-foreground tracking-tight leading-tight">WukaLAW</div><div className="text-[9px] font-semibold uppercase tracking-widest leading-tight" style={{ color: accent }}>AI Legal Intelligence</div></div>}
+        <img src={wukaIcon} alt="wukaLAW" className="flex-shrink-0" style={{ width: 46, height: 46, objectFit: 'contain' }} />
+        {!collapsed && <div className="min-w-0"><div className="text-sm font-bold text-foreground tracking-tight leading-tight">wukaLAW</div><div className="text-[9px] font-semibold uppercase tracking-widest leading-tight" style={{ color: accent }}>AI Legal Intelligence</div></div>}
       </button>
 
       {!collapsed && (
@@ -210,12 +210,12 @@ function Topbar() {
   const { unreadCount } = useNotifications()
   return (
     <header className="h-14 flex items-center justify-between px-6 border-b border-border bg-background flex-shrink-0">
-      <div className="flex items-center gap-2 text-sm"><span className="text-muted-foreground">WukaLAW</span><ChevronRight size={14} className="text-muted-foreground" /><span className="text-foreground font-medium">{titleFor(pathname)}</span></div>
+      <div className="flex items-center gap-2 text-sm"><span className="text-muted-foreground">wukaLAW</span><ChevronRight size={14} className="text-muted-foreground" /><span className="text-foreground font-medium">{titleFor(pathname)}</span></div>
       <div className="flex items-center gap-3">
         <div className="relative hidden md:block"><Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" /><input placeholder="Search cases, docs, AI..." className="w-56 pl-8 pr-4 py-1.5 text-xs rounded-lg border border-border bg-muted/40 text-foreground placeholder-muted-foreground focus:outline-none focus:border-primary/50" /></div>
         <button type="button" onClick={toggleDark} aria-label="Toggle color theme" className="w-8 h-8 rounded-lg border border-border flex items-center justify-center text-muted-foreground hover:text-foreground">{dark ? <Sun size={14} /> : <Moon size={14} />}</button>
         <button type="button" onClick={() => navigate('/notifications')} aria-label={`${unreadCount} unread notifications`} className="relative p-2 rounded-lg hover:bg-muted/50 text-muted-foreground hover:text-foreground"><Bell size={16} />{unreadCount > 0 && <span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 rounded-full text-[9px] font-bold flex items-center justify-center text-[#07090F]" style={{ backgroundColor: G }}>{unreadCount > 99 ? '99+' : unreadCount}</span>}</button>
-        <button type="button" onClick={() => navigate('/profile')} aria-label="Open profile"><Avatar name={user?.name || 'WukaLAW User'} size="sm" /></button>
+        <button type="button" onClick={() => navigate('/profile')} aria-label="Open profile"><Avatar name={user?.name || 'wukaLAW User'} size="sm" /></button>
       </div>
     </header>
   )

@@ -38,7 +38,7 @@ export default function SimilarCases() {
       <div>
         <h1 className="text-2xl font-bold text-foreground">Similar Cases</h1>
         <p className="text-muted-foreground text-sm mt-1">
-          Pick your case. WukaLAW will show where it is now and find Pakistani cases most like it.
+          Pick your case. wukaLAW will show where it is now and find Pakistani cases most like it.
         </p>
       </div>
 
@@ -98,7 +98,7 @@ export default function SimilarCases() {
           <Scale size={28} className="mx-auto mb-3" style={{ color: G }} />
           <div className="text-sm font-semibold text-foreground">Choose a case above</div>
           <p className="text-xs text-muted-foreground mt-1 max-w-lg mx-auto">
-            Once you choose one, WukaLAW starts the search automatically.
+            Once you choose one, wukaLAW starts the search automatically.
           </p>
         </Card>
       )}

@@ -121,7 +121,7 @@ export default function PrecedentBrief({ caseId, documentId }: { caseId: number 
                 </div>
                 <p className="text-xs text-muted-foreground leading-relaxed">{brief.authority_note}</p>
                 <div>
-                  <div className="text-xs font-semibold text-foreground mb-1">Why WukaLAW thinks this match is {strengthLabel(brief.research_strength).toLowerCase()}</div>
+                  <div className="text-xs font-semibold text-foreground mb-1">Why wukaLAW thinks this match is {strengthLabel(brief.research_strength).toLowerCase()}</div>
                   <p className="text-xs text-muted-foreground leading-relaxed">{brief.research_strength_reason}</p>
                 </div>
               </div>

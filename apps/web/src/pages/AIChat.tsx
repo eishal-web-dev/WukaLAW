@@ -191,7 +191,7 @@ export default function AIChat() {
             <Sparkles size={16} style={{ color: G }} />
           </div>
           <div>
-            <div className="text-sm font-semibold text-foreground">WukaLAW AI Assistant</div>
+            <div className="text-sm font-semibold text-foreground">wukaLAW AI Assistant</div>
             <div className="text-xs text-emerald-400 flex items-center gap-1">
               <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
               {isClient ? 'Answers from your case documents only' : 'Answers from your document library'}
@@ -247,7 +247,7 @@ export default function AIChat() {
             <div className="w-14 h-14 rounded-2xl mx-auto mb-4 flex items-center justify-center" style={{ backgroundColor: `${G}20` }}>
               <Brain size={24} style={{ color: G }} />
             </div>
-            <div className="text-foreground font-semibold mb-2">Ask WakuLaw AI anything</div>
+            <div className="text-foreground font-semibold mb-2">Ask wukaLAW AI anything</div>
             <div className="text-muted-foreground text-sm mb-6">
               Questions are answered from your uploaded documents, with sources and confidence.
             </div>

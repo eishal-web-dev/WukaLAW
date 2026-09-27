@@ -5,7 +5,7 @@ export default function Disclaimer() {
       <span className="font-semibold" style={{ color: '#D4AF37' }}>
         Decision-support only — not legal advice.
       </span>{' '}
-      WakuLaw is a research tool. AI outputs may contain errors and must be verified against the
+      wukaLAW is a research tool. AI outputs may contain errors and must be verified against the
       original documents. It is not a replacement for lawyers, judges, or courts.
     </p>
   )

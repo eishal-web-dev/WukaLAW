@@ -20,7 +20,7 @@ export default function Contact() {
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '5px 14px', borderRadius: 999, border: `1px solid ${GA}40`, backgroundColor: `${GA}12`, marginBottom: 20 }}>
             <span style={{ fontSize: 11, color: GA, fontWeight: 700, letterSpacing: '0.06em' }}>GET IN TOUCH</span>
           </div>
-          <h1 style={{ fontSize: 'clamp(28px, 5vw, 48px)', fontWeight: 900, color: TX, letterSpacing: '-0.04em', marginBottom: 12, lineHeight: 1.1 }}>Contact WakuLaw</h1>
+          <h1 style={{ fontSize: 'clamp(28px, 5vw, 48px)', fontWeight: 900, color: TX, letterSpacing: '-0.04em', marginBottom: 12, lineHeight: 1.1 }}>Contact wukaLAW</h1>
           <p style={{ fontSize: 15, color: TX2, lineHeight: 1.7 }}>Have a question about our platform? We'd love to hear from you.</p>
         </div>
 
@@ -49,7 +49,7 @@ export default function Contact() {
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginTop: 32 }}>
-          {[['Email', 'hello@wakulaw.pk'], ['WhatsApp', '+92 300 WAKULAW'], ['Response', 'Within 24 hours']].map(([l, v]) => (
+          {[['Email', 'hello@wakulaw.pk'], ['WhatsApp', '+92 300 wukaLAW'], ['Response', 'Within 24 hours']].map(([l, v]) => (
             <div key={l} style={{ padding: '18px', borderRadius: 16, backgroundColor: CARDBG, border: `1px solid ${BD}`, textAlign: 'center' }}>
               <div style={{ fontSize: 11, color: TX2, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 6 }}>{l}</div>
               <div style={{ fontSize: 13, fontWeight: 600, color: GA }}>{v}</div>

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { Scale, User, Mail, Lock, Sun, Moon } from 'lucide-react'
+import { User, Mail, Lock, Sun, Moon } from 'lucide-react'
 import { useAuth } from '../lib/auth'
 import { errorMessage } from '../lib/api'
 import { usePublicTokens } from '../components/PublicShell'
@@ -9,6 +9,7 @@ import ErrorAlert from '../components/ErrorAlert'
 import PortalSelector from '../components/PortalSelector'
 import { portalHome } from '../lib/portals'
 import type { SignupRole } from '../lib/portals'
+import { wukaIcon } from '../figma/assets'
 
 export default function Register() {
   const navigate = useNavigate()
@@ -54,17 +55,15 @@ export default function Register() {
       </button>
       <div className="w-full max-w-md">
         <button onClick={() => navigate('/')} className="flex items-center gap-3 mb-8 justify-center w-full" style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ backgroundColor: GA }}>
-            <Scale size={18} color={dark ? '#0D1117' : '#FFFFFF'} />
-          </div>
-          <span style={{ color: TX, fontWeight: 700, fontSize: 20 }}>WukaLAW</span>
+          <img src={wukaIcon} alt="wukaLAW logo" className="w-11 h-11 object-contain" />
+          <span style={{ color: TX, fontWeight: 700, fontSize: 20 }}>wukaLAW</span>
         </button>
         <form
           onSubmit={submit}
           style={{ padding: 32, borderRadius: 20, backgroundColor: CARDBG, border: `1px solid ${BD}`, boxShadow: dark ? '0 20px 60px rgba(0,0,0,0.4)' : '0 20px 40px rgba(100,70,0,0.08)' }}
         >
           <h2 style={{ fontSize: 20, fontWeight: 700, color: TX, marginBottom: 4 }}>Create your account</h2>
-          <p style={{ color: TX2, fontSize: 14, marginBottom: 24 }}>Start using WukaLAW's explainable AI legal intelligence.</p>
+          <p style={{ color: TX2, fontSize: 14, marginBottom: 24 }}>Start using wukaLAW's explainable AI legal intelligence.</p>
           <div className="space-y-4">
             <PortalSelector value={role} onChange={(value) => { if (value !== 'admin') setRole(value) }} includeAdmin={false} disabled={submitting} />
             {error && <ErrorAlert message={error} />}

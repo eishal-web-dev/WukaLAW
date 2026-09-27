@@ -57,3 +57,35 @@ class QdrantSettings:
         }
         values.update({key: value for key, value in overrides.items() if value is not None})
         return cls(**values)
+
+
+def resolve_legal_collection(client, settings: QdrantSettings) -> tuple[str, list[str]]:
+    """Find an indexed judgments collection without ever selecting user uploads."""
+    available = sorted(item.name for item in client.client.get_collections().collections)
+    if settings.collection in available:
+        return settings.collection, available
+
+    for name in (
+        "wakulaw_real_5000",
+        "judgments_5000",
+        "wakulaw_legal_chunks",
+        "pakistani_judgments",
+    ):
+        if name in available:
+            return name, available
+
+    candidates = [
+        name for name in available
+        if any(signal in name.casefold() for signal in ("judgment", "legal", "case"))
+        and "user" not in name.casefold()
+        and "upload" not in name.casefold()
+    ]
+    if len(candidates) == 1:
+        return candidates[0], available
+
+    shown = ", ".join(available) if available else "none"
+    raise RuntimeError(
+        f"Configured Pakistani judgments collection '{settings.collection}' was not found. "
+        f"Available collections: {shown}. Set QDRANT_COLLECTION to the indexed judgments collection "
+        "or run the legal-corpus import."
+    )

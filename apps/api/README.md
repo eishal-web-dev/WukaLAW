@@ -1,4 +1,4 @@
-# WakuLaw API
+# wukaLAW API
 
 FastAPI backend + AI modules (preprocessing, embeddings, FAISS retrieval, extractive summarization, RAG Q&A). Runs fully local and free.
 
@@ -34,14 +34,14 @@ brew install tesseract poppler
 sudo apt-get install tesseract-ocr tesseract-ocr-urd poppler-utils
 ```
 
-WukaLAW defaults to `OCR_LANGUAGE=eng+urd` so mixed English/Urdu Pakistani
+wukaLAW defaults to `OCR_LANGUAGE=eng+urd` so mixed English/Urdu Pakistani
 documents are read with both models. On Windows, rerun the Tesseract installer,
 select **Additional language data → Urdu**, and restart the API. You can verify
 the installation with `tesseract --list-langs`; it must list both `eng` and `urd`.
 
 ### Higher-quality Urdu Nastaliq OCR
 
-Tesseract can be unreliable for dense Nastaliq court documents. WukaLAW can
+Tesseract can be unreliable for dense Nastaliq court documents. wukaLAW can
 instead send the original image/PDF to Gemini's vision model for strict
 transcription. Configure `apps/api/.env`:
 
