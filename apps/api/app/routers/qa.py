@@ -55,6 +55,16 @@ def _selected_case_context(case: Case | None, db: Session | None = None) -> str 
             linked = db.get(Document, entry.document_id) if entry.document_id else None
             title = f" (linked document: {linked.title})" if linked and linked.case_id == case.id else ""
             fields.append(f"client timeline update {entry.event_date}: {entry.text}{title}")
+        documents = db.scalars(
+            select(Document)
+            .where(Document.case_id == case.id, _verified_document_filter())
+            .order_by(Document.created_at.desc())
+            .limit(6)
+        ).all()
+        for document in documents:
+            excerpt = " ".join((document.text or "").split())[:1800]
+            if excerpt:
+                fields.append(f"Document: {document.title}: {excerpt}")
     # Keep this as one compact passage so the extractive fallback cannot drop
     # the description while selecting individual sentences.
     return "Selected case record — " + "; ".join(fields) + "."
@@ -322,7 +332,10 @@ def _ask_impl(request: AskRequest, db: Session, user: User) -> dict:
 
     # Only retrieved document passages carry similarity scores. The case
     # record is useful background, but it must never inflate confidence.
-    answer_contexts = [(source.text, source.score) for source in sources]
+    answer_contexts = [
+        (f"Document: {source.document_title}\nPassage: {source.text}", source.score)
+        for source in sources
+    ]
     answer_text, level, reason, model = rag.answer(
         request.question,
         answer_contexts,
@@ -330,7 +343,7 @@ def _ask_impl(request: AskRequest, db: Session, user: User) -> dict:
         history=history,
         search_question=retrieval_question,
     )
-    if selected_case is not None and not sources:
+    if selected_case is not None and (not sources or answer_text == rag.NOT_ENOUGH):
         answer_text = _friendly_case_guidance(selected_case, request.question, history, db)
         level = "low"
         reason = (

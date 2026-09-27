@@ -3,24 +3,25 @@
 Pipeline: embed question -> FAISS top-k chunks -> confidence from cosine
 scores -> answer generation.
 
-Generation is tiered (always free):
-1. If a local Ollama server is running, ask its model to answer USING ONLY
-   the retrieved chunks.
-2. Otherwise fall back to extractive answering: return the sentences from
-   the retrieved chunks most similar to the question.
+Generation uses the configured Gemini/Groq/OpenAI/Ollama provider chain.
+The selected case record and conversation provide background, while verified
+document chunks provide supporting evidence.
 
 If retrieval confidence is below the answerable threshold, the system says
 it does not have enough information instead of guessing.
 """
 
+import logging
 import re
 
-import httpx
 import numpy as np
 
 from ai.embeddings.embedder import embed
 from ai.preprocessing.sentences import split_sentences
+from ai.rag.llm_provider import GeminiProvider, GroqProvider, OllamaProvider, OpenAIProvider
 from app.config import settings
+
+logger = logging.getLogger(__name__)
 
 NOT_ENOUGH = (
     "Not enough information in the uploaded documents to answer this question reliably. "
@@ -96,21 +97,13 @@ def confidence_from_score(best_score: float) -> tuple[str, str]:
     return "low", f"Only weakly related passages found (top similarity {best_score:.2f})."
 
 
-def _ollama_available() -> bool:
-    try:
-        response = httpx.get(f"{settings.ollama_base_url}/api/tags", timeout=2.0)
-        return response.status_code == 200
-    except (httpx.HTTPError, ImportError):
-        return False
-
-
-def _generate_with_ollama(
+def _answer_prompt(
     question: str,
     contexts: list[str],
     background_context: str | None = None,
     history: list[dict] | None = None,
-) -> str | None:
-    context_block = "\n\n---\n\n".join(contexts)
+) -> str:
+    context_block = "\n\n---\n\n".join(contexts) or "No verified document passage was retrieved."
     background_block = (
         f"\n\nCase record background (not independent evidence):\n{background_context}"
         if background_context
@@ -122,26 +115,70 @@ def _generate_with_ollama(
         if turn.get("content", "").strip()
     )
     conversation_block = f"\n\nConversation so far:\n{history_block}" if history_block else ""
-    prompt = (
-        "You are a legal research assistant. Answer the question using ONLY the "
-        "context passages below, which come from legal documents uploaded by the user. "
-        "You may use the case record and conversation only to understand the user's situation; "
-        "do not present either as independently verified evidence. "
-        "If the context does not contain the answer, say so plainly. Do not invent "
-        "facts, citations, case law, outcomes, or deadlines. Keep the answer concise and helpful.\n\n"
+    return (
+        "You are WukaLAW's client-facing legal information assistant. Give a direct, "
+        "plain-language answer to the user's actual question. Synthesize the material; "
+        "NEVER copy or merely repeat the case description or document passages. Address "
+        "the user as 'you' and, when helpful, give concrete next steps or an evidence checklist.\n\n"
+        "Evidence rules:\n"
+        "- The selected case record, case description, timeline and conversation are the "
+        "user's background/account. Attribute disputed facts with phrases such as 'you say' "
+        "or 'according to your case record'; do not present them as proven.\n"
+        "- Verified document passages are supporting evidence, but OCR text may contain errors.\n"
+        "- Clearly distinguish allegations, document-supported facts, and anything still unknown.\n"
+        "- Do not invent facts, Pakistani law, citations, court orders, outcomes or deadlines.\n"
+        "- If the material cannot answer a point, identify exactly what is missing and explain "
+        "what document, timeline entry or lawyer/court confirmation would resolve it.\n"
+        "- Do not predict that the user will win. Keep the answer concise, empathetic and useful.\n\n"
         f"Document evidence:\n{context_block}{background_block}{conversation_block}"
         f"\n\nQuestion: {question}\n\nAnswer:"
     )
-    try:
-        response = httpx.post(
-            f"{settings.ollama_base_url}/api/generate",
-            json={"model": settings.ollama_model, "prompt": prompt, "stream": False},
-            timeout=120.0,
-        )
-        response.raise_for_status()
-        return response.json().get("response", "").strip() or None
-    except (httpx.HTTPError, ImportError):
-        return None
+
+
+def _configured_providers():
+    providers = {
+        "gemini": lambda: GeminiProvider(settings.gemini_model, settings.gemini_api_key),
+        "groq": lambda: GroqProvider(settings.groq_model, settings.groq_api_key),
+        "openai": lambda: OpenAIProvider(settings.openai_model, settings.openai_api_key),
+        "ollama": lambda: OllamaProvider(settings.ollama_model, settings.ollama_base_url),
+    }
+    selected = settings.rag_llm_provider.strip().casefold()
+    names = (
+        [part.strip().casefold() for part in settings.rag_llm_fallback_order.split(",") if part.strip()]
+        if selected == "auto"
+        else [selected]
+    )
+    for name in names:
+        factory = providers.get(name)
+        if factory is None:
+            logger.warning("Ignoring unsupported RAG answer provider %s", name)
+            continue
+        if name == "gemini" and not settings.gemini_api_key:
+            continue
+        if name == "groq" and not settings.groq_api_key:
+            continue
+        if name == "openai" and not settings.openai_api_key:
+            continue
+        yield name, factory()
+
+
+def _generate_answer(
+    question: str,
+    contexts: list[str],
+    background_context: str | None,
+    history: list[dict] | None,
+) -> tuple[str | None, str]:
+    prompt = _answer_prompt(question, contexts, background_context, history)
+    for name, provider in _configured_providers():
+        try:
+            generated = provider.generate(prompt).strip()
+        except Exception as exc:  # one failed provider must not break the case assistant
+            logger.warning("Case answer provider %s failed: %s", name, exc)
+            continue
+        if generated:
+            model = getattr(provider, "model", "configured")
+            return generated, f"{name}/{model}"
+    return None, "none"
 
 
 def _extractive_answer(question: str, contexts: list[str]) -> str:
@@ -226,17 +263,24 @@ def answer(
 
     Returns (answer_text, confidence_level, confidence_reason, model_name).
     """
-    if not retrieved or retrieved[0][1] < settings.min_answerable:
+    has_reliable_documents = bool(retrieved and retrieved[0][1] >= settings.min_answerable)
+    if not has_reliable_documents and not background_context:
         best = retrieved[0][1] if retrieved else 0.0
         level, reason = confidence_from_score(best)
         return NOT_ENOUGH, "low", reason, "none"
 
     contexts = [text for text, _ in retrieved]
-    level, reason = confidence_from_score(retrieved[0][1])
+    best = retrieved[0][1] if retrieved else 0.0
+    level, reason = confidence_from_score(best)
+    if not has_reliable_documents:
+        contexts = []
+        level = "low"
+        reason = "Answered from the selected case background; no sufficiently relevant verified document passage was found."
 
-    if _ollama_available():
-        generated = _generate_with_ollama(question, contexts, background_context, history)
-        if generated:
-            return generated, level, reason, f"ollama/{settings.ollama_model}"
+    generated, model = _generate_answer(question, contexts, background_context, history)
+    if generated:
+        return generated, level, reason, model
 
+    if background_context:
+        return NOT_ENOUGH, "low", "No configured answer-generation provider was available.", "none"
     return _extractive_answer(search_question or question, contexts), level, reason, "extractive-fallback"
