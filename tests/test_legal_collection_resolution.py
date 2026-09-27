@@ -1,9 +1,16 @@
 from types import SimpleNamespace
+from pathlib import Path
+import sys
 
 import pytest
 
 from ai.vectorstore.config import QdrantSettings, resolve_legal_collection
-from apps.api.app.routers.cases import _historical_outcome_summary
+
+API_ROOT = Path(__file__).resolve().parents[1] / "apps" / "api"
+if str(API_ROOT) not in sys.path:
+    sys.path.insert(0, str(API_ROOT))
+
+from app.routers.cases import _historical_outcome_summary
 
 
 def _client(*names):
