@@ -1,18 +1,19 @@
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, Form, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, Form, HTTPException, Response, UploadFile
 from pydantic import BaseModel, Field
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from ai.citations.extract import extract_citations
 from ai.preprocessing.extract import SUPPORTED_EXTENSIONS
+from ai.retrieval import index as vector_index
 from ai.summarization.extractive import summarize
 from ai.timeline.extract import extract_events
 from app.auth import get_current_user
 from app.config import settings
 from app.db import get_db
-from app.models import Chunk, Document, User
+from app.models import CaseEvent, Chunk, Document, User
 from app.schemas import (
     CitationsResponse,
     DocumentList,
@@ -271,6 +272,42 @@ def get_document(
 ):
     document = _get_owned_document(db, document_id, user)
     return {**_meta(document, len(document.chunks)), "text": document.text, "summary": document.summary}
+
+
+@router.delete("/{document_id}", status_code=204)
+def delete_document(
+    document_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Delete an accessible document and remove its private retrieval vectors."""
+    document = _get_owned_document(db, document_id, user)
+    chunk_ids = [chunk.id for chunk in document.chunks]
+    try:
+        vector_index.delete_chunks(chunk_ids)
+    except Exception as error:
+        raise HTTPException(
+            status_code=503,
+            detail="Document could not be removed from AI search. Please try again.",
+        ) from error
+
+    # Timeline entries remain useful after the source document is removed,
+    # but must no longer point at a deleted row.
+    for event in db.scalars(select(CaseEvent).where(CaseEvent.document_id == document.id)).all():
+        event.document_id = None
+    title = document.title
+    case_id = document.case_id
+    db.delete(document)
+    create_notification(
+        db,
+        user_id=user.id,
+        notification_type="case",
+        title="Document deleted",
+        body=f"{title} was removed from the case and AI search.",
+        action_url=f"/cases/{case_id}" if case_id is not None else "/documents",
+    )
+    db.commit()
+    return Response(status_code=204)
 
 
 @router.get("/{document_id}/timeline", response_model=TimelineResponse)
