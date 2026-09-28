@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from math import sqrt
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import func, select
@@ -59,8 +60,26 @@ CASE_TYPE_HINTS = {
 }
 
 
+MIN_OUTCOME_SAMPLE = 5
+
+
+def _wilson_interval(successes: int, total: int, z: float = 1.96) -> tuple[int, int] | None:
+    """Return a rounded 95% Wilson interval for a real binomial sample."""
+    if total < 1:
+        return None
+    proportion = successes / total
+    denominator = 1 + (z * z / total)
+    centre = (proportion + (z * z / (2 * total))) / denominator
+    margin = (
+        z
+        * sqrt((proportion * (1 - proportion) / total) + (z * z / (4 * total * total)))
+        / denominator
+    )
+    return round(max(0, centre - margin) * 100), round(min(1, centre + margin) * 100)
+
+
 def _historical_outcome_summary(results: list[dict]) -> dict:
-    """Summarise explicit dispositions without claiming a win probability."""
+    """Summarise explicit dispositions without claiming a personal win probability."""
     buckets = {"favourable": 0, "unfavourable": 0, "partial_or_mixed": 0, "unclear": 0}
     seen: set[str] = set()
     favourable_rows: list[dict] = []
@@ -95,15 +114,22 @@ def _historical_outcome_summary(results: list[dict]) -> dict:
         for law in (row.get("laws_cited") or [])[:2]:
             signals.append(f"Law appearing in a favourable matched judgment: {law}")
 
+    favourable_ratio = round((buckets["favourable"] / known) * 100) if known else None
+    interval = _wilson_interval(buckets["favourable"], known)
+    score_available = known >= MIN_OUTCOME_SAMPLE
     return {
         "matched_cases": len(seen) if seen else len(results),
         "outcomes_available": known,
         **buckets,
-        "favourable_ratio": round((buckets["favourable"] / known) * 100) if known else None,
+        "favourable_ratio": favourable_ratio,
+        "score_available": score_available,
+        "minimum_sample": MIN_OUTCOME_SAMPLE,
+        "confidence_interval_low": interval[0] if interval and score_available else None,
+        "confidence_interval_high": interval[1] if interval and score_available else None,
         "successful_case_signals": list(dict.fromkeys(signals))[:6],
         "meaning": (
-            "Share of outcome-known matched judgments favourable to the plaintiff, petitioner or appellant. "
-            "It is not this user's probability of winning."
+            "Observed share of outcome-known matched judgments favourable to the plaintiff, petitioner or appellant. "
+            "It is a historical benchmark, not this user's probability of winning."
         ),
     }
 
@@ -568,7 +594,7 @@ def case_documents(case_id: int, db: Session = Depends(get_db), user: User = Dep
 
 @router.get("/{case_id}/prediction")
 def case_prediction(case_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    """Evidence-grounded scenario assessment without an invented percentage."""
+    """Evidence assessment plus an auditable benchmark from matched judgments."""
     case = _get_owned_case(db, case_id, user)
     profile = build_case_intelligence_profile(db, case)
     pathway = build_case_pathway_guidance(case)
@@ -584,6 +610,17 @@ def case_prediction(case_id: int, db: Session = Depends(get_db), user: User = De
         for document in verified[:4]
         if (document.text or "").strip()
     ]
+
+    try:
+        similar = _run_similar_search(case=case, documents=verified, top_k=20)
+    except Exception:
+        # The evidence assessment must remain available when the independent
+        # precedent service is offline or not configured.
+        similar = {
+            "corpus_available": False,
+            "historical_outcomes": _historical_outcome_summary([]),
+        }
+    historical_outlook = similar["historical_outcomes"]
 
     from ai.qa import rag as qa_rag
 
@@ -623,16 +660,31 @@ def case_prediction(case_id: int, db: Session = Depends(get_db), user: User = De
             "already directed."
         ),
         "generated_at": datetime.now(timezone.utc).isoformat(),
+        # Kept null: the historical outcome rate below is not a calibrated
+        # personal probability and must not be consumed as one by older UIs.
         "probability": None,
+        "historical_outlook": {
+            **historical_outlook,
+            "corpus_available": similar.get("corpus_available", True),
+            "label": "Historical outcome benchmark",
+            "method": (
+                "Deduplicated Pakistani judgments matched to the saved case description and up to four verified "
+                "case documents. Only explicit allowed/granted/decreed and dismissed/rejected dispositions are counted."
+            ),
+            "warning": (
+                "This is not a personal win probability. It does not know the user's procedural side, judicial "
+                "discretion, evidence credibility, settlement, later precedent or unrecorded facts."
+            ),
+        },
         "factors": [],
         "supporting_factors": supporting_factors,
         "missing_information": profile["readiness"]["missing_information"],
         "readiness": profile["readiness"]["ready_for_assisted_analysis"],
         **pathway,
         "disclaimer": (
-            "Decision-support only, not legal advice or a court prediction. No win percentage is shown because "
-            "wukaLAW does not yet have a validated, calibrated Pakistani outcome model. Verify documents, law, "
-            "citations and strategy with a qualified lawyer."
+            "Decision-support only, not legal advice or a court prediction. Any historical percentage is an observed "
+            "rate in the displayed matched judgments, not a validated personal probability of winning. Verify the "
+            "judgments, law, citations and strategy with a qualified lawyer."
         ),
     }
 

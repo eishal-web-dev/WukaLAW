@@ -42,6 +42,10 @@ export interface CaseSimilarResponse {
     partial_or_mixed: number
     unclear: number
     favourable_ratio: number | null
+    score_available: boolean
+    minimum_sample: number
+    confidence_interval_low: number | null
+    confidence_interval_high: number | null
     successful_case_signals: string[]
     meaning: string
   }

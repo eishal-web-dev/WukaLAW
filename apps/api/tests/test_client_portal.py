@@ -351,15 +351,39 @@ def test_case_prediction_returns_honest_evidence_assessment_without_fake_percent
             "fake/test",
         ),
     )
+    monkeypatch.setattr(
+        "app.routers.cases._run_similar_search",
+        lambda **kwargs: {
+            "corpus_available": True,
+            "historical_outcomes": {
+                "matched_cases": 5,
+                "outcomes_available": 5,
+                "favourable": 3,
+                "unfavourable": 2,
+                "partial_or_mixed": 0,
+                "unclear": 0,
+                "favourable_ratio": 60,
+                "score_available": True,
+                "minimum_sample": 5,
+                "confidence_interval_low": 23,
+                "confidence_interval_high": 88,
+                "successful_case_signals": [],
+                "meaning": "Historical benchmark, not this user's probability of winning.",
+            },
+        },
+    )
     response = client.get(f"/api/v1/cases/{case_id}/prediction", headers=lawyer)
     assert response.status_code == 200
     data = response.json()
     assert data["available"] is True
     assert data["probability"] is None
+    assert data["historical_outlook"]["favourable_ratio"] == 60
+    assert data["historical_outlook"]["outcomes_available"] == 5
+    assert "not a personal win probability" in data["historical_outlook"]["warning"].lower()
     assert data["factors"] == []
     assert data["assessment_type"] == "ai_scenario_analysis"
     assert "limited" in data["assessment"].lower()
-    assert "no win percentage" in data["disclaimer"].lower()
+    assert "not a validated personal probability" in data["disclaimer"].lower()
 
 
 def test_case_prediction_enforces_the_same_ownership_rules(client):

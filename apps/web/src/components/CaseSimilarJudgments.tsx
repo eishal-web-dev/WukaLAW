@@ -308,8 +308,22 @@ export default function CaseSimilarJudgments({ caseId }: { caseId: number | stri
                   <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{data.historical_outcomes.meaning}</p>
                 </div>
                 <div className="text-right">
-                  <div className="text-3xl font-bold tabular-nums" style={{ color: G }}>{data.historical_outcomes.favourable_ratio}%</div>
-                  <div className="text-[10px] text-muted-foreground">favourable to initiating party</div>
+                  {data.historical_outcomes.score_available ? (
+                    <>
+                      <div className="text-3xl font-bold tabular-nums" style={{ color: G }}>{data.historical_outcomes.favourable_ratio}%</div>
+                      <div className="text-[10px] text-muted-foreground">historically favourable to initiating party</div>
+                      {data.historical_outcomes.confidence_interval_low !== null && data.historical_outcomes.confidence_interval_high !== null && (
+                        <div className="text-[10px] text-muted-foreground mt-0.5">
+                          95% range {data.historical_outcomes.confidence_interval_low}–{data.historical_outcomes.confidence_interval_high}%
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <div className="text-sm font-semibold text-amber-400">Sample too small for a score</div>
+                      <div className="text-[10px] text-muted-foreground mt-0.5">At least {data.historical_outcomes.minimum_sample} outcome-known matches required</div>
+                    </>
+                  )}
                   <div className="text-[10px] text-muted-foreground mt-0.5">
                     based on {data.historical_outcomes.outcomes_available} outcome-known matched case{data.historical_outcomes.outcomes_available === 1 ? '' : 's'}
                   </div>

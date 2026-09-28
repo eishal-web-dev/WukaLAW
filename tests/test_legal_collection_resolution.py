@@ -58,5 +58,25 @@ def test_historical_outcomes_are_not_labelled_as_user_win_probability():
 
     assert summary["outcomes_available"] == 3
     assert summary["favourable_ratio"] == 33
+    assert summary["score_available"] is False
+    assert summary["confidence_interval_low"] is None
     assert summary["unclear"] == 1
     assert "not this user's probability" in summary["meaning"]
+
+
+def test_historical_score_requires_sample_and_reports_uncertainty():
+    summary = _historical_outcome_summary([
+        {"document_id": str(index), "explicit_outcome_phrase": outcome, "matching_factors": [], "laws_cited": []}
+        for index, outcome in enumerate((
+            "Petition allowed",
+            "Suit decreed",
+            "Relief granted",
+            "Appeal dismissed",
+            "Petition rejected",
+        ))
+    ])
+
+    assert summary["score_available"] is True
+    assert summary["favourable_ratio"] == 60
+    assert summary["outcomes_available"] == 5
+    assert summary["confidence_interval_low"] < 60 < summary["confidence_interval_high"]
