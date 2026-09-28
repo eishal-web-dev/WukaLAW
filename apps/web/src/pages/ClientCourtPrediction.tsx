@@ -119,7 +119,7 @@ export default function ClientCourtPrediction() {
         </Card>
       ) : prediction && prediction.available && prediction.probability === null ? (
         <div className="space-y-4">
-          {prediction.historical_outlook?.corpus_available && prediction.historical_outlook.outcomes_available > 0 && (
+          {prediction.historical_outlook?.corpus_available && (
             <Card className="p-6 border-[#D4AF37]/20">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="max-w-md">
@@ -142,8 +142,12 @@ export default function ClientCourtPrediction() {
                     </>
                   ) : (
                     <div className="max-w-[190px]">
-                      <div className="text-sm font-semibold text-amber-400">Not enough outcomes for a reliable score</div>
-                      <div className="text-[10px] text-muted-foreground mt-1">Minimum {prediction.historical_outlook.minimum_sample} outcome-known matches</div>
+                      <div className="text-sm font-semibold text-amber-400">
+                        {prediction.historical_outlook.outcomes_available === 0 ? 'No countable outcomes in the matches' : 'Not enough outcomes for a reliable score'}
+                      </div>
+                      <div className="text-[10px] text-muted-foreground mt-1">
+                        {prediction.historical_outlook.favourable} favourable out of {prediction.historical_outlook.outcomes_available} known outcomes · minimum {prediction.historical_outlook.minimum_sample} required for a percentage
+                      </div>
                     </div>
                   )}
                 </div>

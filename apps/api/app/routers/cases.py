@@ -114,14 +114,16 @@ def _historical_outcome_summary(results: list[dict]) -> dict:
         for law in (row.get("laws_cited") or [])[:2]:
             signals.append(f"Law appearing in a favourable matched judgment: {law}")
 
-    favourable_ratio = round((buckets["favourable"] / known) * 100) if known else None
+    observed_ratio = round((buckets["favourable"] / known) * 100) if known else None
     interval = _wilson_interval(buckets["favourable"], known)
     score_available = known >= MIN_OUTCOME_SAMPLE
     return {
         "matched_cases": len(seen) if seen else len(results),
         "outcomes_available": known,
         **buckets,
-        "favourable_ratio": favourable_ratio,
+        # Never expose a percentage for a tiny sample. Consumers can still
+        # show the auditable raw counts below the minimum.
+        "favourable_ratio": observed_ratio if score_available else None,
         "score_available": score_available,
         "minimum_sample": MIN_OUTCOME_SAMPLE,
         "confidence_interval_low": interval[0] if interval and score_available else None,
@@ -132,6 +134,41 @@ def _historical_outcome_summary(results: list[dict]) -> dict:
             "It is a historical benchmark, not this user's probability of winning."
         ),
     }
+
+
+def _fallback_case_assessment(case: Case, profile: dict, pathway: dict) -> str:
+    """Give a useful full assessment even when no generation provider is online."""
+    description = (profile.get("client_account") or "").strip()
+    verified_count = len(profile.get("verified_documents") or [])
+    timeline_count = len(profile.get("timeline") or [])
+    evidence_count = len(profile.get("evidence_inventory") or [])
+    missing = profile.get("readiness", {}).get("missing_information") or []
+
+    overview = (
+        f"This is a {pathway['matter'].lower()} matter recorded as {pathway['case_stage']}. "
+        + (f"The saved case account says: {description}" if description else "A detailed case account has not yet been saved.")
+    )
+    record = (
+        f"The current record contains {verified_count} verified searchable document(s), "
+        f"{timeline_count} dated timeline update(s), and {evidence_count} additional evidence file(s). "
+        "Verified documents can support analysis; timeline statements and inventory-only evidence still need to be checked against originals."
+    )
+    dispute = (
+        "The outcome will depend on which disputed facts are proved, whether the documents are authentic and admissible, "
+        "how the opposing party answers the allegations, and what the latest court order requires. The saved record alone "
+        "does not establish that the client's account has been accepted by the court."
+    )
+    gaps = (
+        "The main items still needing attention are: " + "; ".join(missing)
+        if missing else
+        "The basic case record is populated, but counsel should still verify the latest order, disputed facts, originals, and applicable law."
+    )
+    return "\n\n".join((
+        f"Case overview\n{overview}",
+        f"What the current record supports\n{record}",
+        f"What may affect the outcome\n{dispute}",
+        f"What should be strengthened\n{gaps}",
+    ))
 
 
 def _get_owned_case(db: Session, case_id: int, user: User) -> Case:
@@ -626,9 +663,10 @@ def case_prediction(case_id: int, db: Session = Depends(get_db), user: User = De
 
     generated, model = qa_rag._generate_answer(
         (
-            "Assess this case without giving a win percentage. Explain what currently supports the user's "
-            "position, what the opposing side may dispute, what is missing, and realistic procedural or "
-            "evidentiary scenarios. Use short headings. Do not invent Pakistani law, court orders, facts or outcomes."
+            "Write a detailed, client-friendly assessment of this case without giving a win percentage. Use the headings "
+            "Case overview, What supports your position, What the other side may dispute, Evidence gaps, Likely next stages, "
+            "and What to prepare now. Explain the reasoning rather than copying documents. Distinguish the client's account "
+            "from verified material. Do not invent Pakistani law, court orders, facts or outcomes."
         ),
         contexts,
         render_case_intelligence_profile(profile),
@@ -653,12 +691,7 @@ def case_prediction(case_id: int, db: Session = Depends(get_db), user: User = De
         "available": True,
         "assessment_type": "ai_scenario_analysis" if generated else "procedural_guidance",
         "model": model,
-        "assessment": generated or (
-            f"This {pathway['matter'].lower()} matter is recorded as {pathway['case_stage']}. The roadmap below explains the usual "
-            "preparation stages suggested by the saved case details. Confirm the exact next step against the "
-            "latest court order with your lawyer, because the record does not establish what the court has "
-            "already directed."
-        ),
+        "assessment": generated or _fallback_case_assessment(case, profile, pathway),
         "generated_at": datetime.now(timezone.utc).isoformat(),
         # Kept null: the historical outcome rate below is not a calibrated
         # personal probability and must not be consumed as one by older UIs.

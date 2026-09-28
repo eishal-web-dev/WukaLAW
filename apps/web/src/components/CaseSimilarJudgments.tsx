@@ -300,7 +300,7 @@ export default function CaseSimilarJudgments({ caseId }: { caseId: number | stri
               </div>
             </Card>
           ) : <>
-          {data.historical_outcomes && data.historical_outcomes.outcomes_available > 0 && (
+          {data.historical_outcomes && (
             <Card className="p-5 border-[#D4AF37]/15">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="max-w-xl">
@@ -329,6 +329,11 @@ export default function CaseSimilarJudgments({ caseId }: { caseId: number | stri
                   </div>
                 </div>
               </div>
+              {data.historical_outcomes.outcomes_available === 0 && (
+                <div className="mt-4 rounded-lg border border-amber-400/15 bg-amber-400/[0.03] p-3 text-xs text-muted-foreground">
+                  Matches were found, but none includes an explicit outcome that can be counted safely. Open the cases below to review their available details.
+                </div>
+              )}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-4 text-center">
                 <div className="rounded-lg bg-emerald-500/[0.05] p-3"><div className="font-bold text-emerald-400">{data.historical_outcomes.favourable}</div><div className="text-[10px] text-muted-foreground">Allowed / granted</div></div>
                 <div className="rounded-lg bg-red-500/[0.05] p-3"><div className="font-bold text-red-400">{data.historical_outcomes.unfavourable}</div><div className="text-[10px] text-muted-foreground">Dismissed / rejected</div></div>

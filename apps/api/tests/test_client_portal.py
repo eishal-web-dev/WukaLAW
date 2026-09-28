@@ -424,6 +424,10 @@ def test_child_custody_prediction_has_actionable_fallback_without_ai_provider(cl
     assert response.status_code == 200
     data = response.json()
     assert data["probability"] is None
+    assert data["assessment_type"] == "procedural_guidance"
+    assert "case overview" in data["assessment"].lower()
+    assert "what the current record supports" in data["assessment"].lower()
+    assert "what may affect the outcome" in data["assessment"].lower()
     assert data["case_stage"] == "Currently Going On"
     assert data["matter"] == "Child custody / guardianship"
     assert any("interim custody or visitation" in item for item in data["next_steps"])

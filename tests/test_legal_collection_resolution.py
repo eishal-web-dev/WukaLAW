@@ -57,7 +57,7 @@ def test_historical_outcomes_are_not_labelled_as_user_win_probability():
     ])
 
     assert summary["outcomes_available"] == 3
-    assert summary["favourable_ratio"] == 33
+    assert summary["favourable_ratio"] is None
     assert summary["score_available"] is False
     assert summary["confidence_interval_low"] is None
     assert summary["unclear"] == 1
