@@ -676,6 +676,45 @@ export interface CasePrediction {
   assessment?: string
   generated_at: string | null
   probability: number | null
+  historical_outlook?: {
+    label: string
+    corpus_available: boolean
+    matched_cases: number
+    outcomes_available: number
+    favourable: number
+    unfavourable: number
+    partial_or_mixed: number
+    unclear: number
+    favourable_ratio: number | null
+    score_available: boolean
+    minimum_sample: number
+    confidence_interval_low: number | null
+    confidence_interval_high: number | null
+    successful_case_signals: string[]
+    meaning: string
+    method: string
+    warning: string
+  }
+  case_preparation?: {
+    score: number
+    maximum: number
+    label: string
+    level: string
+    meaning: string
+    warning: string
+    components: Array<{
+      key: string
+      label: string
+      earned: number
+      maximum: number
+      action: string
+    }>
+    priority_actions: Array<{
+      label: string
+      possible_points: number
+      category: string
+    }>
+  }
   factors: CasePredictionFactor[]
   supporting_factors?: string[]
   missing_information?: string[]
@@ -688,9 +727,9 @@ export interface CasePrediction {
   disclaimer: string
 }
 
-/** GET /cases/{id}/prediction -- real contract; no prediction engine exists
- * yet, so `available` is always false right now. Never render a fake
- * percentage when available is false. */
+/** GET /cases/{id}/prediction -- evidence assessment plus an optional,
+ * auditable historical benchmark. `probability` remains null because the
+ * matched-case rate is not a calibrated personal win probability. */
 export function getCasePrediction(id: number | string): Promise<CasePrediction> {
   return request<CasePrediction>(`/cases/${id}/prediction`)
 }

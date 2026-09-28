@@ -99,6 +99,62 @@ describe('ClientCourtPrediction', () => {
     expect(screen.queryByText(/%/)).not.toBeInTheDocument()
   })
 
+  it('labels a matched-judgment rate as historical and shows its sample and uncertainty', async () => {
+    vi.mocked(api.listCases).mockResolvedValue({ items: [makeCase({})], total: 1 })
+    vi.mocked(api.getCasePrediction).mockResolvedValue({
+      available: true,
+      assessment_type: 'ai_scenario_analysis',
+      assessment: 'The saved record supports further analysis.',
+      generated_at: '2026-09-28T00:00:00Z',
+      probability: null,
+      factors: [],
+      case_preparation: {
+        score: 65,
+        maximum: 100,
+        label: 'Case preparation score',
+        level: 'Developing record',
+        meaning: 'How complete and review-ready the saved case record is.',
+        warning: 'This is not a probability of winning.',
+        components: [],
+        priority_actions: [{
+          label: 'Record the next hearing date.',
+          possible_points: 10,
+          category: 'Next hearing or deadline',
+        }],
+      },
+      historical_outlook: {
+        label: 'Historical outcome benchmark',
+        corpus_available: true,
+        matched_cases: 8,
+        outcomes_available: 5,
+        favourable: 3,
+        unfavourable: 2,
+        partial_or_mixed: 0,
+        unclear: 3,
+        favourable_ratio: 60,
+        score_available: true,
+        minimum_sample: 5,
+        confidence_interval_low: 23,
+        confidence_interval_high: 88,
+        successful_case_signals: [],
+        meaning: 'Observed share in matched judgments; not this user’s probability of winning.',
+        method: 'Explicit dispositions only.',
+        warning: 'This is not a personal win probability.',
+      },
+      disclaimer: 'Decision-support only.',
+    })
+
+    render(<ClientCourtPrediction />)
+    expect(await screen.findByText('Historical outcome benchmark')).toBeInTheDocument()
+    expect(screen.getByText('Case preparation score')).toBeInTheDocument()
+    expect(screen.getByText('65%')).toBeInTheDocument()
+    expect(screen.getByText(/Record the next hearing date/i)).toBeInTheDocument()
+    expect(screen.getByText('60%')).toBeInTheDocument()
+    expect(screen.getByText(/95% range 23–88%/i)).toBeInTheDocument()
+    expect(screen.getByText(/Sample: 5 outcome-known matched judgments/i)).toBeInTheDocument()
+    expect(screen.getByText(/not a personal win probability/i)).toBeInTheDocument()
+  })
+
   it('shows an active child-custody roadmap and preparation checklist', async () => {
     vi.mocked(api.listCases).mockResolvedValue({ items: [makeCase({ case_type: 'Family', status: 'Currently Going On' })], total: 1 })
     vi.mocked(api.getCasePrediction).mockResolvedValue({

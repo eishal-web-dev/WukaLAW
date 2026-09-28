@@ -119,6 +119,97 @@ export default function ClientCourtPrediction() {
         </Card>
       ) : prediction && prediction.available && prediction.probability === null ? (
         <div className="space-y-4">
+          {prediction.case_preparation && (
+            <Card className="p-6 border-emerald-400/20">
+              <div className="flex flex-wrap items-start justify-between gap-5">
+                <div className="max-w-md">
+                  <div className="flex items-center gap-2 mb-2">
+                    <CheckCircle2 size={17} className="text-emerald-400" />
+                    <h2 className="text-sm font-bold text-foreground">{prediction.case_preparation.label}</h2>
+                  </div>
+                  <p className="text-xs text-muted-foreground leading-relaxed">{prediction.case_preparation.meaning}</p>
+                </div>
+                <div className="text-right">
+                  <div className="text-4xl font-bold tabular-nums text-emerald-400">{prediction.case_preparation.score}%</div>
+                  <div className="text-[11px] text-muted-foreground">{prediction.case_preparation.level}</div>
+                </div>
+              </div>
+              <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-white/[0.06]">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-amber-400 to-emerald-400 transition-all"
+                  style={{ width: `${Math.max(0, Math.min(100, prediction.case_preparation.score))}%` }}
+                />
+              </div>
+              {prediction.case_preparation.priority_actions.length > 0 && (
+                <div className="mt-5 border-t border-white/[0.06] pt-4">
+                  <h3 className="text-xs font-bold text-foreground mb-3">How to strengthen your case record</h3>
+                  <ul className="space-y-3">
+                    {prediction.case_preparation.priority_actions.slice(0, 5).map((action) => (
+                      <li key={action.category} className="flex items-start justify-between gap-3 text-xs">
+                        <div><span className="font-semibold text-foreground">{action.category}: </span><span className="text-muted-foreground">{action.label}</span></div>
+                        <span className="flex-shrink-0 rounded-full bg-emerald-400/10 px-2 py-0.5 font-semibold text-emerald-400">up to +{action.possible_points}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              <p className="text-[10px] text-muted-foreground mt-4">{prediction.case_preparation.warning}</p>
+            </Card>
+          )}
+          {prediction.historical_outlook?.corpus_available && (
+            <Card className="p-6 border-[#D4AF37]/20">
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div className="max-w-md">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Scale size={17} style={{ color: G }} />
+                    <h2 className="text-sm font-bold text-foreground">{prediction.historical_outlook.label}</h2>
+                  </div>
+                  <p className="text-xs text-muted-foreground leading-relaxed">{prediction.historical_outlook.meaning}</p>
+                </div>
+                <div className="text-right">
+                  {prediction.historical_outlook.score_available ? (
+                    <>
+                      <div className="text-4xl font-bold tabular-nums" style={{ color: G }}>{prediction.historical_outlook.favourable_ratio}%</div>
+                      <div className="text-[11px] text-muted-foreground">historically favourable</div>
+                      {prediction.historical_outlook.confidence_interval_low !== null && prediction.historical_outlook.confidence_interval_high !== null && (
+                        <div className="text-[10px] text-muted-foreground mt-1">
+                          95% range {prediction.historical_outlook.confidence_interval_low}–{prediction.historical_outlook.confidence_interval_high}%
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div className="max-w-[190px]">
+                      <div className="text-sm font-semibold text-amber-400">
+                        {prediction.historical_outlook.outcomes_available === 0 ? 'No countable outcomes in the matches' : 'Not enough outcomes for a reliable score'}
+                      </div>
+                      <div className="text-[10px] text-muted-foreground mt-1">
+                        {prediction.historical_outlook.favourable} favourable out of {prediction.historical_outlook.outcomes_available} known outcomes · minimum {prediction.historical_outlook.minimum_sample} required for a percentage
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-2 mt-4 text-center">
+                <div className="rounded-lg bg-emerald-500/[0.05] p-3"><div className="font-bold text-emerald-400">{prediction.historical_outlook.favourable}</div><div className="text-[10px] text-muted-foreground">Favourable</div></div>
+                <div className="rounded-lg bg-red-500/[0.05] p-3"><div className="font-bold text-red-400">{prediction.historical_outlook.unfavourable}</div><div className="text-[10px] text-muted-foreground">Unfavourable</div></div>
+                <div className="rounded-lg bg-amber-500/[0.05] p-3"><div className="font-bold text-amber-400">{prediction.historical_outlook.partial_or_mixed}</div><div className="text-[10px] text-muted-foreground">Partial / mixed</div></div>
+              </div>
+              <p className="text-[10px] text-muted-foreground mt-3">
+                Sample: {prediction.historical_outlook.outcomes_available} outcome-known matched judgment{prediction.historical_outlook.outcomes_available === 1 ? '' : 's'}. {prediction.historical_outlook.warning}
+              </p>
+            </Card>
+          )}
+          {prediction.historical_outlook && !prediction.historical_outlook.corpus_available && (
+            <Card className="p-5 border-amber-400/20">
+              <div className="flex items-start gap-2">
+                <AlertTriangle size={15} className="text-amber-400 mt-0.5" />
+                <div>
+                  <h2 className="text-sm font-bold text-foreground">Historical score unavailable</h2>
+                  <p className="text-xs text-muted-foreground mt-1">The Pakistani judgment collection is not reachable. The evidence assessment below still uses this case record, but no percentage will be invented.</p>
+                </div>
+              </div>
+            </Card>
+          )}
           <Card className="p-6">
             <div className="flex items-center gap-2 mb-3">
               <Scale size={17} style={{ color: G }} />

@@ -300,7 +300,7 @@ export default function CaseSimilarJudgments({ caseId }: { caseId: number | stri
               </div>
             </Card>
           ) : <>
-          {data.historical_outcomes && data.historical_outcomes.outcomes_available > 0 && (
+          {data.historical_outcomes && (
             <Card className="p-5 border-[#D4AF37]/15">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="max-w-xl">
@@ -308,13 +308,32 @@ export default function CaseSimilarJudgments({ caseId }: { caseId: number | stri
                   <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{data.historical_outcomes.meaning}</p>
                 </div>
                 <div className="text-right">
-                  <div className="text-3xl font-bold tabular-nums" style={{ color: G }}>{data.historical_outcomes.favourable_ratio}%</div>
-                  <div className="text-[10px] text-muted-foreground">favourable to initiating party</div>
+                  {data.historical_outcomes.score_available ? (
+                    <>
+                      <div className="text-3xl font-bold tabular-nums" style={{ color: G }}>{data.historical_outcomes.favourable_ratio}%</div>
+                      <div className="text-[10px] text-muted-foreground">historically favourable to initiating party</div>
+                      {data.historical_outcomes.confidence_interval_low !== null && data.historical_outcomes.confidence_interval_high !== null && (
+                        <div className="text-[10px] text-muted-foreground mt-0.5">
+                          95% range {data.historical_outcomes.confidence_interval_low}–{data.historical_outcomes.confidence_interval_high}%
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <div className="text-sm font-semibold text-amber-400">Sample too small for a score</div>
+                      <div className="text-[10px] text-muted-foreground mt-0.5">At least {data.historical_outcomes.minimum_sample} outcome-known matches required</div>
+                    </>
+                  )}
                   <div className="text-[10px] text-muted-foreground mt-0.5">
                     based on {data.historical_outcomes.outcomes_available} outcome-known matched case{data.historical_outcomes.outcomes_available === 1 ? '' : 's'}
                   </div>
                 </div>
               </div>
+              {data.historical_outcomes.outcomes_available === 0 && (
+                <div className="mt-4 rounded-lg border border-amber-400/15 bg-amber-400/[0.03] p-3 text-xs text-muted-foreground">
+                  Matches were found, but none includes an explicit outcome that can be counted safely. Open the cases below to review their available details.
+                </div>
+              )}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-4 text-center">
                 <div className="rounded-lg bg-emerald-500/[0.05] p-3"><div className="font-bold text-emerald-400">{data.historical_outcomes.favourable}</div><div className="text-[10px] text-muted-foreground">Allowed / granted</div></div>
                 <div className="rounded-lg bg-red-500/[0.05] p-3"><div className="font-bold text-red-400">{data.historical_outcomes.unfavourable}</div><div className="text-[10px] text-muted-foreground">Dismissed / rejected</div></div>

@@ -151,7 +151,7 @@ def test_real_ocr_recovers_text_from_a_scanned_pdf(tmp_path, monkeypatch):
 
     recovered = ocr_module.ocr_pdf(pdf_path)
 
-    assert "wukaLAW" in recovered.upper()
+    assert "WUKALAW" in recovered.upper()
     assert "COURT" in recovered.upper()
 
 

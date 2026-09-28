@@ -351,15 +351,41 @@ def test_case_prediction_returns_honest_evidence_assessment_without_fake_percent
             "fake/test",
         ),
     )
+    monkeypatch.setattr(
+        "app.routers.cases._run_similar_search",
+        lambda **kwargs: {
+            "corpus_available": True,
+            "historical_outcomes": {
+                "matched_cases": 5,
+                "outcomes_available": 5,
+                "favourable": 3,
+                "unfavourable": 2,
+                "partial_or_mixed": 0,
+                "unclear": 0,
+                "favourable_ratio": 60,
+                "score_available": True,
+                "minimum_sample": 5,
+                "confidence_interval_low": 23,
+                "confidence_interval_high": 88,
+                "successful_case_signals": [],
+                "meaning": "Historical benchmark, not this user's probability of winning.",
+            },
+        },
+    )
     response = client.get(f"/api/v1/cases/{case_id}/prediction", headers=lawyer)
     assert response.status_code == 200
     data = response.json()
     assert data["available"] is True
     assert data["probability"] is None
+    assert data["historical_outlook"]["favourable_ratio"] == 60
+    assert data["historical_outlook"]["outcomes_available"] == 5
+    assert "not a personal win probability" in data["historical_outlook"]["warning"].lower()
+    assert 0 <= data["case_preparation"]["score"] <= 100
+    assert "not a probability of winning" in data["case_preparation"]["warning"].lower()
     assert data["factors"] == []
     assert data["assessment_type"] == "ai_scenario_analysis"
     assert "limited" in data["assessment"].lower()
-    assert "no win percentage" in data["disclaimer"].lower()
+    assert "not a validated personal probability" in data["disclaimer"].lower()
 
 
 def test_case_prediction_enforces_the_same_ownership_rules(client):
@@ -400,6 +426,10 @@ def test_child_custody_prediction_has_actionable_fallback_without_ai_provider(cl
     assert response.status_code == 200
     data = response.json()
     assert data["probability"] is None
+    assert data["assessment_type"] == "procedural_guidance"
+    assert "case overview" in data["assessment"].lower()
+    assert "what the current record supports" in data["assessment"].lower()
+    assert "what may affect the outcome" in data["assessment"].lower()
     assert data["case_stage"] == "Currently Going On"
     assert data["matter"] == "Child custody / guardianship"
     assert any("interim custody or visitation" in item for item in data["next_steps"])
