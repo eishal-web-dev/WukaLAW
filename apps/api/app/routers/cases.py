@@ -61,6 +61,7 @@ CASE_TYPE_HINTS = {
 
 
 MIN_OUTCOME_SAMPLE = 5
+MIN_PERSONAL_ESTIMATE_SAMPLE = 10
 
 
 def _wilson_interval(successes: int, total: int, z: float = 1.96) -> tuple[int, int] | None:
@@ -252,6 +253,56 @@ def _case_preparation_score(profile: dict) -> dict:
         "priority_actions": actions,
         "meaning": "How complete and review-ready the saved case record is based on information available in wukaLAW.",
         "warning": "This is not a probability of winning. A complete file can still lose, and an incomplete file can still succeed after proper legal preparation.",
+    }
+
+
+def _experimental_outcome_estimate(summary: dict, party_role: str | None, claim_focus: str | None) -> dict:
+    """Orient matched dispositions to an explicitly selected procedural side."""
+    role = (party_role or "").strip().casefold()
+    focus = " ".join((claim_focus or "").split())
+    if role not in {"initiating", "defending"} or not focus:
+        return {
+            "available": False,
+            "reason": "Select the specific claim and whether you are bringing or defending it.",
+            "minimum_sample": MIN_PERSONAL_ESTIMATE_SAMPLE,
+        }
+
+    total = int(summary.get("outcomes_available") or 0)
+    if total < MIN_PERSONAL_ESTIMATE_SAMPLE:
+        return {
+            "available": False,
+            "reason": (
+                f"Only {total} outcome-known matched judgment(s) were available; "
+                f"at least {MIN_PERSONAL_ESTIMATE_SAMPLE} are required."
+            ),
+            "claim_focus": focus,
+            "party_role": role,
+            "sample_size": total,
+            "minimum_sample": MIN_PERSONAL_ESTIMATE_SAMPLE,
+        }
+
+    successes = int(summary["favourable"] if role == "initiating" else summary["unfavourable"])
+    estimate = round((successes / total) * 100)
+    interval = _wilson_interval(successes, total)
+    return {
+        "available": True,
+        "label": "Experimental matched-case outlook",
+        "claim_focus": focus,
+        "party_role": role,
+        "estimate": estimate,
+        "range_low": interval[0] if interval else None,
+        "range_high": interval[1] if interval else None,
+        "supporting_outcomes": successes,
+        "sample_size": total,
+        "minimum_sample": MIN_PERSONAL_ESTIMATE_SAMPLE,
+        "method": (
+            "Observed outcomes in deduplicated matched Pakistani judgments, oriented to the selected procedural side. "
+            "Partial or mixed outcomes remain in the denominator and are not counted as a full success."
+        ),
+        "warning": (
+            "Experimental research estimate only—not a validated prediction, legal advice, or guarantee. It does not "
+            "measure witness credibility, judicial discretion, unrecorded facts, settlement, or later precedent."
+        ),
     }
 
 
@@ -714,7 +765,13 @@ def case_documents(case_id: int, db: Session = Depends(get_db), user: User = Dep
 
 
 @router.get("/{case_id}/prediction")
-def case_prediction(case_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def case_prediction(
+    case_id: int,
+    party_role: str | None = Query(default=None, pattern="^(initiating|defending)$"),
+    claim_focus: str | None = Query(default=None, min_length=3, max_length=500),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
     """Evidence assessment plus an auditable benchmark from matched judgments."""
     case = _get_owned_case(db, case_id, user)
     profile = build_case_intelligence_profile(db, case)
@@ -733,7 +790,12 @@ def case_prediction(case_id: int, db: Session = Depends(get_db), user: User = De
     ]
 
     try:
-        similar = _run_similar_search(case=case, documents=verified, top_k=20)
+        similar = _run_similar_search(
+            case=case,
+            documents=verified,
+            top_k=20,
+            focus=" ".join(claim_focus.split()) if claim_focus else None,
+        )
     except Exception:
         # The evidence assessment must remain available when the independent
         # precedent service is offline or not configured.
@@ -794,6 +856,7 @@ def case_prediction(case_id: int, db: Session = Depends(get_db), user: User = De
             ),
         },
         "case_preparation": _case_preparation_score(profile),
+        "outcome_estimate": _experimental_outcome_estimate(historical_outlook, party_role, claim_focus),
         "factors": [],
         "supporting_factors": supporting_factors,
         "missing_information": profile["readiness"]["missing_information"],
