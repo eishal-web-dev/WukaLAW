@@ -108,6 +108,20 @@ describe('ClientCourtPrediction', () => {
       generated_at: '2026-09-28T00:00:00Z',
       probability: null,
       factors: [],
+      case_preparation: {
+        score: 65,
+        maximum: 100,
+        label: 'Case preparation score',
+        level: 'Developing record',
+        meaning: 'How complete and review-ready the saved case record is.',
+        warning: 'This is not a probability of winning.',
+        components: [],
+        priority_actions: [{
+          label: 'Record the next hearing date.',
+          possible_points: 10,
+          category: 'Next hearing or deadline',
+        }],
+      },
       historical_outlook: {
         label: 'Historical outcome benchmark',
         corpus_available: true,
@@ -132,6 +146,9 @@ describe('ClientCourtPrediction', () => {
 
     render(<ClientCourtPrediction />)
     expect(await screen.findByText('Historical outcome benchmark')).toBeInTheDocument()
+    expect(screen.getByText('Case preparation score')).toBeInTheDocument()
+    expect(screen.getByText('65%')).toBeInTheDocument()
+    expect(screen.getByText(/Record the next hearing date/i)).toBeInTheDocument()
     expect(screen.getByText('60%')).toBeInTheDocument()
     expect(screen.getByText(/95% range 23–88%/i)).toBeInTheDocument()
     expect(screen.getByText(/Sample: 5 outcome-known matched judgments/i)).toBeInTheDocument()

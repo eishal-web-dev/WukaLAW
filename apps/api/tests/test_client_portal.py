@@ -380,6 +380,8 @@ def test_case_prediction_returns_honest_evidence_assessment_without_fake_percent
     assert data["historical_outlook"]["favourable_ratio"] == 60
     assert data["historical_outlook"]["outcomes_available"] == 5
     assert "not a personal win probability" in data["historical_outlook"]["warning"].lower()
+    assert 0 <= data["case_preparation"]["score"] <= 100
+    assert "not a probability of winning" in data["case_preparation"]["warning"].lower()
     assert data["factors"] == []
     assert data["assessment_type"] == "ai_scenario_analysis"
     assert "limited" in data["assessment"].lower()

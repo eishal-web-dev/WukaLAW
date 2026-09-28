@@ -171,6 +171,90 @@ def _fallback_case_assessment(case: Case, profile: dict, pathway: dict) -> str:
     ))
 
 
+def _case_preparation_score(profile: dict) -> dict:
+    """Score record completeness, never merits or probability of success."""
+    description_ready = bool((profile.get("client_account") or "").strip())
+    documents = profile.get("verified_documents") or []
+    timeline = profile.get("timeline") or []
+    evidence = profile.get("evidence_inventory") or []
+    pending_ocr = profile.get("documents_pending_ocr_review") or []
+    deadline_ready = bool(profile.get("case", {}).get("deadline"))
+    linked_events = sum(1 for event in timeline if event.get("linked_document_id"))
+
+    components = [
+        {
+            "key": "case_account",
+            "label": "Clear case account",
+            "earned": 15 if description_ready else 0,
+            "maximum": 15,
+            "action": "Add a clear account of what happened, what is disputed, and the relief you want.",
+        },
+        {
+            "key": "verified_documents",
+            "label": "Verified searchable documents",
+            "earned": min(25, round((len(documents) / 4) * 25)),
+            "maximum": 25,
+            "action": "Upload and verify the key pleadings, orders, agreements, receipts, and official records.",
+        },
+        {
+            "key": "timeline",
+            "label": "Dated chronology",
+            "earned": min(15, round((len(timeline) / 3) * 15)),
+            "maximum": 15,
+            "action": "Record at least three important dated events in the case timeline.",
+        },
+        {
+            "key": "linked_proof",
+            "label": "Timeline linked to proof",
+            "earned": min(15, round((linked_events / 3) * 15)),
+            "maximum": 15,
+            "action": "Link each important timeline event to the document that supports it.",
+        },
+        {
+            "key": "evidence_inventory",
+            "label": "Evidence inventory",
+            "earned": min(10, round((len(evidence) / 5) * 10)),
+            "maximum": 10,
+            "action": "Add the most important evidence files and preserve their originals and dates.",
+        },
+        {
+            "key": "deadline",
+            "label": "Next hearing or deadline",
+            "earned": 10 if deadline_ready else 0,
+            "maximum": 10,
+            "action": "Record the next hearing, filing date, or deadline from the latest court order.",
+        },
+        {
+            "key": "ocr_review",
+            "label": "OCR review complete",
+            "earned": 10 if not pending_ocr else 0,
+            "maximum": 10,
+            "action": "Review and verify all OCR text before relying on scanned documents.",
+        },
+    ]
+    score = sum(item["earned"] for item in components)
+    actions = [
+        {
+            "label": item["action"],
+            "possible_points": item["maximum"] - item["earned"],
+            "category": item["label"],
+        }
+        for item in components
+        if item["earned"] < item["maximum"]
+    ]
+    actions.sort(key=lambda item: item["possible_points"], reverse=True)
+    return {
+        "score": score,
+        "maximum": 100,
+        "label": "Case preparation score",
+        "level": "Strong record" if score >= 80 else "Developing record" if score >= 50 else "More preparation needed",
+        "components": components,
+        "priority_actions": actions,
+        "meaning": "How complete and review-ready the saved case record is based on information available in wukaLAW.",
+        "warning": "This is not a probability of winning. A complete file can still lose, and an incomplete file can still succeed after proper legal preparation.",
+    }
+
+
 def _get_owned_case(db: Session, case_id: int, user: User) -> Case:
     """A case is accessible to the lawyer who owns it, the client it is
     assigned to, or -- for a still-unclaimed client case request -- any
@@ -709,6 +793,7 @@ def case_prediction(case_id: int, db: Session = Depends(get_db), user: User = De
                 "discretion, evidence credibility, settlement, later precedent or unrecorded facts."
             ),
         },
+        "case_preparation": _case_preparation_score(profile),
         "factors": [],
         "supporting_factors": supporting_factors,
         "missing_information": profile["readiness"]["missing_information"],

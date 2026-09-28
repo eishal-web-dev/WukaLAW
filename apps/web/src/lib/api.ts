@@ -695,6 +695,26 @@ export interface CasePrediction {
     method: string
     warning: string
   }
+  case_preparation?: {
+    score: number
+    maximum: number
+    label: string
+    level: string
+    meaning: string
+    warning: string
+    components: Array<{
+      key: string
+      label: string
+      earned: number
+      maximum: number
+      action: string
+    }>
+    priority_actions: Array<{
+      label: string
+      possible_points: number
+      category: string
+    }>
+  }
   factors: CasePredictionFactor[]
   supporting_factors?: string[]
   missing_information?: string[]

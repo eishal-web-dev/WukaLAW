@@ -10,7 +10,7 @@ API_ROOT = Path(__file__).resolve().parents[1] / "apps" / "api"
 if str(API_ROOT) not in sys.path:
     sys.path.insert(0, str(API_ROOT))
 
-from app.routers.cases import _historical_outcome_summary
+from app.routers.cases import _case_preparation_score, _historical_outcome_summary
 
 
 def _client(*names):
@@ -80,3 +80,24 @@ def test_historical_score_requires_sample_and_reports_uncertainty():
     assert summary["favourable_ratio"] == 60
     assert summary["outcomes_available"] == 5
     assert summary["confidence_interval_low"] < 60 < summary["confidence_interval_high"]
+
+
+def test_preparation_score_is_transparent_and_not_a_win_probability():
+    profile = {
+        "case": {"deadline": None},
+        "client_account": "A clear account of the dispute.",
+        "verified_documents": [{"id": index} for index in range(4)],
+        "timeline": [
+            {"linked_document_id": 1},
+            {"linked_document_id": None},
+        ],
+        "evidence_inventory": [{"id": index} for index in range(5)],
+        "documents_pending_ocr_review": [],
+    }
+
+    result = _case_preparation_score(profile)
+
+    assert result["score"] == 75
+    assert result["maximum"] == 100
+    assert "not a probability of winning" in result["warning"].lower()
+    assert result["priority_actions"][0]["category"] == "Timeline linked to proof"
