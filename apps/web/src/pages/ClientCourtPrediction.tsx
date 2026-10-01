@@ -15,9 +15,9 @@ function scoreColour(score: number) {
   return '#F87171'
 }
 
-function confidenceLabel(sampleSize: number, minimum: number) {
-  if (sampleSize >= Math.max(30, minimum * 3)) return 'High confidence'
-  if (sampleSize >= minimum) return 'Moderate confidence'
+function sampleLabel(sampleSize: number, minimum: number) {
+  if (sampleSize >= Math.max(30, minimum * 3)) return 'Larger historical sample'
+  if (sampleSize >= minimum) return 'Minimum sample met'
   return 'Insufficient data'
 }
 
@@ -225,18 +225,25 @@ export default function ClientCourtPrediction() {
           {prediction.outcome_estimate?.available && (() => {
             const estimate = prediction.outcome_estimate
             const sampleSize = estimate.sample_size ?? 0
-            const confidence = confidenceLabel(sampleSize, estimate.minimum_sample)
+            const sampleDescription = sampleLabel(sampleSize, estimate.minimum_sample)
             return (
-              <Card className="overflow-hidden border-[#D4AF37]/30">
-                <div className="grid gap-6 p-6 md:grid-cols-[190px_1fr] md:items-center">
-                  <ScoreRing
-                    value={estimate.estimate ?? 0}
-                    label="Outcome estimate"
-                    range={estimate.range_low != null && estimate.range_high != null ? `likely range ${estimate.range_low}–${estimate.range_high}` : undefined}
-                  />
-                  <div>
+              <Card className="overflow-hidden border-border bg-muted/[0.02]">
+                <div className="p-5">
+                  <div className="flex flex-wrap items-start justify-between gap-4">
+                    <div>
+                      <h2 className="text-sm font-bold text-foreground">Historical matched-case benchmark</h2>
+                      <p className="mt-1 text-xs text-muted-foreground">Observed outcomes in retrieved judgments—not your probability of winning.</p>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-lg font-semibold tabular-nums text-foreground">{estimate.estimate ?? 0}% historically supportive</div>
+                      {estimate.range_low != null && estimate.range_high != null && (
+                        <div className="text-[10px] text-muted-foreground">Sample-only statistical range {estimate.range_low}–{estimate.range_high}%</div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="mt-4">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="rounded-full bg-[#D4AF37]/10 px-3 py-1 text-xs font-bold text-[#D4AF37]">{confidence}</span>
+                      <span className="rounded-full bg-[#D4AF37]/10 px-3 py-1 text-xs font-bold text-[#D4AF37]">{sampleDescription}</span>
                       <span className="rounded-full bg-white/[0.04] px-3 py-1 text-xs text-muted-foreground">{sampleSize} matched outcomes</span>
                       <span className="rounded-full bg-white/[0.04] px-3 py-1 text-xs text-muted-foreground">{estimate.party_role === 'initiating' ? 'Bringing claim' : 'Defending claim'}</span>
                     </div>
@@ -253,12 +260,12 @@ export default function ClientCourtPrediction() {
                     </div>
                   </div>
                 </div>
-                <details className="group border-t border-border px-6 py-4">
+                <details className="group border-t border-border px-5 py-4">
                   <summary className="flex cursor-pointer list-none items-center justify-between text-xs font-semibold text-muted-foreground">
                     How this score was calculated <ChevronDown size={15} className="transition-transform group-open:rotate-180" />
                   </summary>
                   <p className="mt-3 text-xs leading-relaxed text-muted-foreground">{estimate.method}</p>
-                  <p className="mt-2 text-[10px] text-amber-300/80">{estimate.warning}</p>
+                  <p className="mt-2 text-[10px] text-amber-300/80">Similarity, evidence quality, legal comparability and judicial discretion are not measured by this range. {estimate.warning}</p>
                 </details>
               </Card>
             )

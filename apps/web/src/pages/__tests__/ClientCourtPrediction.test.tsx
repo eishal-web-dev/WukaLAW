@@ -181,9 +181,10 @@ describe('ClientCourtPrediction', () => {
     })
 
     render(<ClientCourtPrediction />)
-    expect(await screen.findByText('68')).toBeInTheDocument()
-    expect(screen.getByText('/100')).toBeInTheDocument()
-    expect(screen.getByText('High confidence')).toBeInTheDocument()
+    expect(await screen.findByText('Historical matched-case benchmark')).toBeInTheDocument()
+    expect(screen.getByText('68% historically supportive')).toBeInTheDocument()
+    expect(screen.getByText(/not your probability of winning/i)).toBeInTheDocument()
+    expect(screen.getByText('Larger historical sample')).toBeInTheDocument()
     expect(screen.getByText('31 matched outcomes')).toBeInTheDocument()
     expect(screen.getByText('21')).toBeInTheDocument()
     expect(screen.getByText('Recovery of unpaid dower')).toBeInTheDocument()
