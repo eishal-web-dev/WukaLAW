@@ -232,23 +232,23 @@ export default function ClientCourtPrediction() {
             </Card>
           )}
           {prediction.historical_outlook?.corpus_available && (
-            <Card className="p-6 border-[#D4AF37]/20">
+            <Card className="p-5 border-border bg-muted/[0.02]">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="max-w-md">
                   <div className="flex items-center gap-2 mb-2">
                     <Scale size={17} style={{ color: G }} />
-                    <h2 className="text-sm font-bold text-foreground">{prediction.historical_outlook.label}</h2>
+                    <h2 className="text-sm font-bold text-foreground">Historical matched-case benchmark</h2>
                   </div>
                   <p className="text-xs text-muted-foreground leading-relaxed">{prediction.historical_outlook.meaning}</p>
                 </div>
                 <div className="text-right">
                   {prediction.historical_outlook.score_available ? (
                     <>
-                      <div className="text-4xl font-bold tabular-nums" style={{ color: G }}>{prediction.historical_outlook.favourable_ratio}%</div>
-                      <div className="text-[11px] text-muted-foreground">historically favourable</div>
+                      <div className="text-lg font-semibold tabular-nums text-foreground">{prediction.historical_outlook.favourable_ratio}% historically favourable</div>
+                      <div className="text-[10px] font-medium text-amber-400">Not your probability of winning</div>
                       {prediction.historical_outlook.confidence_interval_low !== null && prediction.historical_outlook.confidence_interval_high !== null && (
                         <div className="text-[10px] text-muted-foreground mt-1">
-                          95% range {prediction.historical_outlook.confidence_interval_low}–{prediction.historical_outlook.confidence_interval_high}%
+                          Sample-only statistical range {prediction.historical_outlook.confidence_interval_low}–{prediction.historical_outlook.confidence_interval_high}%
                         </div>
                       )}
                     </>
@@ -270,7 +270,7 @@ export default function ClientCourtPrediction() {
                 <div className="rounded-lg bg-amber-500/[0.05] p-3"><div className="font-bold text-amber-400">{prediction.historical_outlook.partial_or_mixed}</div><div className="text-[10px] text-muted-foreground">Partial / mixed</div></div>
               </div>
               <p className="text-[10px] text-muted-foreground mt-3">
-                Sample: {prediction.historical_outlook.outcomes_available} outcome-known matched judgment{prediction.historical_outlook.outcomes_available === 1 ? '' : 's'}. {prediction.historical_outlook.warning}
+                Sample: {prediction.historical_outlook.outcomes_available} outcome-known matched judgment{prediction.historical_outlook.outcomes_available === 1 ? '' : 's'}. Similarity, evidence, judicial discretion and legal comparability are not measured by this range. {prediction.historical_outlook.warning}
               </p>
             </Card>
           )}
