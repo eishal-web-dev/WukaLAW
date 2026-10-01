@@ -715,6 +715,21 @@ export interface CasePrediction {
       category: string
     }>
   }
+  outcome_estimate?: {
+    available: boolean
+    reason?: string
+    label?: string
+    claim_focus?: string
+    party_role?: 'initiating' | 'defending'
+    estimate?: number
+    range_low?: number | null
+    range_high?: number | null
+    supporting_outcomes?: number
+    sample_size?: number
+    minimum_sample: number
+    method?: string
+    warning?: string
+  }
   factors: CasePredictionFactor[]
   supporting_factors?: string[]
   missing_information?: string[]
@@ -730,8 +745,15 @@ export interface CasePrediction {
 /** GET /cases/{id}/prediction -- evidence assessment plus an optional,
  * auditable historical benchmark. `probability` remains null because the
  * matched-case rate is not a calibrated personal win probability. */
-export function getCasePrediction(id: number | string): Promise<CasePrediction> {
-  return request<CasePrediction>(`/cases/${id}/prediction`)
+export function getCasePrediction(
+  id: number | string,
+  options?: { partyRole: 'initiating' | 'defending'; claimFocus: string },
+): Promise<CasePrediction> {
+  const params = options ? new URLSearchParams({
+    party_role: options.partyRole,
+    claim_focus: options.claimFocus,
+  }) : null
+  return request<CasePrediction>(`/cases/${id}/prediction${params ? `?${params.toString()}` : ''}`)
 }
 
 export interface ReportSummary {

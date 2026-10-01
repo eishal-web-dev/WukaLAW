@@ -23,6 +23,8 @@ export default function ClientCourtPrediction() {
   const [loadingCases, setLoadingCases] = useState(true)
   const [loadingPrediction, setLoadingPrediction] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [partyRole, setPartyRole] = useState<'initiating' | 'defending'>('defending')
+  const [claimFocus, setClaimFocus] = useState('')
 
   useEffect(() => {
     let cancelled = false
@@ -62,6 +64,23 @@ export default function ClientCourtPrediction() {
       cancelled = true
     }
   }, [selectedCaseId])
+
+  const estimateOutlook = async () => {
+    if (selectedCaseId === null) return
+    if (claimFocus.trim().length < 3) {
+      setError('Describe the specific claim you want to estimate first.')
+      return
+    }
+    setError(null)
+    setLoadingPrediction(true)
+    try {
+      setPrediction(await getCasePrediction(selectedCaseId, { partyRole, claimFocus: claimFocus.trim() }))
+    } catch (err) {
+      setError(errorMessage(err))
+    } finally {
+      setLoadingPrediction(false)
+    }
+  }
 
   if (loadingCases) {
     return (
@@ -107,6 +126,36 @@ export default function ClientCourtPrediction() {
 
       {error && <ErrorAlert message={error} />}
 
+      <Card className="p-5 border-[#D4AF37]/15">
+        <h2 className="text-sm font-bold text-foreground">Estimate one specific claim</h2>
+        <p className="text-xs text-muted-foreground mt-1">A case can contain several claims with different prospects. Select your side and describe only the result you want estimated.</p>
+        <div className="grid gap-3 sm:grid-cols-[160px_1fr] mt-4">
+          <select
+            value={partyRole}
+            onChange={(event) => setPartyRole(event.target.value as 'initiating' | 'defending')}
+            className="text-sm px-3 py-2.5 rounded-xl border border-border bg-card text-foreground outline-none focus:border-primary/40"
+          >
+            <option value="defending">I am defending it</option>
+            <option value="initiating">I brought the claim</option>
+          </select>
+          <input
+            value={claimFocus}
+            onChange={(event) => setClaimFocus(event.target.value)}
+            placeholder="Example: defending the alleged PKR 14 lac loan claim"
+            maxLength={500}
+            className="text-sm px-3 py-2.5 rounded-xl border border-border bg-card text-foreground outline-none focus:border-primary/40"
+          />
+        </div>
+        <button
+          type="button"
+          disabled={loadingPrediction || claimFocus.trim().length < 3}
+          onClick={() => void estimateOutlook()}
+          className="mt-3 rounded-lg bg-[#D4AF37] px-4 py-2 text-xs font-bold text-black disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          Calculate from matched cases
+        </button>
+      </Card>
+
       {loadingPrediction ? (
         <div className="py-16 flex justify-center">
           <Spinner label="Checking for a prediction…" />
@@ -119,6 +168,32 @@ export default function ClientCourtPrediction() {
         </Card>
       ) : prediction && prediction.available && prediction.probability === null ? (
         <div className="space-y-4">
+          {prediction.outcome_estimate?.available && (
+            <Card className="p-6 border-[#D4AF37]/30">
+              <div className="flex flex-wrap items-start justify-between gap-5">
+                <div className="max-w-md">
+                  <h2 className="text-sm font-bold text-foreground">{prediction.outcome_estimate.label}</h2>
+                  <p className="text-xs text-muted-foreground mt-1">{prediction.outcome_estimate.claim_focus}</p>
+                  <p className="text-[10px] text-muted-foreground mt-3">{prediction.outcome_estimate.method}</p>
+                </div>
+                <div className="text-right">
+                  <div className="text-4xl font-bold tabular-nums" style={{ color: G }}>{prediction.outcome_estimate.estimate}%</div>
+                  <div className="text-[11px] text-muted-foreground">experimental matched-case estimate</div>
+                  <div className="text-[10px] text-muted-foreground mt-1">95% range {prediction.outcome_estimate.range_low}–{prediction.outcome_estimate.range_high}%</div>
+                </div>
+              </div>
+              <div className="mt-4 rounded-lg bg-white/[0.025] p-3 text-xs text-muted-foreground">
+                {prediction.outcome_estimate.supporting_outcomes} supportive outcome{prediction.outcome_estimate.supporting_outcomes === 1 ? '' : 's'} among {prediction.outcome_estimate.sample_size} outcome-known matched judgments.
+              </div>
+              <p className="text-[10px] text-amber-300/80 mt-3">{prediction.outcome_estimate.warning}</p>
+            </Card>
+          )}
+          {prediction.outcome_estimate && !prediction.outcome_estimate.available && prediction.outcome_estimate.claim_focus && (
+            <Card className="p-5 border-amber-400/20">
+              <h2 className="text-sm font-bold text-foreground">Outcome estimate unavailable</h2>
+              <p className="text-xs text-muted-foreground mt-1">{prediction.outcome_estimate.reason}</p>
+            </Card>
+          )}
           {prediction.case_preparation && (
             <Card className="p-6 border-emerald-400/20">
               <div className="flex flex-wrap items-start justify-between gap-5">
@@ -157,23 +232,23 @@ export default function ClientCourtPrediction() {
             </Card>
           )}
           {prediction.historical_outlook?.corpus_available && (
-            <Card className="p-6 border-[#D4AF37]/20">
+            <Card className="p-5 border-border bg-muted/[0.02]">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="max-w-md">
                   <div className="flex items-center gap-2 mb-2">
                     <Scale size={17} style={{ color: G }} />
-                    <h2 className="text-sm font-bold text-foreground">{prediction.historical_outlook.label}</h2>
+                    <h2 className="text-sm font-bold text-foreground">Historical matched-case benchmark</h2>
                   </div>
                   <p className="text-xs text-muted-foreground leading-relaxed">{prediction.historical_outlook.meaning}</p>
                 </div>
                 <div className="text-right">
                   {prediction.historical_outlook.score_available ? (
                     <>
-                      <div className="text-4xl font-bold tabular-nums" style={{ color: G }}>{prediction.historical_outlook.favourable_ratio}%</div>
-                      <div className="text-[11px] text-muted-foreground">historically favourable</div>
+                      <div className="text-lg font-semibold tabular-nums text-foreground">{prediction.historical_outlook.favourable_ratio}% historically favourable</div>
+                      <div className="text-[10px] font-medium text-amber-400">Not your probability of winning</div>
                       {prediction.historical_outlook.confidence_interval_low !== null && prediction.historical_outlook.confidence_interval_high !== null && (
                         <div className="text-[10px] text-muted-foreground mt-1">
-                          95% range {prediction.historical_outlook.confidence_interval_low}–{prediction.historical_outlook.confidence_interval_high}%
+                          Sample-only statistical range {prediction.historical_outlook.confidence_interval_low}–{prediction.historical_outlook.confidence_interval_high}%
                         </div>
                       )}
                     </>
@@ -195,7 +270,7 @@ export default function ClientCourtPrediction() {
                 <div className="rounded-lg bg-amber-500/[0.05] p-3"><div className="font-bold text-amber-400">{prediction.historical_outlook.partial_or_mixed}</div><div className="text-[10px] text-muted-foreground">Partial / mixed</div></div>
               </div>
               <p className="text-[10px] text-muted-foreground mt-3">
-                Sample: {prediction.historical_outlook.outcomes_available} outcome-known matched judgment{prediction.historical_outlook.outcomes_available === 1 ? '' : 's'}. {prediction.historical_outlook.warning}
+                Sample: {prediction.historical_outlook.outcomes_available} outcome-known matched judgment{prediction.historical_outlook.outcomes_available === 1 ? '' : 's'}. Similarity, evidence, judicial discretion and legal comparability are not measured by this range. {prediction.historical_outlook.warning}
               </p>
             </Card>
           )}
