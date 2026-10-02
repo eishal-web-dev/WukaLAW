@@ -91,6 +91,22 @@ describe('Admin route integration', () => {
     expect(api.adminGetSystem).toHaveBeenCalledOnce()
   })
 
+  it('combines API management and security controls in platform settings', async () => {
+    auth.user.role = 'admin'
+    open('/admin/settings')
+    expect(await screen.findByRole('heading', { name: 'Platform Settings' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'API management' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Security center' })).toBeInTheDocument()
+  })
+
+  it.each(['/admin/security', '/admin/api'])('redirects the former %s page to platform settings', async (path) => {
+    auth.user.role = 'admin'
+    open(path)
+    expect(await screen.findByRole('heading', { name: 'Platform Settings' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'API management' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Security center' })).toBeInTheDocument()
+  })
+
   it('shows a failed request without reporting empty counts as real data', async () => {
     auth.user.role = 'admin'
     vi.mocked(api.adminGetStats).mockRejectedValue(new Error('Admin request failed'))
