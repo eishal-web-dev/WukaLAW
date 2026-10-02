@@ -155,8 +155,8 @@ export default function App() {
             <Route path="/admin/knowledge" element={<AdminOperations />} />
             <Route path="/admin/analytics" element={<AdminOperations />} />
             <Route path="/admin/audit" element={<AdminOperations />} />
-            <Route path="/admin/security" element={<AdminOperations />} />
-            <Route path="/admin/api" element={<AdminOperations />} />
+            <Route path="/admin/security" element={<Navigate to="/admin/settings" replace />} />
+            <Route path="/admin/api" element={<Navigate to="/admin/settings" replace />} />
             <Route path="/admin/billing" element={<AdminOperations />} />
             <Route path="/admin/support" element={<AdminOperations />} />
             <Route path="/admin/cms" element={<AdminOperations />} />
