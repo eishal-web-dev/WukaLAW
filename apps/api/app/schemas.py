@@ -267,3 +267,57 @@ class ReportOut(BaseModel):
 
 class ReportDetailOut(ReportOut):
     content: str
+
+
+class AdminRoleUpdate(BaseModel):
+    role: Literal["client", "lawyer"]
+
+
+class AdminCaseOut(BaseModel):
+    id: int
+    case_number: str
+    title: str
+    case_type: str
+    status: str
+    priority: str
+    lawyer_name: str | None
+    client_name: str | None
+    document_count: int
+    created_at: datetime
+
+
+class AdminDocumentOut(BaseModel):
+    id: int
+    title: str
+    filename: str
+    owner_name: str
+    case_number: str | None
+    size_bytes: int
+    ocr_used: bool
+    has_summary: bool
+    created_at: datetime
+
+
+class AdminActivityOut(BaseModel):
+    id: str
+    kind: Literal["user", "case", "document"]
+    title: str
+    detail: str
+    created_at: datetime
+
+
+class AdminSystemOut(BaseModel):
+    api_status: str
+    database_backend: str
+    storage_backend: str
+    ai_provider: str
+    ai_configured: bool
+    embedding_model: str
+    legal_retrieval_backend: str
+    legal_corpus_configured: bool
+    total_chunks: int
+    notifications_enabled_users: int
+    billing_configured: bool
+    support_configured: bool
+    cms_configured: bool
+    backup_configured: bool
