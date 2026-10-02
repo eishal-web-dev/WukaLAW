@@ -22,6 +22,11 @@ vi.mock('../../lib/api', async (importOriginal) => ({
   ...await importOriginal<typeof import('../../lib/api')>(),
   adminGetStats: vi.fn(),
   adminListUsers: vi.fn(),
+  adminListCases: vi.fn(),
+  adminListDocuments: vi.fn(),
+  adminListActivity: vi.fn(),
+  adminGetSystem: vi.fn(),
+  adminUpdateUserRole: vi.fn(),
 }))
 
 afterEach(cleanup)
@@ -34,6 +39,16 @@ beforeEach(() => {
     id: 1, name: 'Live Account', email: 'live@example.com', role: 'lawyer',
     created_at: '2026-09-01T12:00:00Z', case_count: 7, document_count: 11,
   }])
+  vi.mocked(api.adminListCases).mockResolvedValue([])
+  vi.mocked(api.adminListDocuments).mockResolvedValue([])
+  vi.mocked(api.adminListActivity).mockResolvedValue([])
+  vi.mocked(api.adminGetSystem).mockResolvedValue({
+    api_status: 'healthy', database_backend: 'sqlite', storage_backend: 'Local storage',
+    ai_provider: 'Ollama', ai_configured: true, embedding_model: 'BAAI/bge-m3',
+    legal_retrieval_backend: 'local', legal_corpus_configured: false, total_chunks: 0,
+    notifications_enabled_users: 1, billing_configured: false, support_configured: false,
+    cms_configured: false, backup_configured: false,
+  })
 })
 
 function open(path: string) {
@@ -57,14 +72,23 @@ describe('Admin route integration', () => {
     expect(api.adminGetStats).not.toHaveBeenCalled()
   })
 
-  it.each(['/admin', '/admin/users'])('loads real admin data at %s', async (path) => {
+  it('loads the real admin dashboard', async () => {
     auth.user.role = 'admin'
-    open(path)
+    open('/admin')
     expect(await screen.findByText('live@example.com')).toBeInTheDocument()
     expect(screen.getByText('All Users (1)')).toBeInTheDocument()
     expect(screen.getByText('Admin portal')).toBeInTheDocument()
     expect(api.adminGetStats).toHaveBeenCalledOnce()
     expect(api.adminListUsers).toHaveBeenCalledOnce()
+  })
+
+  it('loads the usable user-management console', async () => {
+    auth.user.role = 'admin'
+    open('/admin/users')
+    expect(await screen.findByRole('heading', { name: 'User Management' })).toBeInTheDocument()
+    expect(screen.getByText('live@example.com')).toBeInTheDocument()
+    expect(api.adminListCases).toHaveBeenCalledOnce()
+    expect(api.adminGetSystem).toHaveBeenCalledOnce()
   })
 
   it('shows a failed request without reporting empty counts as real data', async () => {
