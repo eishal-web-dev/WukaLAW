@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+import logging
 from math import sqrt
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -31,6 +32,7 @@ from app.services.case_intelligence_service import (
 from app.services.notification_service import create_notification
 
 router = APIRouter(prefix="/cases", tags=["cases"])
+logger = logging.getLogger(__name__)
 
 ALLOWED_STATUS = {
     # Current, user-friendly case stages.
@@ -94,9 +96,14 @@ def _historical_outcome_summary(results: list[dict]) -> dict:
             buckets["unclear"] += 1
         elif any(term in outcome for term in ("partly allowed", "partially allowed", "partly decreed", "modified")):
             buckets["partial_or_mixed"] += 1
-        elif any(term in outcome for term in ("dismissed", "rejected", "declined", "disallowed")):
+        elif any(term in outcome for term in (
+            "dismissed", "rejected", "refused", "declined", "disallowed",
+            "upheld", "maintained", "affirmed",
+        )):
             buckets["unfavourable"] += 1
-        elif any(term in outcome for term in ("allowed", "accepted", "decreed", "granted")):
+        elif any(term in outcome for term in (
+            "allowed", "accepted", "decreed", "granted", "set aside",
+        )):
             buckets["favourable"] += 1
             favourable_rows.append(row)
         else:
@@ -343,15 +350,9 @@ def _run_similar_search(
     situation = _similar_case_seed(case, documents, focus=focus)
     corpus_unavailable: str | None = None
     try:
-        from ai.vectorstore.config import QdrantSettings, resolve_legal_collection
-        from ai.vectorstore.qdrant_client import get_shared_qdrant_client
-
-        corpus = QdrantSettings.from_env()
-        qdrant = get_shared_qdrant_client(corpus)
-        resolved_collection, _ = resolve_legal_collection(qdrant, corpus)
         from app.routers.similar_cases import get_similar_case_pipeline
 
-        result = get_similar_case_pipeline(resolved_collection).run(
+        result = get_similar_case_pipeline().run(
             SimilarCaseRequest(
                 situation=situation,
                 top_k=top_k,
@@ -365,7 +366,7 @@ def _run_similar_search(
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     except RuntimeError as exc:
         message = str(exc)
-        if "collection" in message.lower() and ("not found" in message.lower() or "missing" in message.lower()):
+        if any(token in message.lower() for token in ("collection", "corpus", "supabase")):
             corpus_unavailable = message
         else:
             raise HTTPException(status_code=503, detail=f"Similar-case service unavailable: {exc}") from exc
@@ -378,6 +379,35 @@ def _run_similar_search(
             raise
 
     if corpus_unavailable is not None:
+        lowered_error = corpus_unavailable.casefold()
+        if "authentication failed" in lowered_error:
+            corpus_status = "authentication_failed"
+            warning = "The Supabase legal-corpus service-role key was rejected."
+        elif "rpc/table was not found" in lowered_error:
+            corpus_status = "migration_missing"
+            warning = "The Supabase legal-index migration or Data API exposure is unavailable."
+        elif "request configuration is invalid" in lowered_error:
+            corpus_status = "configuration_invalid"
+            warning = "The Supabase URL or service-role key has invalid formatting."
+        elif "dns lookup failed" in lowered_error:
+            corpus_status = "dns_failed"
+            warning = "The Supabase project hostname is not available in public DNS."
+        elif "tls verification failed" in lowered_error:
+            corpus_status = "tls_failed"
+            warning = "The Supabase HTTPS certificate could not be verified on this computer."
+        elif "timed out" in lowered_error:
+            corpus_status = "connection_timeout"
+            warning = "The Supabase HTTPS request timed out."
+        elif "credential" in lowered_error or "configuration is incomplete" in lowered_error:
+            corpus_status = "configuration_missing"
+            warning = "The backend Supabase legal-corpus connection is not fully configured."
+        elif "supabase" in lowered_error:
+            corpus_status = "connection_failed"
+            warning = "The backend could not reach the Supabase Pakistani-judgment index."
+        else:
+            corpus_status = "index_unavailable"
+            warning = "The configured Pakistani-judgment index is unavailable."
+        logger.warning("Similar-case corpus unavailable [%s]: %s", corpus_status, corpus_unavailable)
         # Missing infrastructure is not a malformed client case. Return a
         # stable empty state so the pathway remains useful and the UI does not
         # expose Qdrant collection names or configuration instructions.
@@ -385,11 +415,10 @@ def _run_similar_search(
             "normalized_query": situation,
             "total_candidates": 0,
             "results": [],
-            "warnings": [
-                "The Pakistani judgments library has not been installed on this server yet. Your case details and pathway are still available."
-            ],
+            "warnings": [warning],
             "processing_time_ms": 0,
             "corpus_available": False,
+            "corpus_status": corpus_status,
         }
     else:
         result["corpus_available"] = True
