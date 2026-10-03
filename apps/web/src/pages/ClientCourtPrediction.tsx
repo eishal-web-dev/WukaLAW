@@ -16,7 +16,15 @@ import Spinner from '../components/Spinner'
  * fabricated percentage, and never the old mock's invented judge/expert
  * statistics.
  */
-export default function ClientCourtPrediction() {
+interface ClientCourtPredictionProps {
+  audience?: 'client' | 'lawyer'
+  requireCaseSelection?: boolean
+}
+
+export default function ClientCourtPrediction({
+  audience = 'client',
+  requireCaseSelection = false,
+}: ClientCourtPredictionProps) {
   const [cases, setCases] = useState<Case[]>([])
   const [selectedCaseId, setSelectedCaseId] = useState<number | null>(null)
   const [prediction, setPrediction] = useState<CasePrediction | null>(null)
@@ -29,8 +37,11 @@ export default function ClientCourtPrediction() {
     listCases()
       .then((res) => {
         if (cancelled) return
-        setCases(res.items)
-        if (res.items.length > 0) setSelectedCaseId(res.items[0].id)
+        const accessibleCases = audience === 'lawyer'
+          ? res.items.filter((item) => Boolean(item.lawyer_name))
+          : res.items
+        setCases(accessibleCases)
+        if (!requireCaseSelection && accessibleCases.length > 0) setSelectedCaseId(accessibleCases[0].id)
       })
       .catch((err) => {
         if (!cancelled) setError(errorMessage(err))
@@ -41,11 +52,15 @@ export default function ClientCourtPrediction() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [audience, requireCaseSelection])
 
   useEffect(() => {
-    if (selectedCaseId === null) return
+    if (selectedCaseId === null) {
+      setPrediction(null)
+      return
+    }
     let cancelled = false
+    setError(null)
     setLoadingPrediction(true)
     setPrediction(null)
     getCasePrediction(selectedCaseId)
@@ -66,7 +81,7 @@ export default function ClientCourtPrediction() {
   if (loadingCases) {
     return (
       <div className="p-8 flex items-center justify-center h-full">
-        <Spinner label="Loading your cases…" />
+        <Spinner label={audience === 'lawyer' ? 'Loading assigned cases…' : 'Loading your cases…'} />
       </div>
     )
   }
@@ -76,9 +91,13 @@ export default function ClientCourtPrediction() {
       <div className="p-8 flex items-center justify-center h-full">
         <Card className="p-8 max-w-md text-center">
           <Scale size={28} className="mx-auto mb-3 text-muted-foreground" />
-          <h2 className="text-base font-semibold text-foreground mb-1">No cases assigned yet</h2>
+          <h2 className="text-base font-semibold text-foreground mb-1">
+            {audience === 'lawyer' ? 'No cases in your workspace' : 'No cases assigned yet'}
+          </h2>
           <p className="text-sm text-muted-foreground">
-            Court prediction estimates will be available here once a case is assigned to your account.
+            {audience === 'lawyer'
+              ? 'Claim or receive a case assignment before creating a case-specific assessment.'
+              : 'Court prediction estimates will be available here once a case is assigned to your account.'}
           </p>
         </Card>
       </div>
@@ -90,24 +109,47 @@ export default function ClientCourtPrediction() {
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-2">
           <Scale size={18} style={{ color: G }} />
-          <h1 className="text-xl font-bold text-foreground tracking-tight">AI Case Assessment</h1>
+          <div>
+            <h1 className="text-xl font-bold text-foreground tracking-tight">
+              {audience === 'lawyer' ? 'Case-specific Court Assessment' : 'AI Case Assessment'}
+            </h1>
+            {audience === 'lawyer' && (
+              <p className="mt-1 text-xs text-muted-foreground">
+                Choose one assigned case. Only that case's record is sent for assessment.
+              </p>
+            )}
+          </div>
         </div>
-        <select
-          value={selectedCaseId ?? ''}
-          onChange={(e) => setSelectedCaseId(Number(e.target.value))}
-          className="text-sm px-3 py-2 rounded-xl border border-border bg-card text-foreground outline-none focus:border-primary/40"
-        >
-          {cases.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.case_number} — {c.title}
-            </option>
-          ))}
-        </select>
+        <label className="text-xs font-semibold text-muted-foreground">
+          {audience === 'lawyer' ? 'Case to assess' : 'Selected case'}
+          <select
+            aria-label={audience === 'lawyer' ? 'Case to assess' : 'Selected case'}
+            value={selectedCaseId ?? ''}
+            onChange={(e) => setSelectedCaseId(e.target.value ? Number(e.target.value) : null)}
+            className="mt-1 block min-w-64 text-sm px-3 py-2 rounded-xl border border-border bg-card text-foreground outline-none focus:border-primary/40"
+          >
+            {requireCaseSelection && <option value="">Choose an assigned case…</option>}
+            {cases.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.case_number} — {c.title}
+              </option>
+            ))}
+          </select>
+        </label>
       </div>
 
       {error && <ErrorAlert message={error} />}
 
-      {loadingPrediction ? (
+      {selectedCaseId === null && requireCaseSelection ? (
+        <Card className="p-10 text-center space-y-3">
+          <Scale size={28} className="mx-auto text-muted-foreground" />
+          <h2 className="text-base font-semibold text-foreground">Select a case to begin</h2>
+          <p className="mx-auto max-w-md text-sm text-muted-foreground">
+            The assessment will use only the selected case's saved description, verified documents,
+            timeline, evidence inventory, deadline, and matched Pakistani judgments.
+          </p>
+        </Card>
+      ) : loadingPrediction ? (
         <div className="py-16 flex justify-center">
           <Spinner label="Checking for a prediction…" />
         </div>
