@@ -364,3 +364,14 @@ class ResearchLogOut(ResearchLogCreate):
     case_number: str | None = None
     case_title: str | None = None
     created_at: datetime
+
+
+class LawyerClientOut(BaseModel):
+    id: int
+    name: str
+    email: str
+    case_count: int
+    active_case_count: int
+    document_count: int
+    last_case_at: datetime
+    cases: list[CaseOut] = Field(default_factory=list)
