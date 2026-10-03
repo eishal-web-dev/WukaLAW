@@ -2,14 +2,14 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Plus, Briefcase, FileText, Bell, Activity, Lightbulb, AlertCircle,
-  Sparkles, ArrowRight,
+  Sparkles, ArrowRight, CalendarDays, Gavel,
 } from 'lucide-react'
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell,
 } from 'recharts'
-import { listCases, listDocuments, errorMessage } from '../lib/api'
-import type { Case, DocumentMeta } from '../lib/api'
+import { listCalendarEvents, listCases, listDocuments, listHearings, errorMessage } from '../lib/api'
+import type { CalendarEvent, Case, DocumentMeta, Hearing } from '../lib/api'
 import { useAuth } from '../lib/auth'
 import { useNotifications } from '../lib/notifications'
 import { formatDate } from '../lib/format'
@@ -33,6 +33,8 @@ export default function Dashboard() {
   const { unreadCount } = useNotifications()
   const [cases, setCases] = useState<Case[]>([])
   const [documents, setDocuments] = useState<DocumentMeta[]>([])
+  const [events, setEvents] = useState<CalendarEvent[]>([])
+  const [hearings, setHearings] = useState<Hearing[]>([])
   const [caseTotal, setCaseTotal] = useState(0)
   const [docTotal, setDocTotal] = useState(0)
   const [loading, setLoading] = useState(true)
@@ -40,13 +42,15 @@ export default function Dashboard() {
 
   useEffect(() => {
     let cancelled = false
-    Promise.all([listCases(), listDocuments()])
-      .then(([cs, docs]) => {
+    Promise.all([listCases(), listDocuments(), listCalendarEvents(), listHearings()])
+      .then(([cs, docs, calendarEvents, hearingItems]) => {
         if (cancelled) return
         setCases(cs.items)
         setDocuments(docs.items)
         setCaseTotal(cs.total)
         setDocTotal(docs.total)
+        setEvents(calendarEvents)
+        setHearings(hearingItems)
       })
       .catch((err) => {
         if (!cancelled) setError(errorMessage(err))
@@ -59,7 +63,7 @@ export default function Dashboard() {
     }
   }, [])
 
-  const activeCases = cases.filter((c) => c.status === 'Active').length
+  const activeCases = cases.filter((c) => !['Case Complete', 'Closed'].includes(c.status)).length
   const firstName = (user?.name || 'Counsel').split(' ')[0]
   const today = new Date().toLocaleDateString(undefined, {
     weekday: 'long', month: 'long', day: 'numeric', year: 'numeric',
@@ -104,11 +108,22 @@ export default function Dashboard() {
     { icon: <Sparkles size={14} />, text: 'Find precedents similar to your matter with semantic search.', action: 'Explore', path: '/similar-cases' },
   ]
 
-  const deadlines = cases
-    .filter((c) => c.deadline)
-    .map((c) => ({ ...c, days: daysUntil(c.deadline) ?? 0 }))
-    .sort((a, b) => a.days - b.days)
-    .slice(0, 4)
+  const upcoming = useMemo(() => {
+    const now = Date.now()
+    const caseDates = cases.flatMap((item) => item.deadline ? [{
+      id: `case-${item.id}`, date: item.deadline, title: item.title, subtitle: `${item.case_number} · Case deadline`, kind: 'Deadline', path: `/cases/${item.id}`,
+    }] : [])
+    const calendarDates = events.map((item) => ({
+      id: `event-${item.id}`, date: item.starts_at, title: item.title, subtitle: item.case_number ? `${item.case_number} · ${item.event_type}` : item.event_type, kind: item.event_type, path: '/calendar',
+    }))
+    const hearingDates = hearings.filter((item) => item.status !== 'Cancelled').map((item) => ({
+      id: `hearing-${item.id}`, date: item.scheduled_at, title: item.title, subtitle: `${item.case_number} · ${item.court}`, kind: 'Hearing', path: '/hearings',
+    }))
+    return [...caseDates, ...calendarDates, ...hearingDates]
+      .filter((item) => new Date(item.date).getTime() >= now)
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+      .slice(0, 5)
+  }, [cases, events, hearings])
 
   return (
     <div className="p-8 space-y-8 overflow-y-auto h-full">
@@ -278,30 +293,29 @@ export default function Dashboard() {
         </Card>
 
         <Card className="p-6">
-          <SectionHeader title="Upcoming Deadlines" />
-          {deadlines.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-6 text-center">No deadlines set.</p>
+          <SectionHeader title="Upcoming Schedule" action={<Btn variant="ghost" size="sm" onClick={() => navigate('/calendar')}>Calendar</Btn>} />
+          {upcoming.length === 0 ? (
+            <div className="py-8 text-center"><CalendarDays size={24} className="mx-auto text-muted-foreground"/><p className="mt-2 text-sm text-muted-foreground">No future deadlines, hearings, or events.</p></div>
           ) : (
             <div className="space-y-3">
-              {deadlines.map((d) => (
+              {upcoming.map((item) => {
+                const days = daysUntil(item.date) ?? 0
+                return (
                 <div
-                  key={d.id}
+                  key={item.id}
                   className="flex items-start gap-3 p-3 rounded-xl hover:bg-white/[0.03] transition-colors cursor-pointer"
-                  onClick={() => navigate(`/cases/${d.id}`)}
+                  onClick={() => navigate(item.path)}
                 >
-                  <div className={`text-center rounded-lg p-1.5 flex-shrink-0 w-12 ${d.days <= 7 ? 'bg-red-500/10' : 'bg-white/[0.05]'}`}>
-                    <div className={`text-lg font-bold leading-none ${d.days <= 7 ? 'text-red-400' : 'text-foreground'}`}>{d.days}</div>
-                    <div className="text-[9px] text-muted-foreground">days</div>
+                  <div className={`grid h-11 w-11 flex-shrink-0 place-items-center rounded-xl ${item.kind === 'Hearing' ? 'bg-purple-500/15 text-purple-300' : 'bg-[#D4AF37]/10 text-[#D4AF37]'}`}>
+                    {item.kind === 'Hearing' ? <Gavel size={17}/> : <CalendarDays size={17}/>}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="text-xs font-medium text-foreground truncate">{d.title}</div>
-                    <div className="text-[10px] text-muted-foreground mt-0.5">
-                      {d.case_type} · {d.deadline ? formatDate(d.deadline) : ''}
-                    </div>
-                    <div className="text-[10px] mt-0.5" style={{ color: G }}>{d.case_number}</div>
+                    <div className="text-xs font-medium text-foreground truncate">{item.title}</div>
+                    <div className="text-[10px] text-muted-foreground mt-0.5 truncate">{item.subtitle}</div>
+                    <div className="text-[10px] mt-1" style={{ color: G }}>{formatDate(item.date)} · {days === 0 ? 'Today' : `in ${days} day${days === 1 ? '' : 's'}`}</div>
                   </div>
                 </div>
-              ))}
+              )})}
             </div>
           )}
         </Card>

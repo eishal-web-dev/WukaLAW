@@ -1,53 +1,53 @@
 import { useEffect, useMemo, useState } from 'react'
-import { CalendarDays, ChevronLeft, ChevronRight, Plus, Trash2 } from 'lucide-react'
+import { CalendarDays, ChevronLeft, ChevronRight, Clock3, Gavel, MapPin, Plus, Trash2, X } from 'lucide-react'
 import { createCalendarEvent, deleteCalendarEvent, errorMessage, listCalendarEvents, listCases, listHearings, type CalendarEvent, type Case, type Hearing } from '../lib/api'
 
-const field = 'w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground'
-const isoLocal = (d: Date) => new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16)
+const field = 'w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-foreground outline-none focus:border-[#D4AF37]/60'
+const isoLocal = (date: Date) => new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16)
+const dayKey = (date: Date | string) => { const value = new Date(date); return `${value.getFullYear()}-${value.getMonth()}-${value.getDate()}` }
+type ScheduleItem = { id: string; date: string; title: string; type: string; caseNumber: string | null; location: string; notes: string; eventId: number | null }
 
 export default function LawyerCalendar() {
-  const [month, setMonth] = useState(() => new Date(new Date().getFullYear(), new Date().getMonth(), 1))
-  const [events, setEvents] = useState<CalendarEvent[]>([])
-  const [hearings, setHearings] = useState<Hearing[]>([])
-  const [cases, setCases] = useState<Case[]>([])
-  const [open, setOpen] = useState(false)
-  const [error, setError] = useState('')
-  const [form, setForm] = useState({ title: '', starts_at: isoLocal(new Date()), ends_at: '', event_type: 'Meeting', location: '', notes: '', case_id: '' })
-  const load = async () => {
-    try { const [e, h, c] = await Promise.all([listCalendarEvents(), listHearings(), listCases()]); setEvents(e); setHearings(h); setCases(c.items); setError('') }
-    catch (err) { setError(errorMessage(err)) }
-  }
+  const today = useMemo(() => new Date(), [])
+  const [month, setMonth] = useState(() => new Date(today.getFullYear(), today.getMonth(), 1))
+  const [selectedDate, setSelectedDate] = useState(today)
+  const [events, setEvents] = useState<CalendarEvent[]>([]), [hearings, setHearings] = useState<Hearing[]>([]), [cases, setCases] = useState<Case[]>([])
+  const [open, setOpen] = useState(false), [saving, setSaving] = useState(false), [error, setError] = useState('')
+  const [form, setForm] = useState({ title: '', starts_at: isoLocal(today), ends_at: '', event_type: 'Meeting', location: '', notes: '', case_id: '' })
+  const load = async () => { try { const [e, h, c] = await Promise.all([listCalendarEvents(), listHearings(), listCases()]); setEvents(e); setHearings(h); setCases(c.items); setError('') } catch (err) { setError(errorMessage(err)) } }
   useEffect(() => { void load() }, [])
-  const dated = useMemo(() => [
-    ...events.map(e => ({ id: `e${e.id}`, date: e.starts_at, title: e.title, type: e.event_type, caseNumber: e.case_number, eventId: e.id })),
-    ...hearings.filter(h => h.status !== 'Cancelled').map(h => ({ id: `h${h.id}`, date: h.scheduled_at, title: h.title, type: 'Hearing', caseNumber: h.case_number, eventId: null })),
-  ], [events, hearings])
-  const firstDay = month.getDay(); const days = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate()
-  const cells = Array.from({ length: 42 }, (_, i) => i - firstDay + 1)
-  const save = async (e: React.FormEvent) => {
-    e.preventDefault()
-    try {
-      await createCalendarEvent({ title: form.title, starts_at: new Date(form.starts_at).toISOString(), ends_at: form.ends_at ? new Date(form.ends_at).toISOString() : null, event_type: form.event_type, location: form.location, notes: form.notes, case_id: form.case_id ? Number(form.case_id) : null })
-      setOpen(false); setForm({ ...form, title: '', location: '', notes: '' }); await load()
-    } catch (err) { setError(errorMessage(err)) }
-  }
-  return <div className="p-6 space-y-5 overflow-auto h-full">
-    <div className="flex flex-wrap items-center justify-between gap-3"><div><h1 className="text-2xl font-bold text-foreground">Calendar</h1><p className="text-sm text-muted-foreground">Hearings and lawyer-created events in one schedule.</p></div><button onClick={() => setOpen(!open)} className="rounded-lg bg-[#D4AF37] px-4 py-2 text-sm font-semibold text-black flex items-center gap-2"><Plus size={15}/>Add event</button></div>
-    {error && <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-300">{error}</div>}
-    {open && <form onSubmit={save} className="grid gap-3 rounded-xl border border-border bg-card p-4 md:grid-cols-3">
-      <input required className={field} placeholder="Event title" value={form.title} onChange={e=>setForm({...form,title:e.target.value})}/>
-      <input required type="datetime-local" className={field} value={form.starts_at} onChange={e=>setForm({...form,starts_at:e.target.value})}/>
-      <input type="datetime-local" className={field} value={form.ends_at} onChange={e=>setForm({...form,ends_at:e.target.value})}/>
-      <select className={field} value={form.case_id} onChange={e=>setForm({...form,case_id:e.target.value})}><option value="">No case</option>{cases.map(c=><option key={c.id} value={c.id}>{c.case_number} — {c.title}</option>)}</select>
-      <select className={field} value={form.event_type} onChange={e=>setForm({...form,event_type:e.target.value})}>{['Meeting','Deadline','Filing','Consultation','Personal'].map(x=><option key={x}>{x}</option>)}</select>
-      <input className={field} placeholder="Location or video link" value={form.location} onChange={e=>setForm({...form,location:e.target.value})}/>
-      <textarea className={`${field} md:col-span-2`} placeholder="Notes" value={form.notes} onChange={e=>setForm({...form,notes:e.target.value})}/><button className="rounded-lg bg-[#D4AF37] px-4 py-2 font-semibold text-black">Save event</button>
-    </form>}
-    <div className="rounded-xl border border-border bg-card overflow-hidden">
-      <div className="flex items-center justify-between p-4 border-b border-border"><button onClick={()=>setMonth(new Date(month.getFullYear(),month.getMonth()-1,1))}><ChevronLeft/></button><h2 className="font-bold">{month.toLocaleDateString(undefined,{month:'long',year:'numeric'})}</h2><button onClick={()=>setMonth(new Date(month.getFullYear(),month.getMonth()+1,1))}><ChevronRight/></button></div>
-      <div className="grid grid-cols-7 border-b border-border">{['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d=><div key={d} className="p-2 text-center text-xs text-muted-foreground">{d}</div>)}</div>
-      <div className="grid grid-cols-7">{cells.map((day,i)=>{ const inMonth=day>0&&day<=days; const items=inMonth?dated.filter(x=>{const d=new Date(x.date);return d.getFullYear()===month.getFullYear()&&d.getMonth()===month.getMonth()&&d.getDate()===day}):[]; return <div key={i} className="min-h-24 border-b border-r border-border/50 p-1.5"><span className={inMonth?'text-xs':'text-xs opacity-0'}>{day}</span>{items.map(x=><div key={x.id} className={`mt-1 rounded px-1.5 py-1 text-[10px] ${x.type==='Hearing'?'bg-purple-500/20 text-purple-300':'bg-[#D4AF37]/15 text-[#D4AF37]'}`} title={`${x.caseNumber||''} ${x.title}`}><div className="flex gap-1"><span className="truncate flex-1">{new Date(x.date).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})} {x.title}</span>{x.eventId&&<button aria-label="Delete event" onClick={async()=>{await deleteCalendarEvent(x.eventId!);await load()}}><Trash2 size={10}/></button>}</div></div>)}</div>})}</div>
+  const schedule = useMemo<ScheduleItem[]>(() => [
+    ...events.map(e => ({ id: `event-${e.id}`, date: e.starts_at, title: e.title, type: e.event_type, caseNumber: e.case_number, location: e.location, notes: e.notes, eventId: e.id })),
+    ...hearings.filter(h => h.status !== 'Cancelled').map(h => ({ id: `hearing-${h.id}`, date: h.scheduled_at, title: h.title, type: 'Hearing', caseNumber: h.case_number, location: h.court, notes: h.preparation_notes, eventId: null })),
+  ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()), [events, hearings])
+  const selectedItems = useMemo(() => schedule.filter(item => dayKey(item.date) === dayKey(selectedDate)), [schedule, selectedDate])
+  const firstDay = month.getDay(), days = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate()
+  const cells = Array.from({ length: 42 }, (_, index) => index - firstDay + 1)
+  const openForDate = (date: Date) => { setSelectedDate(date); setForm(current => ({ ...current, starts_at: isoLocal(new Date(date.getFullYear(), date.getMonth(), date.getDate(), 9)), ends_at: '' })); setOpen(true) }
+  const goToday = () => { setMonth(new Date(today.getFullYear(), today.getMonth(), 1)); setSelectedDate(today) }
+  const save = async (event: React.FormEvent) => { event.preventDefault(); setSaving(true); try { await createCalendarEvent({ title: form.title, starts_at: new Date(form.starts_at).toISOString(), ends_at: form.ends_at ? new Date(form.ends_at).toISOString() : null, event_type: form.event_type, location: form.location, notes: form.notes, case_id: form.case_id ? Number(form.case_id) : null }); setOpen(false); setForm(current => ({ ...current, title: '', location: '', notes: '', ends_at: '' })); await load() } catch (err) { setError(errorMessage(err)) } finally { setSaving(false) } }
+  const remove = async (id: number) => { try { await deleteCalendarEvent(id); await load() } catch (err) { setError(errorMessage(err)) } }
+
+  return <div className="h-full overflow-auto p-6 space-y-5">
+    <header className="flex flex-wrap items-center justify-between gap-3"><div><h1 className="text-2xl font-bold text-foreground">Calendar</h1><p className="mt-1 text-sm text-muted-foreground">One live schedule for hearings, deadlines, meetings, and consultations.</p></div><button type="button" onClick={() => openForDate(selectedDate)} className="flex items-center gap-2 rounded-xl bg-[#D4AF37] px-4 py-2.5 text-sm font-semibold text-black"><Plus size={16}/>Add event</button></header>
+    {error ? <div role="alert" className="rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-300">{error}</div> : null}
+    {open ? <form onSubmit={save} className="rounded-2xl border border-[#D4AF37]/25 bg-card p-5 shadow-xl">
+      <div className="mb-4 flex items-start justify-between"><div><h2 className="font-bold">New calendar event</h2><p className="text-xs text-muted-foreground">Add a meeting, filing deadline, or reminder.</p></div><button type="button" aria-label="Close event form" onClick={() => setOpen(false)} className="rounded-lg p-1.5 text-muted-foreground hover:bg-white/5"><X size={17}/></button></div>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <label className="text-xs font-medium text-muted-foreground">Title<input required className={`${field} mt-1.5`} placeholder="e.g. Prepare written statement" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })}/></label>
+        <label className="text-xs font-medium text-muted-foreground">Starts<input required type="datetime-local" className={`${field} mt-1.5`} value={form.starts_at} onChange={e => setForm({ ...form, starts_at: e.target.value })}/></label>
+        <label className="text-xs font-medium text-muted-foreground">Ends (optional)<input type="datetime-local" className={`${field} mt-1.5`} value={form.ends_at} onChange={e => setForm({ ...form, ends_at: e.target.value })}/></label>
+        <label className="text-xs font-medium text-muted-foreground">Related case<select className={`${field} mt-1.5`} value={form.case_id} onChange={e => setForm({ ...form, case_id: e.target.value })}><option value="">No related case</option>{cases.map(item => <option key={item.id} value={item.id}>{item.case_number} — {item.title}</option>)}</select></label>
+        <label className="text-xs font-medium text-muted-foreground">Event type<select className={`${field} mt-1.5`} value={form.event_type} onChange={e => setForm({ ...form, event_type: e.target.value })}>{['Meeting', 'Deadline', 'Filing', 'Consultation', 'Personal'].map(value => <option key={value}>{value}</option>)}</select></label>
+        <label className="text-xs font-medium text-muted-foreground">Location or link<input className={`${field} mt-1.5`} placeholder="Court, office, or video URL" value={form.location} onChange={e => setForm({ ...form, location: e.target.value })}/></label>
+        <label className="text-xs font-medium text-muted-foreground md:col-span-2 lg:col-span-3">Notes<textarea rows={3} className={`${field} mt-1.5 resize-y`} placeholder="Preparation notes or agenda" value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })}/></label>
+      </div><div className="mt-4 flex justify-end gap-2"><button type="button" onClick={() => setOpen(false)} className="rounded-xl border border-border px-4 py-2 text-sm">Cancel</button><button disabled={saving} className="rounded-xl bg-[#D4AF37] px-5 py-2 text-sm font-semibold text-black disabled:opacity-60">{saving ? 'Saving…' : 'Save event'}</button></div>
+    </form> : null}
+    <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_330px]">
+      <section className="overflow-hidden rounded-2xl border border-border bg-card"><div className="flex flex-wrap items-center justify-between gap-3 border-b border-border p-4"><div className="flex items-center gap-2"><button aria-label="Previous month" onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1))} className="rounded-lg border border-border p-2"><ChevronLeft size={17}/></button><button aria-label="Next month" onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() + 1, 1))} className="rounded-lg border border-border p-2"><ChevronRight size={17}/></button><button onClick={goToday} className="rounded-lg border border-border px-3 py-2 text-xs font-semibold">Today</button></div><h2 className="text-lg font-bold">{month.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}</h2><div className="flex gap-3 text-[11px] text-muted-foreground"><span className="flex items-center gap-1.5"><i className="h-2 w-2 rounded-full bg-purple-400"/>Hearings</span><span className="flex items-center gap-1.5"><i className="h-2 w-2 rounded-full bg-[#D4AF37]"/>Events</span></div></div>
+        <div className="overflow-x-auto"><div className="min-w-[700px]"><div className="grid grid-cols-7 border-b border-border">{['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(label => <div key={label} className="p-2.5 text-center text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</div>)}</div><div className="grid grid-cols-7">{cells.map((day, index) => { const inMonth = day > 0 && day <= days; const date = inMonth ? new Date(month.getFullYear(), month.getMonth(), day) : null; const items = date ? schedule.filter(item => dayKey(item.date) === dayKey(date)) : []; const selected = date ? dayKey(date) === dayKey(selectedDate) : false; const isToday = date ? dayKey(date) === dayKey(today) : false; return <button type="button" disabled={!inMonth} onClick={() => date && setSelectedDate(date)} onDoubleClick={() => date && openForDate(date)} key={index} className={`min-h-28 border-b border-r border-border/50 p-2 text-left transition ${inMonth ? 'hover:bg-white/[0.025]' : 'bg-black/5'} ${selected ? 'bg-[#D4AF37]/[0.06] ring-1 ring-inset ring-[#D4AF37]/30' : ''}`}>{inMonth ? <span className={`grid h-7 w-7 place-items-center rounded-full text-xs ${isToday ? 'bg-[#D4AF37] font-bold text-black' : ''}`}>{day}</span> : null}<div className="mt-1 space-y-1">{items.slice(0,3).map(item => <div key={item.id} className={`truncate rounded-md px-1.5 py-1 text-[10px] ${item.type === 'Hearing' ? 'bg-purple-500/15 text-purple-300' : 'bg-[#D4AF37]/10 text-[#D4AF37]'}`}>{new Date(item.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} {item.title}</div>)}{items.length > 3 ? <p className="px-1 text-[10px] text-muted-foreground">+{items.length - 3} more</p> : null}</div></button>})}</div></div></div>
+      </section>
+      <aside className="rounded-2xl border border-border bg-card p-5"><div className="flex items-start justify-between"><div><p className="text-xs font-semibold uppercase tracking-wide text-[#D4AF37]">Selected day</p><h2 className="mt-1 text-lg font-bold">{selectedDate.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}</h2></div><button aria-label="Add event on selected date" onClick={() => openForDate(selectedDate)} className="rounded-lg border border-border p-2"><Plus size={16}/></button></div><div className="mt-5 space-y-3">{selectedItems.length ? selectedItems.map(item => <article key={item.id} className="rounded-xl border border-border bg-background/40 p-3"><div className="flex items-start gap-3"><div className={`grid h-9 w-9 flex-shrink-0 place-items-center rounded-lg ${item.type === 'Hearing' ? 'bg-purple-500/15 text-purple-300' : 'bg-[#D4AF37]/10 text-[#D4AF37]'}`}>{item.type === 'Hearing' ? <Gavel size={16}/> : <CalendarDays size={16}/>}</div><div className="min-w-0 flex-1"><div className="flex items-start justify-between gap-2"><h3 className="text-sm font-semibold">{item.title}</h3>{item.eventId ? <button aria-label={`Delete ${item.title}`} onClick={() => void remove(item.eventId!)} className="text-muted-foreground hover:text-red-400"><Trash2 size={14}/></button> : null}</div><p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground"><Clock3 size={12}/>{new Date(item.date).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' })} · {item.type}</p>{item.location ? <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground"><MapPin size={12}/><span className="truncate">{item.location}</span></p> : null}{item.caseNumber ? <p className="mt-2 text-[11px] font-semibold text-[#D4AF37]">{item.caseNumber}</p> : null}{item.notes ? <p className="mt-2 text-xs leading-relaxed text-muted-foreground">{item.notes}</p> : null}</div></div></article>) : <div className="py-10 text-center"><CalendarDays className="mx-auto text-muted-foreground"/><p className="mt-2 text-sm font-medium">Nothing scheduled</p><p className="mt-1 text-xs text-muted-foreground">Choose Add event to plan this day.</p></div>}</div></aside>
     </div>
-    {!dated.length && <div className="text-center text-muted-foreground py-8"><CalendarDays className="mx-auto mb-2"/>No events yet. Add your first deadline, meeting, or consultation.</div>}
   </div>
 }
