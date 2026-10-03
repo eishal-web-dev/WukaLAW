@@ -876,6 +876,78 @@ export async function downloadEvidenceFile(caseId: number, item: EvidenceFile): 
   setTimeout(() => URL.revokeObjectURL(url), 60000)
 }
 
+// Live admin operations contracts
+export interface AdminCase {
+  id: number
+  case_number: string
+  title: string
+  case_type: string
+  status: string
+  priority: string
+  lawyer_name: string | null
+  client_name: string | null
+  document_count: number
+  created_at: string
+}
+
+export interface AdminDocument {
+  id: number
+  title: string
+  filename: string
+  owner_name: string
+  case_number: string | null
+  size_bytes: number
+  ocr_used: boolean
+  has_summary: boolean
+  created_at: string
+}
+
+export interface AdminActivity {
+  id: string
+  kind: 'user' | 'case' | 'document'
+  title: string
+  detail: string
+  created_at: string
+}
+
+export interface AdminSystem {
+  api_status: string
+  database_backend: string
+  storage_backend: string
+  ai_provider: string
+  ai_configured: boolean
+  embedding_model: string
+  legal_retrieval_backend: string
+  legal_corpus_configured: boolean
+  total_chunks: number
+  notifications_enabled_users: number
+  billing_configured: boolean
+  support_configured: boolean
+  cms_configured: boolean
+  backup_configured: boolean
+}
+
+// Live admin operations endpoints
+export function adminUpdateUserRole(id: number, role: 'client' | 'lawyer'): Promise<AdminUser> {
+  return patchJson<AdminUser>(`/admin/users/${id}/role`, { role })
+}
+
+export function adminListCases(): Promise<AdminCase[]> {
+  return request<AdminCase[]>('/admin/cases')
+}
+
+export function adminListDocuments(): Promise<AdminDocument[]> {
+  return request<AdminDocument[]>('/admin/documents')
+}
+
+export function adminListActivity(): Promise<AdminActivity[]> {
+  return request<AdminActivity[]>('/admin/activity')
+}
+
+export function adminGetSystem(): Promise<AdminSystem> {
+  return request<AdminSystem>('/admin/system')
+}
+
 // Lawyer organizer contracts
 export interface CalendarEvent {
   id: number
