@@ -107,6 +107,29 @@ pytest
 
 Tests use fast deterministic fake embeddings (`FAKE_EMBEDDINGS=1`) — no model download needed.
 
+## Supabase Pakistani-judgment index
+
+The existing private Storage bucket can be indexed without downloading the
+whole corpus. Configure `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and
+`SUPABASE_LEGAL_BUCKET`, apply the migration in `supabase/migrations`, then run:
+
+```bash
+python scripts/index_supabase_legal_corpus.py --prefix datasets/raw/ --device cpu
+```
+
+The importer streams one TXT file at a time, embeds bounded chunks with the
+configured BGE-M3 model, and upserts resumable chunk IDs into pgvector. Set
+`LEGAL_RETRIEVAL_BACKEND=supabase` to require Supabase, or leave `auto` to use
+Supabase when configured and retain Qdrant as a fallback.
+
+On Windows PowerShell, activate the repository environment and install the API
+dependencies before starting the importer:
+
+```powershell
+& F:\WakuLAW\.venv\Scripts\Activate.ps1
+python -m pip install -r apps\api\requirements.txt
+```
+
 ## Endpoints
 
 All endpoints except `/health` and `/auth/*` require `Authorization: Bearer <token>` (get a token from register/login). Set `SECRET_KEY` in `.env` for any non-development use.

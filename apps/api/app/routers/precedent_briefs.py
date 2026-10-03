@@ -1,6 +1,6 @@
 """Grounded, client-friendly briefs for historical precedents.
 
-Qdrant identifies a matching judgment. For the detailed brief we prefer the
+The configured legal retriever identifies a matching judgment. For the detailed brief we prefer the
 original source file stored in the configured S3-compatible bucket (Supabase in
 local WakuLAW development). If the source file cannot be read, the endpoint
 falls back to the indexed passages. The LLM is instructed to distinguish
@@ -13,7 +13,9 @@ import json
 import re
 from pathlib import PurePosixPath
 from typing import Any
+from urllib.parse import quote
 
+import httpx
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -40,9 +42,15 @@ SUBSTANTIVE_CLIENT_TERMS = (
 
 def _owned_case(db: Session, case_id: int, user: User) -> Case:
     case = db.get(Case, case_id)
-    if case is None or case.owner_id != user.id:
+    if case is None:
         raise HTTPException(status_code=404, detail="Case not found.")
-    return case
+    if case.owner_id == user.id:
+        return case
+    if user.role == "client" and case.client_id == user.id:
+        return case
+    if user.role != "client" and case.owner_id is None:
+        return case
+    raise HTTPException(status_code=404, detail="Case not found.")
 
 
 def _clean_json(text: str) -> dict[str, Any]:
@@ -116,7 +124,31 @@ def _decode_source_file(body: bytes, source_path: str) -> str | None:
     return body.decode("utf-8", errors="replace")
 
 
-def _full_source_text(source_path: str) -> tuple[str | None, str | None]:
+def _supabase_source_text(source_path: str) -> tuple[str | None, str | None]:
+    if not settings.supabase_url or not settings.supabase_service_role_key:
+        return None, None
+    headers = {
+        "apikey": settings.supabase_service_role_key,
+        "Authorization": f"Bearer {settings.supabase_service_role_key}",
+    }
+    for key in _dataset_keys(source_path):
+        encoded = quote(key, safe="/")
+        url = (
+            f"{settings.supabase_url.rstrip('/')}/storage/v1/object/authenticated/"
+            f"{quote(settings.supabase_legal_bucket, safe='')}/{encoded}"
+        )
+        try:
+            response = httpx.get(url, headers=headers, timeout=60.0)
+            response.raise_for_status()
+        except httpx.HTTPError:
+            continue
+        text = _decode_source_file(response.content, source_path)
+        if text and text.strip():
+            return " ".join(text.split()), key
+    return None, None
+
+
+def _s3_source_text(source_path: str) -> tuple[str | None, str | None]:
     client = _s3_client()
     if client is None:
         return None, None
@@ -130,6 +162,16 @@ def _full_source_text(source_path: str) -> tuple[str | None, str | None]:
         if text and text.strip():
             return " ".join(text.split()), key
     return None, None
+
+
+def _full_source_text(source_path: str) -> tuple[str | None, str | None]:
+    # The legal corpus already lives in private Supabase Storage. Read it with
+    # the backend-only service key first; retain generic S3 as a deployment
+    # fallback for installations that store their corpus elsewhere.
+    text, key = _supabase_source_text(source_path)
+    if text:
+        return text, key
+    return _s3_source_text(source_path)
 
 
 def _authority_note(court: str | None) -> str:
@@ -151,6 +193,26 @@ def _authority_note(court: str | None) -> str:
             "court hierarchy, ratio and later treatment before reliance."
         )
     return "Court authority could not be verified from the indexed metadata."
+
+
+def _generation_provider():
+    """Use the same settings-backed provider selection as the AI Assistant.
+
+    The generic RAG router historically read only ``os.environ`` while the
+    FastAPI application loads ``apps/api/.env`` through ``app.config``. That
+    discrepancy made a configured key look missing on precedent briefs.
+    """
+    from ai.qa import rag as qa_rag
+    from ai.rag.llm_provider import FallbackLLMProvider
+
+    configured = list(qa_rag._configured_providers())
+    if not configured:
+        raise RuntimeError(
+            "No legal-assistant AI provider is configured. Set RAG_LLM_PROVIDER and its matching backend key."
+        )
+    if len(configured) == 1:
+        return configured[0][1]
+    return FallbackLLMProvider(configured)
 
 
 @router.get("/{case_id}/precedent-brief")
@@ -175,9 +237,13 @@ def precedent_brief(
     has_substantive_client_issue = _has_substantive_client_issue(client_record)
 
     try:
-        from app.routers.rag import get_pipeline
+        from app.routers.similar_cases import get_similar_case_pipeline
 
-        pipeline = get_pipeline()
+        # Use the exact same legal backend as Similar Cases. Building the
+        # general RAG pipeline here silently switched Supabase matches back to
+        # Qdrant, where their document IDs do not exist.
+        retriever = get_similar_case_pipeline().candidates.retriever
+        llm = _generation_provider()
         search_seed = " ".join(
             part for part in [case.case_type or "", explicit_case_facts or ""] if part
         ).strip()
@@ -191,7 +257,7 @@ def precedent_brief(
         chunks = []
         seen: set[str] = set()
         for query in queries:
-            rows = pipeline.retriever.search(
+            rows = retriever.search(
                 LegalSearchQuery(
                     query=query,
                     top_k=20,
@@ -204,6 +270,10 @@ def precedent_brief(
                     continue
                 seen.add(row.canonical_chunk_id)
                 chunks.append(row)
+
+        # Defence in depth: a full-story request must never analyse a different
+        # precedent, even if a future retriever adapter mishandles its filter.
+        chunks = [row for row in chunks if row.document_id == document_id]
 
         if not chunks:
             raise HTTPException(status_code=404, detail="Historical judgment passages were not found.")
@@ -298,7 +368,7 @@ Return ONLY valid JSON with this exact schema:
   "evidence_limitations": "important information missing from either record that limits the comparison"
 }}
 """
-        raw = pipeline.llm.generate(prompt)
+        raw = llm.generate(prompt)
         brief = _clean_json(raw)
     except HTTPException:
         raise

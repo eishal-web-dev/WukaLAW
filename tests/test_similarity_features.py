@@ -10,3 +10,21 @@ def test_missing_metadata_does_not_invent_features():
  names={x.factor for x in compute_features(intelligence(),hit(),SimilarCaseRequest("bail",jurisdiction=None))}
  assert "shared_law" not in names and "shared_section" not in names
 
+
+def test_names_do_not_create_false_dower_match():
+ request=SimilarCaseRequest("wife claims haq meher and unpaid dower",jurisdiction="Pakistan")
+ criminal=hit(text="Petitioner Mehran seeks post-arrest bail under the Criminal Procedure Code.")
+ names={x.factor for x in compute_features(intelligence(),criminal,request)}
+ assert "same_specific_issue" not in names
+ assert "missing_specific_issue" in names
+
+
+def test_criminal_custody_is_not_child_custody_and_bad_folder_is_not_domain_evidence():
+ request=SimilarCaseRequest("mother seeks child custody and visitation rights",jurisdiction="Pakistan")
+ criminal=hit(text="The accused remains in police custody pending the criminal bail hearing.")
+ criminal.case_category="Family Law Cases"
+ family_intelligence=LegalQuery(Intent.SIMILAR_CASE,.9,LegalDomain.FAMILY,[],Language.ENGLISH,Jurisdiction.PAKISTAN,{},[],"child custody",[])
+ names={x.factor for x in compute_features(family_intelligence,criminal,request)}
+ assert "same_specific_issue" not in names
+ assert "same_legal_domain" not in names
+ assert "missing_specific_issue" in names

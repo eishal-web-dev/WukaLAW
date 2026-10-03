@@ -12,6 +12,7 @@ from ai.retrieval import LegalRetriever
 from ai.similar_cases import SimilarCasePipeline, SimilarCaseRequest
 from ai.vectorstore.config import QdrantSettings, resolve_legal_collection
 from ai.vectorstore.qdrant_client import get_shared_qdrant_client
+from app.config import settings as app_settings
 
 router = APIRouter(prefix="/api/cases", tags=["similar-cases"])
 
@@ -38,6 +39,26 @@ class SimilarCasesRequest(BaseModel):
 
 @lru_cache(maxsize=8)
 def get_similar_case_pipeline(collection: str | None = None):
+    backend = app_settings.legal_retrieval_backend.strip().casefold()
+    if backend not in {"auto", "supabase", "qdrant"}:
+        raise RuntimeError("LEGAL_RETRIEVAL_BACKEND must be auto, supabase, or qdrant.")
+    if backend in {"auto", "supabase"} and bool(app_settings.supabase_url) != bool(app_settings.supabase_service_role_key):
+        raise RuntimeError(
+            "Supabase legal corpus configuration is incomplete; both SUPABASE_URL "
+            "and SUPABASE_SERVICE_ROLE_KEY are required."
+        )
+    if backend in {"auto", "supabase"} and app_settings.supabase_url and app_settings.supabase_service_role_key:
+        from ai.retrieval.supabase_retriever import SupabaseLegalRetriever
+
+        provider = create_provider(app_settings.embedding_model, app_settings.embedding_device)
+        return SimilarCasePipeline(SupabaseLegalRetriever(
+            app_settings.supabase_url,
+            app_settings.supabase_service_role_key,
+            provider,
+        ))
+    if backend == "supabase":
+        raise RuntimeError("Supabase legal corpus credentials are not configured.")
+
     settings = QdrantSettings.from_env()
     client = get_shared_qdrant_client(settings)
     resolved_collection = collection or resolve_legal_collection(client, settings)[0]

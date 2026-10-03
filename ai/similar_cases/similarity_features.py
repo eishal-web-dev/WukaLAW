@@ -58,11 +58,20 @@ SPECIFIC_ISSUES: dict[str, tuple[str, ...]] = {
         "breach of trust", "nab", "accountability bureau",
     ),
     "custody_guardianship": (
-        "child custody", "custody", "guardianship", "guardian", "visitation",
+        "child custody", "custody of child", "custody of the child",
+        "custody of minor", "minor custody", "guardianship", "guardian court",
+        "child visitation", "visitation rights",
     ),
-    "maintenance": ("maintenance", "maintenance allowance", "nafaqa", "nafqa"),
+    "maintenance": (
+        "maintenance allowance", "child maintenance", "spousal maintenance",
+        "wife maintenance", "maintenance of wife", "maintenance of child",
+        "nafaqa", "nafqa",
+    ),
     "dissolution_khula": ("khula", "dissolution of marriage", "divorce", "talaq"),
-    "dower_mehr": ("dower", "haq mehr", "haq meher", "mehr", "meher"),
+    "dower_mehr": (
+        "dower", "haq mehr", "haq meher", "prompt mehr", "prompt meher",
+        "deferred mehr", "deferred meher",
+    ),
     "dowry_gifts": ("dowry", "bridal gifts", "jahez", "dowry articles"),
     "inheritance_partition": ("inheritance", "succession", "partition", "legal heirs"),
     "specific_performance": ("specific performance", "sale agreement", "agreement to sell"),
@@ -78,9 +87,18 @@ def overlap(a, b):
     return [str(x) for x in a if str(x).casefold() in right]
 
 
+def _contains_term(text: str, term: str) -> bool:
+    """Match complete legal terms, never substrings inside names/words.
+
+    This prevents ``mehr`` from matching names such as Mehran/Mehrnood and
+    avoids similar accidental issue classifications.
+    """
+    return bool(re.search(r"(?<!\w)" + re.escape(term.casefold()) + r"(?!\w)", text))
+
+
 def _families(text: str, mapping: dict[str, tuple[str, ...]]) -> set[str]:
     value = (text or "").casefold()
-    return {family for family, terms in mapping.items() if any(term in value for term in terms)}
+    return {family for family, terms in mapping.items() if any(_contains_term(value, term) for term in terms)}
 
 
 def compute_features(intelligence, candidate, request, weights=None):
@@ -91,7 +109,6 @@ def compute_features(intelligence, candidate, request, weights=None):
     candidate_text = " ".join(
         [
             candidate.title or "",
-            candidate.case_category or "",
             candidate.case_number or "",
             candidate.text_preview or "",
             " ".join(candidate.laws_cited or []),
@@ -126,7 +143,10 @@ def compute_features(intelligence, candidate, request, weights=None):
     elif source_broad:
         factors.append(MatchingFactor("issue_mismatch", ", ".join(sorted(source_broad)), w.issue_mismatch_penalty))
 
-    text = " ".join([candidate.case_category or "", candidate.text_preview or ""]).casefold()
+    # Dataset folders/categories are noisy and can be wrong (criminal bail
+    # judgments have appeared under "Family Law Cases"). Legal-domain evidence
+    # must therefore come from the judgment text itself.
+    text = (candidate.text_preview or "").casefold()
     domain = intelligence.primary_domain.value.casefold().replace(" law", "")
     if domain != "unknown" and domain in text:
         factors.append(MatchingFactor("same_legal_domain", intelligence.primary_domain.value, w.same_legal_domain))
