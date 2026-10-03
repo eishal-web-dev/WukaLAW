@@ -947,3 +947,119 @@ export function adminListActivity(): Promise<AdminActivity[]> {
 export function adminGetSystem(): Promise<AdminSystem> {
   return request<AdminSystem>('/admin/system')
 }
+
+// Lawyer organizer contracts
+export interface CalendarEvent {
+  id: number
+  case_id: number | null
+  case_number: string | null
+  case_title: string | null
+  title: string
+  starts_at: string
+  ends_at: string | null
+  event_type: string
+  location: string
+  notes: string
+  created_at: string
+}
+
+export interface LawyerTask {
+  id: number
+  case_id: number | null
+  case_number: string | null
+  case_title: string | null
+  title: string
+  status: 'To Do' | 'In Progress' | 'Review' | 'Done'
+  priority: CasePriority
+  due_at: string | null
+  notes: string
+  created_at: string
+}
+
+export interface Hearing {
+  id: number
+  case_id: number
+  case_number: string
+  case_title: string
+  title: string
+  scheduled_at: string
+  court: string
+  judge: string
+  hearing_type: string
+  status: 'Scheduled' | 'Completed' | 'Adjourned' | 'Cancelled'
+  preparation_notes: string
+  outcome: string
+  created_at: string
+}
+
+export interface ResearchLog {
+  id: number
+  case_id: number | null
+  case_number: string | null
+  case_title: string | null
+  query: string
+  notes: string
+  results: Record<string, unknown>[]
+  created_at: string
+}
+
+// Lawyer organizer endpoints
+export function listCalendarEvents(): Promise<CalendarEvent[]> {
+  return request<CalendarEvent[]>('/lawyer-workflow/events')
+}
+
+export function createCalendarEvent(payload: Omit<CalendarEvent, 'id' | 'case_number' | 'case_title' | 'created_at'>): Promise<CalendarEvent> {
+  return postJson<CalendarEvent>('/lawyer-workflow/events', payload)
+}
+
+export function updateCalendarEvent(id: number, payload: Partial<CalendarEvent>): Promise<CalendarEvent> {
+  return patchJson<CalendarEvent>(`/lawyer-workflow/events/${id}`, payload)
+}
+
+export function deleteCalendarEvent(id: number): Promise<void> {
+  return del(`/lawyer-workflow/events/${id}`)
+}
+
+export function listLawyerTasks(): Promise<LawyerTask[]> {
+  return request<LawyerTask[]>('/lawyer-workflow/tasks')
+}
+
+export function createLawyerTask(payload: Omit<LawyerTask, 'id' | 'case_number' | 'case_title' | 'created_at'>): Promise<LawyerTask> {
+  return postJson<LawyerTask>('/lawyer-workflow/tasks', payload)
+}
+
+export function updateLawyerTask(id: number, payload: Partial<LawyerTask>): Promise<LawyerTask> {
+  return patchJson<LawyerTask>(`/lawyer-workflow/tasks/${id}`, payload)
+}
+
+export function deleteLawyerTask(id: number): Promise<void> {
+  return del(`/lawyer-workflow/tasks/${id}`)
+}
+
+export function listHearings(): Promise<Hearing[]> {
+  return request<Hearing[]>('/lawyer-workflow/hearings')
+}
+
+export function createHearing(payload: Omit<Hearing, 'id' | 'case_number' | 'case_title' | 'created_at'>): Promise<Hearing> {
+  return postJson<Hearing>('/lawyer-workflow/hearings', payload)
+}
+
+export function updateHearing(id: number, payload: Partial<Hearing>): Promise<Hearing> {
+  return patchJson<Hearing>(`/lawyer-workflow/hearings/${id}`, payload)
+}
+
+export function deleteHearing(id: number): Promise<void> {
+  return del(`/lawyer-workflow/hearings/${id}`)
+}
+
+export function listResearchLogs(): Promise<ResearchLog[]> {
+  return request<ResearchLog[]>('/lawyer-workflow/research')
+}
+
+export function createResearchLog(payload: Pick<ResearchLog, 'case_id' | 'query' | 'notes' | 'results'>): Promise<ResearchLog> {
+  return postJson<ResearchLog>('/lawyer-workflow/research', payload)
+}
+
+export function deleteResearchLog(id: number): Promise<void> {
+  return del(`/lawyer-workflow/research/${id}`)
+}

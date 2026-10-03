@@ -37,7 +37,11 @@ import AdminDashboard from './pages/AdminDashboard'
 import AdminOperations from './pages/AdminOperations'
 
 // App screens (preview — sample data)
-import Workspace from './pages/Workspace'
+import LawyerWorkspace from './pages/LawyerWorkspace'
+import LawyerCalendar from './pages/LawyerCalendar'
+import LawyerTasks from './pages/LawyerTasks'
+import LawyerHearings from './pages/LawyerHearings'
+import LawyerResearch from './pages/LawyerResearch'
 import Prediction from './pages/Prediction'
 import Explainable from './pages/Explainable'
 import Timeline from './pages/Timeline'
@@ -109,16 +113,16 @@ export default function App() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/clients" element={<FigmaPortalRoute page="lp-clients" />} />
             <Route path="/clients/detail" element={<FigmaPortalRoute page="lp-client-detail" />} />
-            <Route path="/hearings" element={<FigmaPortalRoute page="lp-hearings" />} />
-            <Route path="/calendar" element={<FigmaPortalRoute page="lp-calendar" />} />
-            <Route path="/tasks" element={<FigmaPortalRoute page="lp-tasks" />} />
+            <Route path="/hearings" element={<LawyerHearings />} />
+            <Route path="/calendar" element={<LawyerCalendar />} />
+            <Route path="/tasks" element={<LawyerTasks />} />
             <Route path="/ai-strategy" element={<FigmaPortalRoute page="lp-ai-strategy" />} />
-            <Route path="/research" element={<FigmaPortalRoute page="lp-research" />} />
+            <Route path="/research" element={<LawyerResearch />} />
             <Route path="/strategy" element={<FigmaPortalRoute page="lp-strategy" />} />
             <Route path="/report-generator" element={<FigmaPortalRoute page="lp-report-gen" />} />
             <Route path="/messages" element={<FigmaPortalRoute page="lp-messages" />} />
             <Route path="/team" element={<FigmaPortalRoute page="lp-team" />} />
-            <Route path="/workspace" element={<Workspace />} />
+            <Route path="/workspace" element={<LawyerWorkspace />} />
             <Route path="/prediction" element={<Prediction />} />
             <Route path="/explainable" element={<Explainable />} />
             <Route path="/reports" element={<Reports />} />

@@ -321,3 +321,100 @@ class AdminSystemOut(BaseModel):
     support_configured: bool
     cms_configured: bool
     backup_configured: bool
+
+
+class OrganizerBase(BaseModel):
+    case_id: int | None = None
+
+
+class CalendarEventCreate(OrganizerBase):
+    title: str = Field(min_length=2, max_length=255)
+    starts_at: datetime
+    ends_at: datetime | None = None
+    event_type: str = Field(default="Meeting", max_length=32)
+    location: str = Field(default="", max_length=255)
+    notes: str = Field(default="", max_length=5000)
+
+
+class CalendarEventUpdate(BaseModel):
+    title: str | None = Field(default=None, min_length=2, max_length=255)
+    case_id: int | None = None
+    starts_at: datetime | None = None
+    ends_at: datetime | None = None
+    event_type: str | None = Field(default=None, max_length=32)
+    location: str | None = Field(default=None, max_length=255)
+    notes: str | None = Field(default=None, max_length=5000)
+
+
+class CalendarEventOut(CalendarEventCreate):
+    id: int
+    case_number: str | None = None
+    case_title: str | None = None
+    created_at: datetime
+
+
+class LawyerTaskCreate(OrganizerBase):
+    title: str = Field(min_length=2, max_length=255)
+    status: Literal["To Do", "In Progress", "Review", "Done"] = "To Do"
+    priority: Literal["Low", "Medium", "High", "Critical"] = "Medium"
+    due_at: datetime | None = None
+    notes: str = Field(default="", max_length=5000)
+
+
+class LawyerTaskUpdate(BaseModel):
+    title: str | None = Field(default=None, min_length=2, max_length=255)
+    case_id: int | None = None
+    status: Literal["To Do", "In Progress", "Review", "Done"] | None = None
+    priority: Literal["Low", "Medium", "High", "Critical"] | None = None
+    due_at: datetime | None = None
+    notes: str | None = Field(default=None, max_length=5000)
+
+
+class LawyerTaskOut(LawyerTaskCreate):
+    id: int
+    case_number: str | None = None
+    case_title: str | None = None
+    created_at: datetime
+
+
+class HearingCreate(BaseModel):
+    case_id: int
+    title: str = Field(min_length=2, max_length=255)
+    scheduled_at: datetime
+    court: str = Field(min_length=2, max_length=255)
+    judge: str = Field(default="", max_length=255)
+    hearing_type: str = Field(default="Hearing", max_length=64)
+    status: Literal["Scheduled", "Completed", "Adjourned", "Cancelled"] = "Scheduled"
+    preparation_notes: str = Field(default="", max_length=10000)
+    outcome: str = Field(default="", max_length=10000)
+
+
+class HearingUpdate(BaseModel):
+    title: str | None = Field(default=None, min_length=2, max_length=255)
+    scheduled_at: datetime | None = None
+    court: str | None = Field(default=None, min_length=2, max_length=255)
+    judge: str | None = Field(default=None, max_length=255)
+    hearing_type: str | None = Field(default=None, max_length=64)
+    status: Literal["Scheduled", "Completed", "Adjourned", "Cancelled"] | None = None
+    preparation_notes: str | None = Field(default=None, max_length=10000)
+    outcome: str | None = Field(default=None, max_length=10000)
+
+
+class HearingOut(HearingCreate):
+    id: int
+    case_number: str
+    case_title: str
+    created_at: datetime
+
+
+class ResearchLogCreate(OrganizerBase):
+    query: str = Field(min_length=3, max_length=5000)
+    notes: str = Field(default="", max_length=10000)
+    results: list[dict] = Field(default_factory=list)
+
+
+class ResearchLogOut(ResearchLogCreate):
+    id: int
+    case_number: str | None = None
+    case_title: str | None = None
+    created_at: datetime
