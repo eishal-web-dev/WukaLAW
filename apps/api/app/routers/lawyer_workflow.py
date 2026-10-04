@@ -1,16 +1,17 @@
 from fastapi import APIRouter, Depends, HTTPException, Response
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.auth import get_current_user
 from app.db import get_db
-from app.models import CalendarEvent, Case, Hearing, LawyerTask, ResearchLog, User
+from app.models import CalendarEvent, Case, Document, Hearing, LawyerTask, ResearchLog, User
 from app.schemas import (
     CalendarEventCreate, CalendarEventOut, CalendarEventUpdate,
     HearingCreate, HearingOut, HearingUpdate,
     LawyerTaskCreate, LawyerTaskOut, LawyerTaskUpdate,
-    ResearchLogCreate, ResearchLogOut,
+    LawyerClientOut, ResearchLogCreate, ResearchLogOut,
 )
+from app.routers.cases import _case_out
 
 router = APIRouter(prefix="/lawyer-workflow", tags=["lawyer-workflow"])
 
@@ -73,6 +74,47 @@ def _hearing_out(item: Hearing, case: Case) -> dict:
 def _research_out(item: ResearchLog, case: Case | None) -> dict:
     return {"id": item.id, "case_id": item.case_id, "query": item.query, "notes": item.notes,
             "results": item.results or [], "created_at": item.created_at, **_case_fields(case)}
+
+
+@router.get("/clients", response_model=list[LawyerClientOut])
+def list_clients(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    """Clients connected to cases currently owned by this lawyer.
+
+    Unclaimed intake requests are deliberately excluded: viewing the shared
+    intake queue must not make a person appear in a lawyer's private client
+    book before the lawyer claims the matter.
+    """
+    _lawyer(user)
+    cases = db.scalars(
+        select(Case)
+        .where(Case.owner_id == user.id, Case.client_id.is_not(None))
+        .order_by(Case.created_at.desc())
+    ).all()
+    grouped: dict[int, list[Case]] = {}
+    for case in cases:
+        grouped.setdefault(case.client_id, []).append(case)
+    result = []
+    for client_id, client_cases in grouped.items():
+        client = db.get(User, client_id)
+        if client is None:
+            continue
+        case_ids = [case.id for case in client_cases]
+        document_count = db.scalar(
+            select(func.count(Document.id)).where(Document.case_id.in_(case_ids))
+        ) or 0
+        result.append({
+            "id": client.id,
+            "name": client.name,
+            "email": client.email,
+            "case_count": len(client_cases),
+            "active_case_count": sum(
+                case.status not in {"Case Complete", "Closed"} for case in client_cases
+            ),
+            "document_count": document_count,
+            "last_case_at": max(case.created_at for case in client_cases),
+            "cases": [_case_out(db, case) for case in client_cases],
+        })
+    return sorted(result, key=lambda item: item["last_case_at"], reverse=True)
 
 
 @router.get("/events", response_model=list[CalendarEventOut])

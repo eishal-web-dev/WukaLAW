@@ -1003,7 +1003,22 @@ export interface ResearchLog {
   created_at: string
 }
 
+export interface LawyerClient {
+  id: number
+  name: string
+  email: string
+  case_count: number
+  active_case_count: number
+  document_count: number
+  last_case_at: string
+  cases: Case[]
+}
+
 // Lawyer organizer endpoints
+export function listLawyerClients(): Promise<LawyerClient[]> {
+  return request<LawyerClient[]>('/lawyer-workflow/clients')
+}
+
 export function listCalendarEvents(): Promise<CalendarEvent[]> {
   return request<CalendarEvent[]>('/lawyer-workflow/events')
 }

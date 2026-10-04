@@ -42,6 +42,7 @@ import LawyerCalendar from './pages/LawyerCalendar'
 import LawyerTasks from './pages/LawyerTasks'
 import LawyerHearings from './pages/LawyerHearings'
 import LawyerResearch from './pages/LawyerResearch'
+import LawyerClients from './pages/LawyerClients'
 import Prediction from './pages/Prediction'
 import Explainable from './pages/Explainable'
 import Timeline from './pages/Timeline'
@@ -111,8 +112,8 @@ export default function App() {
           {/* Lawyer-only screens */}
           <Route element={<PortalRoute portal="lawyer" />}>
             <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/clients" element={<FigmaPortalRoute page="lp-clients" />} />
-            <Route path="/clients/detail" element={<FigmaPortalRoute page="lp-client-detail" />} />
+            <Route path="/clients" element={<LawyerClients />} />
+            <Route path="/clients/:clientId" element={<LawyerClients />} />
             <Route path="/hearings" element={<LawyerHearings />} />
             <Route path="/calendar" element={<LawyerCalendar />} />
             <Route path="/tasks" element={<LawyerTasks />} />
