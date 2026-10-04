@@ -34,6 +34,7 @@ export interface SimilarJudgment {
 
 export interface CaseSimilarResponse {
   corpus_available?: boolean
+  corpus_status?: 'configuration_missing' | 'configuration_invalid' | 'authentication_failed' | 'migration_missing' | 'dns_failed' | 'tls_failed' | 'connection_timeout' | 'connection_failed' | 'index_unavailable'
   historical_outcomes?: {
     matched_cases: number
     outcomes_available: number

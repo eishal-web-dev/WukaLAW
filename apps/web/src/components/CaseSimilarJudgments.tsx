@@ -82,6 +82,28 @@ function detailLabel(item: SimilarJudgment): string {
   return 'Case details available'
 }
 
+function matchTags(item: SimilarJudgment): string[] {
+  const tags: string[] = []
+  const issue = issueLabel(item)
+  if (issue) tags.push(issue)
+
+  const factorLabels: Record<string, (value: string) => string> = {
+    same_legal_domain: (value) => value,
+    same_case_category: (value) => value,
+    same_jurisdiction: (value) => value,
+    same_broad_issue: (value) => readableLabel(value),
+    shared_law: (value) => value,
+    shared_section: (value) => `Section ${value}`,
+    shared_article: (value) => `Article ${value}`,
+    shared_legal_citation: (value) => value,
+  }
+  for (const factor of item.matching_factors) {
+    const format = factorLabels[factor.factor]
+    if (format && factor.value) tags.push(format(factor.value))
+  }
+  return [...new Set(tags)].slice(0, 6)
+}
+
 export default function CaseSimilarJudgments({ caseId }: { caseId: number | string }) {
   const reduceMotion = useReducedMotion()
   const [data, setData] = useState<CaseSimilarResponse | null>(null)
@@ -292,69 +314,51 @@ export default function CaseSimilarJudgments({ caseId }: { caseId: number | stri
               <div className="flex items-start gap-3">
                 <Database size={18} className="text-amber-400 mt-0.5 flex-shrink-0" />
                 <div>
-                  <h3 className="text-sm font-semibold text-foreground">Pakistani judgment matching is being set up</h3>
+                  <h3 className="text-sm font-semibold text-foreground">
+                    {data.corpus_status === 'configuration_missing'
+                      ? 'Supabase judgment connection is not configured'
+                      : data.corpus_status === 'configuration_invalid'
+                        ? 'Supabase URL or key formatting is invalid'
+                      : data.corpus_status === 'authentication_failed'
+                        ? 'Supabase rejected the backend key'
+                      : data.corpus_status === 'migration_missing'
+                          ? 'Supabase legal search migration is unavailable'
+                      : data.corpus_status === 'dns_failed'
+                        ? 'Supabase project is inactive or unavailable'
+                      : data.corpus_status === 'tls_failed'
+                        ? 'Supabase HTTPS verification failed'
+                      : data.corpus_status === 'connection_timeout'
+                        ? 'Supabase connection timed out'
+                      : data.corpus_status === 'connection_failed'
+                        ? 'Cannot reach the Pakistani judgment index'
+                        : 'Pakistani judgment index is unavailable'}
+                  </h3>
                   <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                    Your case details and procedural guidance still work. Judgment matches will appear here after the legal judgment library is installed on this server.
+                    {data.corpus_status === 'configuration_missing'
+                      ? 'Add SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY to the backend .env, then restart the API. The corpus stays in Supabase.'
+                      : data.corpus_status === 'configuration_invalid'
+                        ? 'Use one unbroken line for each .env value and remove accidental spaces or copied path text.'
+                      : data.corpus_status === 'authentication_failed'
+                        ? 'Use the project service_role key, not the anon key, in the backend .env and restart the API.'
+                      : data.corpus_status === 'migration_missing'
+                          ? 'Run npx supabase db push for the linked project, then restart the API. Your corpus remains in Supabase.'
+                      : data.corpus_status === 'dns_failed'
+                        ? 'Open the Supabase dashboard and restore this project. If it is already active, copy its current Project URL into the backend SUPABASE_URL and restart the API.'
+                      : data.corpus_status === 'tls_failed'
+                        ? 'Check the Windows system clock and any antivirus or proxy performing HTTPS inspection.'
+                      : data.corpus_status === 'connection_timeout'
+                        ? 'Check the network, VPN, proxy, or firewall and try the search again.'
+                      : 'Your corpus remains in Supabase; restart the API after checking its Supabase connection and migration.'}
                   </p>
                 </div>
               </div>
             </Card>
           ) : <>
-          {data.historical_outcomes && (
-            <Card className="p-5 border-[#D4AF37]/15">
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <div className="max-w-xl">
-                  <h3 className="text-sm font-semibold text-foreground">What happened in the matched cases</h3>
-                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{data.historical_outcomes.meaning}</p>
-                </div>
-                <div className="text-right">
-                  {data.historical_outcomes.score_available ? (
-                    <>
-                      <div className="text-3xl font-bold tabular-nums" style={{ color: G }}>{data.historical_outcomes.favourable_ratio}%</div>
-                      <div className="text-[10px] text-muted-foreground">historically favourable to initiating party</div>
-                      {data.historical_outcomes.confidence_interval_low !== null && data.historical_outcomes.confidence_interval_high !== null && (
-                        <div className="text-[10px] text-muted-foreground mt-0.5">
-                          95% range {data.historical_outcomes.confidence_interval_low}–{data.historical_outcomes.confidence_interval_high}%
-                        </div>
-                      )}
-                    </>
-                  ) : (
-                    <>
-                      <div className="text-sm font-semibold text-amber-400">Sample too small for a score</div>
-                      <div className="text-[10px] text-muted-foreground mt-0.5">At least {data.historical_outcomes.minimum_sample} outcome-known matches required</div>
-                    </>
-                  )}
-                  <div className="text-[10px] text-muted-foreground mt-0.5">
-                    based on {data.historical_outcomes.outcomes_available} outcome-known matched case{data.historical_outcomes.outcomes_available === 1 ? '' : 's'}
-                  </div>
-                </div>
-              </div>
-              {data.historical_outcomes.outcomes_available === 0 && (
-                <div className="mt-4 rounded-lg border border-amber-400/15 bg-amber-400/[0.03] p-3 text-xs text-muted-foreground">
-                  Matches were found, but none includes an explicit outcome that can be counted safely. Open the cases below to review their available details.
-                </div>
-              )}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-4 text-center">
-                <div className="rounded-lg bg-emerald-500/[0.05] p-3"><div className="font-bold text-emerald-400">{data.historical_outcomes.favourable}</div><div className="text-[10px] text-muted-foreground">Allowed / granted</div></div>
-                <div className="rounded-lg bg-red-500/[0.05] p-3"><div className="font-bold text-red-400">{data.historical_outcomes.unfavourable}</div><div className="text-[10px] text-muted-foreground">Dismissed / rejected</div></div>
-                <div className="rounded-lg bg-amber-500/[0.05] p-3"><div className="font-bold text-amber-400">{data.historical_outcomes.partial_or_mixed}</div><div className="text-[10px] text-muted-foreground">Partial / mixed</div></div>
-                <div className="rounded-lg bg-white/[0.025] p-3"><div className="font-bold text-foreground">{data.historical_outcomes.unclear}</div><div className="text-[10px] text-muted-foreground">Outcome unclear</div></div>
-              </div>
-              {data.historical_outcomes.successful_case_signals.length > 0 && (
-                <div className="mt-4 border-t border-white/[0.06] pt-4">
-                  <div className="text-xs font-semibold text-foreground mb-2">Factors seen in favourable matched cases</div>
-                  <ul className="space-y-1.5 text-xs text-muted-foreground">
-                    {data.historical_outcomes.successful_case_signals.map((signal) => <li key={signal}>• {signal}</li>)}
-                  </ul>
-                </div>
-              )}
-            </Card>
-          )}
           <div className="grid grid-cols-2 gap-3 max-w-sm">
             <motion.div whileHover={reduceMotion ? undefined : { y: -2 }}>
               <Card className="p-4 h-full">
                 <div className="text-2xl font-bold text-foreground tabular-nums">{data.total_candidates}</div>
-                <div className="text-[10px] text-muted-foreground mt-1">Cases we checked</div>
+                <div className="text-[10px] text-muted-foreground mt-1">Unique judgments checked</div>
               </Card>
             </motion.div>
             <motion.div whileHover={reduceMotion ? undefined : { y: -2 }}>
@@ -376,8 +380,12 @@ export default function CaseSimilarJudgments({ caseId }: { caseId: number | stri
           {data.results.length === 0 ? (
             <Card className="p-7 text-center">
               <BookOpenCheck size={24} className="mx-auto mb-3 text-muted-foreground" />
-              <div className="text-sm font-semibold text-foreground">We couldn't find a close case yet</div>
-              <p className="text-xs text-muted-foreground mt-1">Try different details or add more information/documents to your case.</p>
+              <div className="text-sm font-semibold text-foreground">No reliable match in the indexed judgments</div>
+              <p className="text-xs text-muted-foreground mt-1">
+                {data.total_candidates < 25
+                  ? `Only ${data.total_candidates} unique judgment${data.total_candidates === 1 ? '' : 's'} were available to check. Finish indexing the Pakistani judgment library, then search again.`
+                  : 'Try one main legal issue at a time, or add the latest pleading/order and search again.'}
+              </p>
             </Card>
           ) : (
             <>
@@ -385,6 +393,7 @@ export default function CaseSimilarJudgments({ caseId }: { caseId: number | stri
                 <AnimatePresence initial={false}>
                   {visibleResults.map((item, index) => {
                     const issue = issueLabel(item)
+                    const tags = matchTags(item)
                     const open = expanded.has(item.document_id)
                     return (
                       <motion.div
@@ -423,10 +432,14 @@ export default function CaseSimilarJudgments({ caseId }: { caseId: number | stri
                             {open && (
                               <motion.div initial={reduceMotion ? {} : { opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={reduceMotion ? {} : { opacity: 0, height: 0 }} transition={{ duration: 0.22 }} className="overflow-hidden">
                                 <div className="mt-3 space-y-3 border-t border-white/[0.06] pt-3">
-                                  <div className="rounded-lg bg-white/[0.025] border border-white/[0.06] p-3">
-                                    <div className="text-[10px] text-muted-foreground mb-1">Why we picked this case</div>
-                                    <p className="text-xs text-foreground leading-relaxed">{item.explanation || shortReason(item)}</p>
-                                  </div>
+                                  {tags.length > 0 && (
+                                    <div>
+                                      <div className="text-[10px] text-muted-foreground mb-2">Why it matches</div>
+                                      <div className="flex flex-wrap gap-1.5">
+                                        {tags.map((tag) => <Badge key={`match-${tag}`} label={tag} />)}
+                                      </div>
+                                    </div>
+                                  )}
 
                                   {item.explicit_outcome_phrase && (
                                     <div className="rounded-lg bg-white/[0.025] border border-white/[0.06] p-3">
@@ -448,10 +461,6 @@ export default function CaseSimilarJudgments({ caseId }: { caseId: number | stri
 
                                   {item.differences.length > 0 && <div className="text-xs text-muted-foreground"><span className="font-semibold text-foreground">What's different: </span>{item.differences[0]}</div>}
 
-                                  <div className="rounded-lg border border-sky-500/15 bg-sky-500/[0.025] p-3 flex items-start gap-2">
-                                    <Database size={13} className="text-sky-400 mt-0.5 flex-shrink-0" />
-                                    <div className="text-[10px] text-muted-foreground leading-relaxed">This match comes from wukaLAW's indexed Pakistani case library. Open the full case story only if you need deeper research.</div>
-                                  </div>
                                   <PrecedentBrief caseId={caseId} documentId={item.document_id} />
                                 </div>
                               </motion.div>

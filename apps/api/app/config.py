@@ -1,9 +1,24 @@
 from pathlib import Path
 
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+API_ROOT = Path(__file__).resolve().parents[1]
+REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
+ENV_FILES = (REPOSITORY_ROOT / ".env", API_ROOT / ".env")
 
 
 class Settings(BaseSettings):
+    # Resolve dotenv files from the source tree instead of the shell's current
+    # directory. This keeps Windows/local startup consistent whether uvicorn is
+    # launched from F:\\WakuLAW or F:\\WakuLAW\\apps\\api. The API-local file
+    # comes last and therefore overrides duplicate values from the repo file.
+    model_config = SettingsConfigDict(
+        env_file=ENV_FILES,
+        env_file_encoding="utf-8-sig",
+        extra="ignore",
+    )
+
     api_host: str = "0.0.0.0"
     api_port: int = 8000
     database_url: str = "sqlite:///./wakulaw.db"
@@ -11,6 +26,13 @@ class Settings(BaseSettings):
     storage_dir: Path = Path("./storage")
     max_upload_mb: int = 20
     max_s3_upload_mb: int = 512
+
+    # Private Supabase legal corpus. The service-role key is backend-only and
+    # must never be exposed through a VITE_/NEXT_PUBLIC_ variable.
+    supabase_url: str = ""
+    supabase_service_role_key: str = ""
+    supabase_legal_bucket: str = "wakulaw-documents"
+    legal_retrieval_backend: str = "auto"  # auto, supabase, or qdrant
 
     # One embedding stack for both the legal corpus and frontend uploads.
     embedding_model: str = "BAAI/bge-m3"
@@ -70,11 +92,6 @@ class Settings(BaseSettings):
     high_confidence: float = 0.55
     medium_confidence: float = 0.35
     min_answerable: float = 0.25
-
-    class Config:
-        env_file = ".env"
-        extra = "ignore"
-
 
 settings = Settings()
 settings.upload_dir.mkdir(parents=True, exist_ok=True)

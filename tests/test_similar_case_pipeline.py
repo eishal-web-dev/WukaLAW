@@ -10,6 +10,7 @@ def test_natural_search_judgment_only_dedup_outcome():
  retriever=FakeRetriever(values);out=SimilarCasePipeline(retriever,intelligence_analyzer=intel).run(SimilarCaseRequest("similar criminal case",include_outcomes=True))
  assert len(out.results)==1 and out.results[0].explicit_outcome_phrase=="appeal allowed"
  assert retriever.queries[0].document_types==["judgment"] and out.results[0].matching_factors
+ assert out.total_candidates==1
 def test_document_search_excludes_source_and_exact_duplicate():
  # other is a clearly-relevant judgment (high score) so this test verifies the
  # dedup logic — source and its exact duplicate are excluded, other survives —

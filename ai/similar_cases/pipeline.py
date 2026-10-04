@@ -58,6 +58,9 @@ class SimilarCasePipeline:
         ]
 
         ranked = rank_candidates(raw, intelligence, request, self.weights, self.thresholds)
+        # Retrieval returns passages. Public API/UI counts must describe unique
+        # judgments, otherwise 96 chunks from ten source files appears as 96 cases.
+        candidate_cases = len({row[2].document_id for row in ranked if row[2].document_id})
 
         # Do not show weak semantic neighbours as legal precedents. The previous
         # implementation displayed every top vector hit, which made unrelated tax,
@@ -117,7 +120,7 @@ class SimilarCasePipeline:
             instructions.retrieval_query,
             intelligence.to_dict(),
             instructions.applied_filters(),
-            len(raw),
+            candidate_cases,
             results,
             list(dict.fromkeys(warnings)),
             (time.perf_counter() - started) * 1000,
