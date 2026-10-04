@@ -420,6 +420,65 @@ class ResearchLogOut(ResearchLogCreate):
     created_at: datetime
 
 
+class CaseStrategyWrite(BaseModel):
+    objective: str = Field(default="", max_length=10000)
+    case_theory: str = Field(default="", max_length=20000)
+    strengths: list[str] = Field(default_factory=list, max_length=30)
+    risks: list[str] = Field(default_factory=list, max_length=30)
+    next_actions: list[str] = Field(default_factory=list, max_length=30)
+
+
+class CaseStrategyOut(CaseStrategyWrite):
+    id: int | None = None
+    case_id: int
+    case_number: str
+    case_title: str
+    updated_at: datetime | None = None
+
+
+class CaseMessageCreate(BaseModel):
+    case_id: int
+    body: str = Field(min_length=1, max_length=10000)
+
+
+class CaseMessageOut(BaseModel):
+    id: int
+    case_id: int
+    case_number: str
+    case_title: str
+    sender_id: int
+    sender_name: str
+    sender_role: str
+    body: str
+    created_at: datetime
+
+
+class TeamMemberCreate(BaseModel):
+    name: str = Field(min_length=2, max_length=255)
+    email: str = Field(min_length=3, max_length=255)
+    role: str = Field(default="Team member", min_length=2, max_length=100)
+    notes: str = Field(default="", max_length=5000)
+
+
+class TeamMemberOut(TeamMemberCreate):
+    id: int
+    created_at: datetime
+
+
+class BillingProfileWrite(BaseModel):
+    business_name: str = Field(default="", max_length=255)
+    currency: Literal["PKR", "USD", "GBP", "AED"] = "PKR"
+    hourly_rate: int = Field(default=0, ge=0, le=100000000)
+    invoice_notes: str = Field(default="", max_length=5000)
+
+
+class BillingProfileOut(BillingProfileWrite):
+    plan: str
+    payment_status: str
+    usage: dict[str, int]
+    updated_at: datetime | None = None
+
+
 class LawyerClientOut(BaseModel):
     id: int
     name: str
