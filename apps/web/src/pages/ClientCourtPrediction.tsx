@@ -1,10 +1,57 @@
 import { useEffect, useState } from 'react'
-import { Scale, AlertTriangle, CheckCircle2, ListChecks, CalendarClock, BriefcaseBusiness } from 'lucide-react'
+import {
+  Scale, AlertTriangle, CheckCircle2, ListChecks, CalendarClock,
+  BriefcaseBusiness, ShieldCheck, TrendingUp, FileSearch, ChevronDown,
+} from 'lucide-react'
 import { listCases, getCasePrediction, errorMessage } from '../lib/api'
 import type { Case, CasePrediction } from '../lib/api'
 import { Card, G } from '../components/design'
 import ErrorAlert from '../components/ErrorAlert'
 import Spinner from '../components/Spinner'
+
+function scoreColour(score: number) {
+  if (score >= 70) return '#34D399'
+  if (score >= 45) return '#FBBF24'
+  return '#F87171'
+}
+
+function sampleLabel(sampleSize: number, minimum: number) {
+  if (sampleSize >= Math.max(30, minimum * 3)) return 'Larger historical sample'
+  if (sampleSize >= minimum) return 'Minimum sample met'
+  return 'Insufficient data'
+}
+
+function ScoreRing({ value, label, range }: { value: number; label: string; range?: string }) {
+  const score = Math.max(0, Math.min(100, value))
+  const colour = scoreColour(score)
+  return (
+    <div className="relative grid h-44 w-44 shrink-0 place-items-center rounded-full"
+      style={{ background: `conic-gradient(${colour} ${score * 3.6}deg, rgba(255,255,255,.07) 0deg)` }}>
+      <div className="grid h-36 w-36 place-items-center rounded-full bg-card text-center shadow-inner">
+        <div>
+          <div className="text-4xl font-black tabular-nums text-foreground">{score}<span className="text-lg text-muted-foreground">/100</span></div>
+          <div className="mt-1 text-[11px] font-semibold uppercase tracking-wider" style={{ color: colour }}>{label}</div>
+          {range && <div className="mt-1 text-[10px] text-muted-foreground">{range}</div>}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function MetricBar({ label, value, maximum = 100, colour = G }: { label: string; value: number; maximum?: number; colour?: string }) {
+  const width = maximum > 0 ? Math.max(0, Math.min(100, (value / maximum) * 100)) : 0
+  return (
+    <div>
+      <div className="mb-1.5 flex items-center justify-between gap-3 text-xs">
+        <span className="font-medium text-foreground">{label}</span>
+        <span className="tabular-nums text-muted-foreground">{value}/{maximum}</span>
+      </div>
+      <div className="h-2 overflow-hidden rounded-full bg-white/[0.06]">
+        <div className="h-full rounded-full transition-all duration-500" style={{ width: `${width}%`, backgroundColor: colour }} />
+      </div>
+    </div>
+  )
+}
 
 /**
  * Client-facing Court Prediction page. There is no prediction engine
@@ -105,7 +152,7 @@ export default function ClientCourtPrediction() {
   }
 
   return (
-    <div className="p-6 sm:p-8 max-w-2xl mx-auto space-y-5">
+    <div className="p-4 sm:p-8 max-w-6xl mx-auto space-y-5">
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-2">
           <Scale size={18} style={{ color: G }} />
@@ -126,9 +173,15 @@ export default function ClientCourtPrediction() {
 
       {error && <ErrorAlert message={error} />}
 
-      <Card className="p-5 border-[#D4AF37]/15">
-        <h2 className="text-sm font-bold text-foreground">Estimate one specific claim</h2>
-        <p className="text-xs text-muted-foreground mt-1">A case can contain several claims with different prospects. Select your side and describe only the result you want estimated.</p>
+      <Card className="overflow-hidden border-[#D4AF37]/15">
+        <div className="flex items-center gap-3 border-b border-border bg-[#D4AF37]/[0.04] px-5 py-4">
+          <div className="rounded-xl bg-[#D4AF37]/10 p-2 text-[#D4AF37]"><FileSearch size={17} /></div>
+          <div>
+            <h2 className="text-sm font-bold text-foreground">Choose the result to assess</h2>
+            <p className="text-xs text-muted-foreground">Each claim is assessed separately from this case's saved record.</p>
+          </div>
+        </div>
+        <div className="p-5">
         <div className="grid gap-3 sm:grid-cols-[160px_1fr] mt-4">
           <select
             value={partyRole}
@@ -154,6 +207,7 @@ export default function ClientCourtPrediction() {
         >
           Calculate from matched cases
         </button>
+        </div>
       </Card>
 
       {loadingPrediction ? (
@@ -168,67 +222,99 @@ export default function ClientCourtPrediction() {
         </Card>
       ) : prediction && prediction.available && prediction.probability === null ? (
         <div className="space-y-4">
-          {prediction.outcome_estimate?.available && (
-            <Card className="p-6 border-[#D4AF37]/30">
-              <div className="flex flex-wrap items-start justify-between gap-5">
-                <div className="max-w-md">
-                  <h2 className="text-sm font-bold text-foreground">{prediction.outcome_estimate.label}</h2>
-                  <p className="text-xs text-muted-foreground mt-1">{prediction.outcome_estimate.claim_focus}</p>
-                  <p className="text-[10px] text-muted-foreground mt-3">{prediction.outcome_estimate.method}</p>
+          {prediction.outcome_estimate?.available && (() => {
+            const estimate = prediction.outcome_estimate
+            const sampleSize = estimate.sample_size ?? 0
+            const sampleDescription = sampleLabel(sampleSize, estimate.minimum_sample)
+            return (
+              <Card className="overflow-hidden border-border bg-muted/[0.02]">
+                <div className="p-5">
+                  <div className="flex flex-wrap items-start justify-between gap-4">
+                    <div>
+                      <h2 className="text-sm font-bold text-foreground">Historical matched-case benchmark</h2>
+                      <p className="mt-1 text-xs text-muted-foreground">Observed outcomes in retrieved judgments—not your probability of winning.</p>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-lg font-semibold tabular-nums text-foreground">{estimate.estimate ?? 0}% historically supportive</div>
+                      {estimate.range_low != null && estimate.range_high != null && (
+                        <div className="text-[10px] text-muted-foreground">Sample-only statistical range {estimate.range_low}–{estimate.range_high}%</div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="mt-4">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="rounded-full bg-[#D4AF37]/10 px-3 py-1 text-xs font-bold text-[#D4AF37]">{sampleDescription}</span>
+                      <span className="rounded-full bg-white/[0.04] px-3 py-1 text-xs text-muted-foreground">{sampleSize} matched outcomes</span>
+                      <span className="rounded-full bg-white/[0.04] px-3 py-1 text-xs text-muted-foreground">{estimate.party_role === 'initiating' ? 'Bringing claim' : 'Defending claim'}</span>
+                    </div>
+                    <h2 className="mt-4 text-lg font-bold text-foreground">{estimate.claim_focus}</h2>
+                    <div className="mt-4 grid grid-cols-2 gap-3">
+                      <div className="rounded-xl border border-emerald-400/10 bg-emerald-400/[0.05] p-4">
+                        <div className="text-2xl font-bold text-emerald-400">{estimate.supporting_outcomes}</div>
+                        <div className="text-[11px] text-muted-foreground">supportive outcomes</div>
+                      </div>
+                      <div className="rounded-xl border border-white/[0.05] bg-white/[0.025] p-4">
+                        <div className="text-2xl font-bold text-foreground">{sampleSize - (estimate.supporting_outcomes ?? 0)}</div>
+                        <div className="text-[11px] text-muted-foreground">other outcomes</div>
+                      </div>
+                    </div>
+                  </div>
+                  <p className="mt-4 rounded-lg border border-amber-400/10 bg-amber-400/[0.04] px-3 py-2 text-[11px] leading-relaxed text-amber-300/80">
+                    Similarity, evidence quality, legal comparability and judicial discretion are not measured by this range. {estimate.warning}
+                  </p>
                 </div>
-                <div className="text-right">
-                  <div className="text-4xl font-bold tabular-nums" style={{ color: G }}>{prediction.outcome_estimate.estimate}%</div>
-                  <div className="text-[11px] text-muted-foreground">experimental matched-case estimate</div>
-                  <div className="text-[10px] text-muted-foreground mt-1">95% range {prediction.outcome_estimate.range_low}–{prediction.outcome_estimate.range_high}%</div>
-                </div>
-              </div>
-              <div className="mt-4 rounded-lg bg-white/[0.025] p-3 text-xs text-muted-foreground">
-                {prediction.outcome_estimate.supporting_outcomes} supportive outcome{prediction.outcome_estimate.supporting_outcomes === 1 ? '' : 's'} among {prediction.outcome_estimate.sample_size} outcome-known matched judgments.
-              </div>
-              <p className="text-[10px] text-amber-300/80 mt-3">{prediction.outcome_estimate.warning}</p>
-            </Card>
-          )}
+                <details className="group border-t border-border px-5 py-4">
+                  <summary className="flex cursor-pointer list-none items-center justify-between text-xs font-semibold text-muted-foreground">
+                    How this score was calculated <ChevronDown size={15} className="transition-transform group-open:rotate-180" />
+                  </summary>
+                  <p className="mt-3 text-xs leading-relaxed text-muted-foreground">{estimate.method}</p>
+                </details>
+              </Card>
+            )
+          })()}
           {prediction.outcome_estimate && !prediction.outcome_estimate.available && prediction.outcome_estimate.claim_focus && (
-            <Card className="p-5 border-amber-400/20">
-              <h2 className="text-sm font-bold text-foreground">Outcome estimate unavailable</h2>
-              <p className="text-xs text-muted-foreground mt-1">{prediction.outcome_estimate.reason}</p>
+            <Card className="p-5 border-amber-400/20 bg-amber-400/[0.025]">
+              <div className="flex items-center gap-3">
+                <div className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-amber-400/10 text-amber-400"><AlertTriangle size={20} /></div>
+                <div><h2 className="text-sm font-bold text-foreground">More matched outcomes needed</h2>
+                <p className="text-xs text-muted-foreground mt-1">{prediction.outcome_estimate.reason}</p></div>
+              </div>
             </Card>
           )}
           {prediction.case_preparation && (
-            <Card className="p-6 border-emerald-400/20">
-              <div className="flex flex-wrap items-start justify-between gap-5">
-                <div className="max-w-md">
-                  <div className="flex items-center gap-2 mb-2">
-                    <CheckCircle2 size={17} className="text-emerald-400" />
-                    <h2 className="text-sm font-bold text-foreground">{prediction.case_preparation.label}</h2>
-                  </div>
-                  <p className="text-xs text-muted-foreground leading-relaxed">{prediction.case_preparation.meaning}</p>
-                </div>
-                <div className="text-right">
-                  <div className="text-4xl font-bold tabular-nums text-emerald-400">{prediction.case_preparation.score}%</div>
-                  <div className="text-[11px] text-muted-foreground">{prediction.case_preparation.level}</div>
-                </div>
+            <Card className="overflow-hidden border-emerald-400/20">
+              <div className="flex items-center gap-3 border-b border-border px-6 py-4">
+                <ShieldCheck size={18} className="text-emerald-400" />
+                <div><h2 className="text-sm font-bold text-foreground">Evidence readiness</h2><p className="text-[11px] text-muted-foreground">Strength of the information currently saved for this case</p></div>
               </div>
-              <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-white/[0.06]">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-amber-400 to-emerald-400 transition-all"
-                  style={{ width: `${Math.max(0, Math.min(100, prediction.case_preparation.score))}%` }}
-                />
+              <div className="grid gap-7 p-6 md:grid-cols-[190px_1fr] md:items-center">
+                <ScoreRing value={prediction.case_preparation.score} label={prediction.case_preparation.level} />
+                <div className="space-y-4">
+                  {prediction.case_preparation.components.map((component) => (
+                    <MetricBar
+                      key={component.key}
+                      label={component.label}
+                      value={component.earned}
+                      maximum={component.maximum}
+                      colour={component.earned >= component.maximum ? '#34D399' : '#FBBF24'}
+                    />
+                  ))}
+                </div>
               </div>
               {prediction.case_preparation.priority_actions.length > 0 && (
-                <div className="mt-5 border-t border-white/[0.06] pt-4">
-                  <h3 className="text-xs font-bold text-foreground mb-3">How to strengthen your case record</h3>
-                  <ul className="space-y-3">
+                <div className="border-t border-white/[0.06] bg-emerald-400/[0.02] p-6">
+                  <h3 className="mb-3 flex items-center gap-2 text-sm font-bold text-foreground"><TrendingUp size={16} className="text-emerald-400" /> Best ways to strengthen this case</h3>
+                  <ul className="grid gap-3 md:grid-cols-2">
                     {prediction.case_preparation.priority_actions.slice(0, 5).map((action) => (
-                      <li key={action.category} className="flex items-start justify-between gap-3 text-xs">
-                        <div><span className="font-semibold text-foreground">{action.category}: </span><span className="text-muted-foreground">{action.label}</span></div>
-                        <span className="flex-shrink-0 rounded-full bg-emerald-400/10 px-2 py-0.5 font-semibold text-emerald-400">up to +{action.possible_points}</span>
+                      <li key={action.category} className="rounded-xl border border-white/[0.05] bg-card p-4 text-xs">
+                        <div className="flex items-center justify-between gap-3"><span className="font-semibold text-foreground">{action.category}</span><span className="flex-shrink-0 rounded-full bg-emerald-400/10 px-2 py-0.5 font-semibold text-emerald-400">+{action.possible_points}</span></div>
+                        <p className="mt-2 leading-relaxed text-muted-foreground">{action.label}</p>
                       </li>
                     ))}
                   </ul>
                 </div>
               )}
-              <p className="text-[10px] text-muted-foreground mt-4">{prediction.case_preparation.warning}</p>
+              <p className="border-t border-border px-6 py-3 text-[10px] text-muted-foreground">{prediction.case_preparation.warning}</p>
             </Card>
           )}
           {prediction.historical_outlook?.corpus_available && (
@@ -285,14 +371,17 @@ export default function ClientCourtPrediction() {
               </div>
             </Card>
           )}
-          <Card className="p-6">
-            <div className="flex items-center gap-2 mb-3">
+          <Card className="overflow-hidden">
+            <div className="flex items-center gap-2 border-b border-border px-6 py-4">
               <Scale size={17} style={{ color: G }} />
               <h2 className="text-sm font-bold text-foreground">Evidence-grounded assessment</h2>
             </div>
-            <p className="text-sm text-muted-foreground whitespace-pre-line leading-relaxed">{prediction.assessment}</p>
+            <details className="group p-6" open>
+              <summary className="flex cursor-pointer list-none items-center justify-between text-xs font-semibold text-muted-foreground">View detailed explanation <ChevronDown size={15} className="transition-transform group-open:rotate-180" /></summary>
+              <p className="mt-4 text-sm text-muted-foreground whitespace-pre-line leading-relaxed">{prediction.assessment}</p>
+            </details>
             {(prediction.case_stage || prediction.matter) && (
-              <div className="mt-4 flex flex-wrap gap-2 text-xs">
+              <div className="flex flex-wrap gap-2 border-t border-border px-6 py-4 text-xs">
                 {prediction.case_stage && <span className="rounded-full bg-primary/10 px-3 py-1 font-semibold text-primary">{prediction.case_stage}</span>}
                 {prediction.matter && <span className="rounded-full bg-muted px-3 py-1 text-foreground">{prediction.matter}</span>}
               </div>
@@ -322,21 +411,23 @@ export default function ClientCourtPrediction() {
               </ul>
             </Card>
           )}
-          {(prediction.supporting_factors?.length ?? 0) > 0 && (
-            <Card className="p-5">
-              <h3 className="text-xs font-bold text-foreground mb-3 flex items-center gap-2"><CheckCircle2 size={14} className="text-emerald-400" /> Information currently available</h3>
-              <ul className="space-y-2 text-xs text-muted-foreground">
-                {prediction.supporting_factors?.map((item) => <li key={item}>• {item}</li>)}
-              </ul>
-            </Card>
-          )}
-          {(prediction.missing_information?.length ?? 0) > 0 && (
-            <Card className="p-5">
-              <h3 className="text-xs font-bold text-foreground mb-3 flex items-center gap-2"><ListChecks size={14} className="text-amber-400" /> Improve this assessment</h3>
-              <ul className="space-y-2 text-xs text-muted-foreground">
-                {prediction.missing_information?.map((item) => <li key={item}>• {item}</li>)}
-              </ul>
-            </Card>
+          {((prediction.supporting_factors?.length ?? 0) > 0 || (prediction.missing_information?.length ?? 0) > 0) && (
+            <div className="grid gap-4 md:grid-cols-2">
+              <Card className="p-5 border-emerald-400/15">
+                <h3 className="text-xs font-bold text-foreground mb-3 flex items-center gap-2"><CheckCircle2 size={14} className="text-emerald-400" /> Available evidence</h3>
+                <ul className="space-y-2 text-xs text-muted-foreground">
+                  {prediction.supporting_factors?.map((item) => <li key={item} className="rounded-lg bg-emerald-400/[0.04] p-3">{item}</li>)}
+                  {!prediction.supporting_factors?.length && <li className="text-muted-foreground">No verified supporting items yet.</li>}
+                </ul>
+              </Card>
+              <Card className="p-5 border-amber-400/15">
+                <h3 className="text-xs font-bold text-foreground mb-3 flex items-center gap-2"><ListChecks size={14} className="text-amber-400" /> Missing or unverified</h3>
+                <ul className="space-y-2 text-xs text-muted-foreground">
+                  {prediction.missing_information?.map((item) => <li key={item} className="rounded-lg bg-amber-400/[0.04] p-3">{item}</li>)}
+                  {!prediction.missing_information?.length && <li className="text-muted-foreground">No priority gaps detected.</li>}
+                </ul>
+              </Card>
+            </div>
           )}
           <p className="text-xs text-muted-foreground text-center">{prediction.disclaimer}</p>
         </div>

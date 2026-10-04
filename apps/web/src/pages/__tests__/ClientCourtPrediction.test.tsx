@@ -146,14 +146,50 @@ describe('ClientCourtPrediction', () => {
 
     render(<ClientCourtPrediction />)
     expect(await screen.findByText('Historical matched-case benchmark')).toBeInTheDocument()
-    expect(screen.getByText('Case preparation score')).toBeInTheDocument()
-    expect(screen.getByText('65%')).toBeInTheDocument()
+    expect(screen.getByText('Evidence readiness')).toBeInTheDocument()
+    expect(screen.getByText('65')).toBeInTheDocument()
     expect(screen.getByText(/Record the next hearing date/i)).toBeInTheDocument()
     expect(screen.getByText(/60% historically favourable/i)).toBeInTheDocument()
     expect(screen.getAllByText(/not your probability of winning/i).length).toBeGreaterThan(0)
     expect(screen.getByText(/Sample-only statistical range 23–88%/i)).toBeInTheDocument()
     expect(screen.getByText(/Sample: 5 outcome-known matched judgments/i)).toBeInTheDocument()
     expect(screen.getByText(/not a personal win probability/i)).toBeInTheDocument()
+  })
+
+  it('renders an outcome gauge, confidence, sample size, and supportive outcomes', async () => {
+    vi.mocked(api.listCases).mockResolvedValue({ items: [makeCase({})], total: 1 })
+    vi.mocked(api.getCasePrediction).mockResolvedValue({
+      available: true,
+      assessment: 'Detailed assessment.',
+      generated_at: '2026-09-29T00:00:00Z',
+      probability: null,
+      factors: [],
+      outcome_estimate: {
+        available: true,
+        label: 'Experimental matched-case outlook',
+        claim_focus: 'Recovery of unpaid dower',
+        party_role: 'initiating',
+        estimate: 68,
+        range_low: 55,
+        range_high: 79,
+        supporting_outcomes: 21,
+        sample_size: 31,
+        minimum_sample: 10,
+        method: 'Observed outcomes in matched Pakistani judgments.',
+        warning: 'Not a guarantee.',
+      },
+      disclaimer: 'Decision-support only.',
+    })
+
+    render(<ClientCourtPrediction />)
+    expect(await screen.findByText('Historical matched-case benchmark')).toBeInTheDocument()
+    expect(screen.getByText('68% historically supportive')).toBeInTheDocument()
+    expect(screen.getByText(/not your probability of winning/i)).toBeInTheDocument()
+    expect(screen.getByText('Larger historical sample')).toBeInTheDocument()
+    expect(screen.getByText('31 matched outcomes')).toBeInTheDocument()
+    expect(screen.getByText('21')).toBeInTheDocument()
+    expect(screen.getByText('Recovery of unpaid dower')).toBeInTheDocument()
+    expect(screen.getByText(/Similarity, evidence quality, legal comparability and judicial discretion are not measured/i)).toBeVisible()
   })
 
   it('shows an active child-custody roadmap and preparation checklist', async () => {
