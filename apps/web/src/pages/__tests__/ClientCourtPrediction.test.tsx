@@ -189,6 +189,7 @@ describe('ClientCourtPrediction', () => {
     expect(screen.getByText('31 matched outcomes')).toBeInTheDocument()
     expect(screen.getByText('21')).toBeInTheDocument()
     expect(screen.getByText('Recovery of unpaid dower')).toBeInTheDocument()
+    expect(screen.getByText(/Similarity, evidence quality, legal comparability and judicial discretion are not measured/i)).toBeVisible()
   })
 
   it('shows an active child-custody roadmap and preparation checklist', async () => {

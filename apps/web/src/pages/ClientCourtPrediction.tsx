@@ -259,13 +259,15 @@ export default function ClientCourtPrediction() {
                       </div>
                     </div>
                   </div>
+                  <p className="mt-4 rounded-lg border border-amber-400/10 bg-amber-400/[0.04] px-3 py-2 text-[11px] leading-relaxed text-amber-300/80">
+                    Similarity, evidence quality, legal comparability and judicial discretion are not measured by this range. {estimate.warning}
+                  </p>
                 </div>
                 <details className="group border-t border-border px-5 py-4">
                   <summary className="flex cursor-pointer list-none items-center justify-between text-xs font-semibold text-muted-foreground">
                     How this score was calculated <ChevronDown size={15} className="transition-transform group-open:rotate-180" />
                   </summary>
                   <p className="mt-3 text-xs leading-relaxed text-muted-foreground">{estimate.method}</p>
-                  <p className="mt-2 text-[10px] text-amber-300/80">Similarity, evidence quality, legal comparability and judicial discretion are not measured by this range. {estimate.warning}</p>
                 </details>
               </Card>
             )
