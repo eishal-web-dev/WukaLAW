@@ -2,7 +2,7 @@
 fallback used by /api/rag/query when RAG_LLM_PROVIDER=auto."""
 import pytest
 
-from ai.rag.llm_provider import FallbackLLMProvider, LLMProvider
+from ai.rag.llm_provider import FallbackLLMProvider, GroqProvider, LLMProvider
 from ai.rag.rag_pipeline import RagPipeline
 
 
@@ -87,6 +87,39 @@ def test_raises_with_all_provider_errors_when_every_provider_fails():
 def test_empty_provider_list_is_rejected_at_construction():
     with pytest.raises(ValueError):
         FallbackLLMProvider([])
+
+
+def test_groq_tries_accessible_fallback_when_configured_model_is_missing(monkeypatch):
+    attempts = []
+
+    class Completions:
+        def create(self, *, model, **kwargs):
+            attempts.append(model)
+            if model == "unavailable-model":
+                raise RuntimeError("404 model_not_found: model does not exist")
+            return type("Response", (), {
+                "choices": [type("Choice", (), {
+                    "message": type("Message", (), {"content": "grounded response"})()
+                })()]
+            })()
+
+    class Client:
+        def __init__(self, api_key):
+            self.chat = type("Chat", (), {"completions": Completions()})()
+
+    import sys
+    import types
+    monkeypatch.setitem(sys.modules, "groq", types.SimpleNamespace(Groq=Client))
+
+    provider = GroqProvider(
+        model="unavailable-model",
+        api_key="test-key",
+        fallback_models="openai/gpt-oss-20b",
+    )
+
+    assert provider.generate("prompt") == "grounded response"
+    assert attempts == ["unavailable-model", "openai/gpt-oss-20b"]
+    assert provider.last_model == "openai/gpt-oss-20b"
 
 
 def test_pipeline_surfaces_which_provider_answered():

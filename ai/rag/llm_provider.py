@@ -84,9 +84,22 @@ class GeminiProvider(LLMProvider):
 class GroqProvider(LLMProvider):
     name = "groq"
 
-    def __init__(self, model: str | None = None, api_key: str | None = None):
+    def __init__(
+        self,
+        model: str | None = None,
+        api_key: str | None = None,
+        fallback_models: str | None = None,
+    ):
         self.model = model or os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
         self.api_key = api_key or os.getenv("GROQ_API_KEY")
+        configured_fallbacks = fallback_models or os.getenv(
+            "GROQ_FALLBACK_MODELS", "openai/gpt-oss-20b,llama-3.1-8b-instant"
+        )
+        self.fallback_models = [
+            value.strip() for value in configured_fallbacks.split(",")
+            if value.strip() and value.strip() != self.model
+        ]
+        self.last_model: str | None = None
 
     def generate(self, prompt: str) -> str:
         if not self.api_key:
@@ -94,16 +107,32 @@ class GroqProvider(LLMProvider):
         try:
             from groq import Groq
             client = Groq(api_key=self.api_key)
-            response = client.chat.completions.create(
-                model=self.model,
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0,
-            )
         except Exception as exc:
-            message = str(exc)
-            if "429" in message or "rate_limit" in message.casefold():
-                raise RuntimeError("Groq rate limit has been reached") from exc
-            raise RuntimeError(f"Groq request failed: {exc}") from exc
+            raise RuntimeError(f"Groq client could not start: {exc}") from exc
+
+        response = None
+        model_errors: list[str] = []
+        for candidate in [self.model, *self.fallback_models]:
+            try:
+                response = client.chat.completions.create(
+                    model=candidate,
+                    messages=[{"role": "user", "content": prompt}],
+                    temperature=0,
+                )
+                self.last_model = candidate
+                break
+            except Exception as exc:
+                message = str(exc)
+                normalized = message.casefold()
+                if "429" in message or "rate_limit" in normalized:
+                    raise RuntimeError("Groq rate limit has been reached") from exc
+                if "404" in message or "model_not_found" in normalized or "does not exist" in normalized:
+                    model_errors.append(f"{candidate}: unavailable")
+                    continue
+                raise RuntimeError(f"Groq request failed: {exc}") from exc
+
+        if response is None:
+            raise RuntimeError("Groq has no accessible text model (" + "; ".join(model_errors) + ")")
 
         text = response.choices[0].message.content
         if not text:
