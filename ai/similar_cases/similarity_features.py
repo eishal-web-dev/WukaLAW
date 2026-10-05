@@ -63,7 +63,7 @@ SPECIFIC_ISSUES: dict[str, tuple[str, ...]] = {
         "child visitation", "visitation rights",
     ),
     "maintenance": (
-        "maintenance allowance", "child maintenance", "spousal maintenance",
+        "maintenance", "maintenance allowance", "child maintenance", "spousal maintenance",
         "wife maintenance", "maintenance of wife", "maintenance of child",
         "nafaqa", "nafqa",
     ),
