@@ -42,3 +42,14 @@ def test_low_vector_unrelated_judgment_is_still_rejected():
  candidate=hit("tax-case","tax-chunk",.22,text="The taxpayer challenged an income tax assessment before the revenue authority.")
  out=SimilarCasePipeline(FakeRetriever([candidate]),intelligence_analyzer=family_intel).run(SimilarCaseRequest("My husband has not paid my haq meher and I seek dower recovery."))
  assert out.results==[]
+
+
+def test_multi_claim_family_case_runs_focused_retrieval_per_issue():
+ retriever=FakeRetriever([hit("mehr-case","mehr-chunk",.4,text="Family Court recovery of unpaid dower and haq mehr.")])
+ out=SimilarCasePipeline(retriever,intelligence_analyzer=family_intel).run(SimilarCaseRequest("I seek haq meher, dowry articles, child custody and maintenance."))
+ queries=[query.query for query in retriever.queries]
+ assert any("unpaid dower" in query for query in queries)
+ assert any("dowry articles" in query for query in queries)
+ assert any("child custody" in query for query in queries)
+ assert any("child maintenance" in query for query in queries)
+ assert out.results

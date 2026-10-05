@@ -81,6 +81,14 @@ SPECIFIC_ISSUES: dict[str, tuple[str, ...]] = {
     "termination_service": ("termination", "dismissal from service", "removal from service", "reinstatement"),
 }
 
+FOCUSED_ISSUE_QUERIES: dict[str, str] = {
+    "custody_guardianship": "Pakistani family court judgment child custody guardianship welfare of minor visitation",
+    "maintenance": "Pakistani family court judgment wife child maintenance allowance recovery",
+    "dissolution_khula": "Pakistani family court judgment khula dissolution of marriage divorce",
+    "dower_mehr": "Pakistani family court judgment recovery of unpaid dower haq mehr meher nikahnama",
+    "dowry_gifts": "Pakistani family court judgment recovery of dowry articles bridal gifts jahez",
+}
+
 
 def overlap(a, b):
     right = {str(x).casefold() for x in b}
@@ -99,6 +107,22 @@ def _contains_term(text: str, term: str) -> bool:
 def _families(text: str, mapping: dict[str, tuple[str, ...]]) -> set[str]:
     value = (text or "").casefold()
     return {family for family, terms in mapping.items() if any(_contains_term(value, term) for term in terms)}
+
+
+def focused_issue_queries(text: str, limit: int = 5) -> list[tuple[str, str]]:
+    """Build narrow retrieval queries for concrete issues found in a case.
+
+    A single case record can contain unrelated claims (money, vehicle, khula,
+    dower, dowry, custody and maintenance). Embedding that whole narrative once
+    dilutes the legally important terms. Search each detected issue separately,
+    then let the existing issue-aware ranker merge and validate the results.
+    """
+    detected = _families(text, SPECIFIC_ISSUES)
+    return [
+        (family, query)
+        for family, query in FOCUSED_ISSUE_QUERIES.items()
+        if family in detected
+    ][:limit]
 
 
 def compute_features(intelligence, candidate, request, weights=None):
