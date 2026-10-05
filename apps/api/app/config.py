@@ -75,6 +75,7 @@ class Settings(BaseSettings):
     gemini_model: str = "gemini-3.6-flash"
     groq_api_key: str = ""
     groq_model: str = "llama-3.3-70b-versatile"
+    groq_fallback_models: str = "openai/gpt-oss-20b,llama-3.1-8b-instant"
     openai_api_key: str = ""
     openai_model: str = "gpt-4.1-mini"
 
