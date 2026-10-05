@@ -53,3 +53,32 @@ def test_multi_claim_family_case_runs_focused_retrieval_per_issue():
  assert any("child custody" in query for query in queries)
  assert any("child maintenance" in query for query in queries)
  assert out.results
+
+
+def test_honour_killing_bail_case_is_never_shown_as_child_custody_precedent():
+ candidate=hit(
+  "criminal-bail", "criminal-bail-chunk", .78,
+  text=("The petitioners sought pre-arrest bail in an FIR for honour killing and murder "
+        "under section 302 PPC. The deceased married of her own choice. The Supreme Court "
+        "dismissed the criminal petition and recalled ad-interim bail."),
+  outcome="bail refused",
+  laws=["Pakistan Penal Code", "Code of Criminal Procedure"],
+  sections=["302", "497", "498"],
+ )
+ out=SimilarCasePipeline(FakeRetriever([candidate]),intelligence_analyzer=family_intel).run(
+  SimilarCaseRequest("I seek child custody, haq meher, dowry and maintenance.")
+ )
+ assert out.results==[]
+ assert any("criminal bail/homicide" in warning for warning in out.warnings)
+
+
+def test_real_guardianship_case_survives_cross_domain_filter():
+ candidate=hit(
+  "custody-case", "custody-chunk", .42,
+  text=("The Guardian Court decided child custody under the Guardians and Wards Act, "
+        "applying welfare of the minor and visitation rights."),
+ )
+ out=SimilarCasePipeline(FakeRetriever([candidate]),intelligence_analyzer=family_intel).run(
+  SimilarCaseRequest("I seek child custody and safe visitation rights.")
+ )
+ assert len(out.results)==1
