@@ -363,6 +363,13 @@ class CmsPostOut(CmsPostWrite):
     updated_at: datetime
 
 
+class BackupSnapshotOut(BaseModel):
+    filename: str
+    size_bytes: int
+    created_at: datetime
+    storage: Literal["local"] = "local"
+
+
 class OrganizerBase(BaseModel):
     case_id: int | None = None
 

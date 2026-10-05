@@ -958,6 +958,10 @@ export const adminListSupportTickets = () => request<SupportTicket[]>('/admin/su
 export const adminSaveSupportTicket = (value: Omit<SupportTicket,'id'|'created_at'>, id?:number) => request<SupportTicket>(id ? `/admin/support-tickets/${id}` : '/admin/support-tickets', { method:id?'PUT':'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(value) })
 export const adminListCmsPosts = () => request<CmsPost[]>('/admin/cms-posts')
 export const adminSaveCmsPost = (value: Omit<CmsPost,'id'|'created_at'|'updated_at'>, id?:number) => request<CmsPost>(id ? `/admin/cms-posts/${id}` : '/admin/cms-posts', { method:id?'PUT':'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(value) })
+export interface BackupSnapshot { filename:string; size_bytes:number; created_at:string; storage:'local' }
+export const adminListBackups = () => request<BackupSnapshot[]>('/admin/backups')
+export const adminCreateBackup = () => request<BackupSnapshot>('/admin/backups',{method:'POST'})
+export async function adminDownloadBackup(filename:string):Promise<void>{const response=await fetch(`${API_BASE_URL}/admin/backups/${encodeURIComponent(filename)}/download`,{headers:authHeaders()});if(response.status===401)throw handleSessionExpired();if(!response.ok)throw new ApiError('Could not download this backup.',response.status);const url=URL.createObjectURL(await response.blob());const a=document.createElement('a');a.href=url;a.download=filename;a.click();URL.revokeObjectURL(url)}
 
 // Lawyer organizer contracts
 export interface CalendarEvent {

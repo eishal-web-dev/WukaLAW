@@ -123,6 +123,12 @@ def test_admin_business_records_are_persisted_and_editable(client):
     assert post.status_code == 201, post.text
     assert client.get("/api/v1/admin/cms-posts", headers=headers).json()[0]["slug"] == "family-court-guide"
 
+    backup = client.post("/api/v1/admin/backups", headers=headers)
+    assert backup.status_code == 201, backup.text
+    assert backup.json()["filename"].endswith(".sqlite3")
+    assert client.get("/api/v1/admin/backups", headers=headers).json()
+    assert client.get(f"/api/v1/admin/backups/{backup.json()['filename']}/download", headers=headers).status_code == 200
+
 
 def test_registration_cannot_grant_admin_and_role_survives_login(client):
     response = client.post('/api/v1/auth/register', json={
