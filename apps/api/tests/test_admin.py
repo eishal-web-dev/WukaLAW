@@ -62,7 +62,11 @@ def test_unauthenticated_request_is_rejected(client):
     assert response.status_code == 401
 
 
-def test_admin_operations_use_real_data_and_protect_roles(client):
+def test_admin_operations_use_real_data_and_protect_roles(client, monkeypatch):
+    from app.routers import admin as admin_router
+
+    monkeypatch.setattr(admin_router.settings, "supabase_url", "https://example.supabase.co")
+    monkeypatch.setattr(admin_router.settings, "supabase_service_role_key", "service-role-test-key")
     admin_headers = register_user(client, email="admin@gmail.com")
     _make_admin("admin@gmail.com")
     lawyer_headers = register_user(client, email="lawyer@example.com", name="Adv. Test")
@@ -87,6 +91,7 @@ def test_admin_operations_use_real_data_and_protect_roles(client):
     assert system.json()["api_status"] == "healthy"
     assert "database_backend" in system.json()
     assert "billing_configured" in system.json()
+    assert system.json()["legal_corpus_configured"] is True
 
     lawyer = next(u for u in client.get("/api/v1/admin/users", headers=admin_headers).json() if u["email"] == "lawyer@example.com")
     changed = client.patch(

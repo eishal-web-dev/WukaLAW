@@ -1,4 +1,18 @@
 from scripts.index_supabase_legal_corpus import outcome
+from scripts.index_supabase_legal_corpus import SupabaseCorpusIndexer
+
+
+def test_indexer_normalizes_storage_s3_endpoint():
+    indexer = SupabaseCorpusIndexer(
+        "https://example.storage.supabase.co/storage/v1/s3",
+        "test-key",
+        "legal-files",
+        object(),
+    )
+    try:
+        assert indexer.url == "https://example.supabase.co"
+    finally:
+        indexer.client.close()
 
 
 def test_outcome_detects_common_pakistani_dispositions():
