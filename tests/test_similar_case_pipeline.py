@@ -25,3 +25,20 @@ def test_missing_outcome_and_no_results():
  assert empty.results==[] and empty.warnings
 def test_document_not_found_safe():
  out=SimilarCasePipeline(FakeRetriever([]),intelligence_analyzer=intel).run(SimilarCaseRequest(document_id="missing"));assert out.results==[] and out.warnings
+
+
+def family_intel(q):
+ return LegalQuery(Intent.SIMILAR_CASE,.9,LegalDomain.FAMILY,[],Language.ENGLISH,Jurisdiction.PAKISTAN,{},[],"dower mehr family dispute pakistan",[])
+
+
+def test_low_vector_family_judgment_survives_when_specific_issue_matches():
+ candidate=hit("mehr-case","mehr-chunk",.22,text="The Family Court decreed recovery of dower and unpaid mehr for the wife.")
+ out=SimilarCasePipeline(FakeRetriever([candidate]),intelligence_analyzer=family_intel).run(SimilarCaseRequest("My husband has not paid my haq meher and I seek dower recovery."))
+ assert len(out.results)==1
+ assert any(f.factor=="same_specific_issue" and "dower_mehr" in f.value for f in out.results[0].matching_factors)
+
+
+def test_low_vector_unrelated_judgment_is_still_rejected():
+ candidate=hit("tax-case","tax-chunk",.22,text="The taxpayer challenged an income tax assessment before the revenue authority.")
+ out=SimilarCasePipeline(FakeRetriever([candidate]),intelligence_analyzer=family_intel).run(SimilarCaseRequest("My husband has not paid my haq meher and I seek dower recovery."))
+ assert out.results==[]

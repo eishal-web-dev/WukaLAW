@@ -8,7 +8,11 @@ from .similarity_features import compute_features, FeatureWeights
 class SimilarityThresholds:
     highly_relevant: float = .78
     relevant: float = .58
-    possibly_relevant: float = .40
+    # Supabase RPC already enforces a 0.20 vector floor. A candidate that also
+    # shares the same concrete issue (for example dower/mehr or custody) scores
+    # about 0.37 at that floor. The previous 0.40 cutoff therefore discarded
+    # legally on-point family judgments after successfully retrieving them.
+    possibly_relevant: float = .35
 
 
 def label(score, thresholds=None):
