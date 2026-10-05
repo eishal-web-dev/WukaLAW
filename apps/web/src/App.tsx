@@ -42,6 +42,10 @@ import LawyerCalendar from './pages/LawyerCalendar'
 import LawyerTasks from './pages/LawyerTasks'
 import LawyerHearings from './pages/LawyerHearings'
 import LawyerResearch from './pages/LawyerResearch'
+import LawyerStrategy from './pages/LawyerStrategy'
+import LawyerMessages from './pages/LawyerMessages'
+import LawyerTeam from './pages/LawyerTeam'
+import LawyerBilling from './pages/LawyerBilling'
 import LawyerClients from './pages/LawyerClients'
 import Prediction from './pages/Prediction'
 import Explainable from './pages/Explainable'
@@ -51,20 +55,11 @@ import Analytics from './pages/Analytics'
 import Settings from './pages/Settings'
 
 const FigmaPublicPage = lazy(() => import('./figma/FigmaPublicPage'))
-const FigmaPortalPage = lazy(() => import('./figma/FigmaPortalPage'))
 
 function FigmaPublicRoute({ page }: { page: 'landing' | 'about' | 'practice-areas' | 'case-studies' | 'contact' | 'find-lawyer' | 'lawyer-profile' | 'pricing' | 'features' | 'solutions' | 'blog' | 'faq' | 'careers' | 'privacy' | 'terms' }) {
   return (
     <Suspense fallback={<div className="min-h-screen bg-background" />}>
       <FigmaPublicPage page={page} />
-    </Suspense>
-  )
-}
-
-function FigmaPortalRoute({ page }: { page: string }) {
-  return (
-    <Suspense fallback={<div className="h-full bg-background" />}>
-      <FigmaPortalPage page={page} />
     </Suspense>
   )
 }
@@ -108,21 +103,21 @@ export default function App() {
           <Route path="/similar-cases" element={<SimilarCases />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/notifications" element={<Notifications />} />
-          <Route path="/billing" element={<FigmaPortalRoute page="lp-billing" />} />
           {/* Lawyer-only screens */}
           <Route element={<PortalRoute portal="lawyer" />}>
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/billing" element={<LawyerBilling />} />
             <Route path="/clients" element={<LawyerClients />} />
             <Route path="/clients/:clientId" element={<LawyerClients />} />
             <Route path="/hearings" element={<LawyerHearings />} />
             <Route path="/calendar" element={<LawyerCalendar />} />
             <Route path="/tasks" element={<LawyerTasks />} />
-            <Route path="/ai-strategy" element={<FigmaPortalRoute page="lp-ai-strategy" />} />
+            <Route path="/ai-strategy" element={<Navigate to="/strategy" replace />} />
             <Route path="/research" element={<LawyerResearch />} />
-            <Route path="/strategy" element={<FigmaPortalRoute page="lp-strategy" />} />
-            <Route path="/report-generator" element={<FigmaPortalRoute page="lp-report-gen" />} />
-            <Route path="/messages" element={<FigmaPortalRoute page="lp-messages" />} />
-            <Route path="/team" element={<FigmaPortalRoute page="lp-team" />} />
+            <Route path="/strategy" element={<LawyerStrategy />} />
+            <Route path="/report-generator" element={<Reports generatorOnly />} />
+            <Route path="/messages" element={<LawyerMessages />} />
+            <Route path="/team" element={<LawyerTeam />} />
             <Route path="/workspace" element={<LawyerWorkspace />} />
             <Route path="/prediction" element={<Prediction />} />
             <Route path="/explainable" element={<Explainable />} />
@@ -147,6 +142,7 @@ export default function App() {
             <Route path="/client/report-generator" element={<ClientReportGenerator />} />
             <Route path="/client/downloads" element={<ClientDownloads />} />
             <Route path="/client/billing" element={<ClientBilling />} />
+            <Route path="/client/messages" element={<LawyerMessages />} />
           </Route>
           {/* Admin routes require the server-assigned role. */}
           <Route element={<AdminRoute />}>

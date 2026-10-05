@@ -1078,3 +1078,92 @@ export function createResearchLog(payload: Pick<ResearchLog, 'case_id' | 'query'
 export function deleteResearchLog(id: number): Promise<void> {
   return del(`/lawyer-workflow/research/${id}`)
 }
+
+export interface CaseStrategy {
+  id: number | null
+  case_id: number
+  case_number: string
+  case_title: string
+  objective: string
+  case_theory: string
+  strengths: string[]
+  risks: string[]
+  next_actions: string[]
+  updated_at: string | null
+}
+
+export interface CaseMessage {
+  id: number
+  case_id: number
+  case_number: string
+  case_title: string
+  sender_id: number
+  sender_name: string
+  sender_role: string
+  body: string
+  created_at: string
+}
+
+export interface TeamMember {
+  id: number
+  name: string
+  email: string
+  role: string
+  notes: string
+  created_at: string
+}
+
+export interface BillingProfile {
+  business_name: string
+  currency: 'PKR' | 'USD' | 'GBP' | 'AED'
+  hourly_rate: number
+  invoice_notes: string
+  plan: string
+  payment_status: string
+  usage: { cases: number; documents: number; reports: number }
+  updated_at: string | null
+}
+
+export function getCaseStrategy(caseId: number): Promise<CaseStrategy> {
+  return request<CaseStrategy>(`/lawyer-operations/cases/${caseId}/strategy`)
+}
+
+export function saveCaseStrategy(caseId: number, payload: Pick<CaseStrategy, 'objective' | 'case_theory' | 'strengths' | 'risks' | 'next_actions'>): Promise<CaseStrategy> {
+  return request<CaseStrategy>(`/lawyer-operations/cases/${caseId}/strategy`, {
+    method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
+  })
+}
+
+export function listCaseMessages(caseId: number): Promise<CaseMessage[]> {
+  return request<CaseMessage[]>(`/lawyer-operations/messages?case_id=${caseId}`)
+}
+
+export function sendCaseMessage(caseId: number, body: string): Promise<CaseMessage> {
+  return postJson<CaseMessage>('/lawyer-operations/messages', { case_id: caseId, body })
+}
+
+export function listTeamMembers(): Promise<TeamMember[]> {
+  return request<TeamMember[]>('/lawyer-operations/team')
+}
+
+export function addTeamMember(payload: Omit<TeamMember, 'id' | 'created_at'>): Promise<TeamMember> {
+  return postJson<TeamMember>('/lawyer-operations/team', payload)
+}
+
+export function removeTeamMember(id: number): Promise<void> {
+  return del(`/lawyer-operations/team/${id}`)
+}
+
+export function emailTeamMember(id: number, subject: string, body: string): Promise<{ delivered: boolean; recipient: string; provider_message_id: string }> {
+  return postJson(`/lawyer-operations/team/${id}/email`, { subject, body })
+}
+
+export function getBillingProfile(): Promise<BillingProfile> {
+  return request<BillingProfile>('/lawyer-operations/billing')
+}
+
+export function saveBillingProfile(payload: Pick<BillingProfile, 'business_name' | 'currency' | 'hourly_rate' | 'invoice_notes'>): Promise<BillingProfile> {
+  return request<BillingProfile>('/lawyer-operations/billing', {
+    method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
+  })
+}

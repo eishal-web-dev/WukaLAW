@@ -35,7 +35,6 @@ const LAWYER_NAV: NavGroup[] = [
     { path: '/evidence', label: 'Evidence', icon: Search },
   ] },
   { label: 'AI Intelligence', items: [
-    { path: '/ai-strategy', label: 'AI Strategy', icon: Sparkles },
     { path: '/research', label: 'Legal Research', icon: BookOpen },
     { path: '/prediction', label: 'Court Prediction', icon: Brain },
     { path: '/similar-cases', label: 'Similar Cases', icon: GitBranch },
@@ -83,6 +82,9 @@ const CLIENT_NAV: NavGroup[] = [
   { label: 'Reports', items: [
     { path: '/client/report-generator', label: 'Report Generator', icon: BarChart2 },
     { path: '/client/downloads', label: 'Downloads', icon: Download },
+  ] },
+  { label: 'Communication', items: [
+    { path: '/client/messages', label: 'Messages', icon: MessageCircle },
   ] },
   { label: 'Account', items: [
     { path: '/client/billing', label: 'Billing', icon: CreditCard },

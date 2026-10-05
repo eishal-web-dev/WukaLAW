@@ -189,3 +189,51 @@ class ResearchLog(Base):
     notes: Mapped[str] = mapped_column(Text, default="")
     results: Mapped[list] = mapped_column(JSON, default=list)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
+
+
+class CaseStrategy(Base):
+    __tablename__ = "case_strategies"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    owner_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    case_id: Mapped[int] = mapped_column(ForeignKey("cases.id"), unique=True, index=True)
+    objective: Mapped[str] = mapped_column(Text, default="")
+    case_theory: Mapped[str] = mapped_column(Text, default="")
+    strengths: Mapped[list] = mapped_column(JSON, default=list)
+    risks: Mapped[list] = mapped_column(JSON, default=list)
+    next_actions: Mapped[list] = mapped_column(JSON, default=list)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
+
+
+class CaseMessage(Base):
+    __tablename__ = "case_messages"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    case_id: Mapped[int] = mapped_column(ForeignKey("cases.id"), index=True)
+    sender_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    body: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
+
+
+class LawyerTeamMember(Base):
+    __tablename__ = "lawyer_team_members"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    owner_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    name: Mapped[str] = mapped_column(String(255))
+    email: Mapped[str] = mapped_column(String(255))
+    role: Mapped[str] = mapped_column(String(100), default="Team member")
+    notes: Mapped[str] = mapped_column(Text, default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class LawyerBillingProfile(Base):
+    __tablename__ = "lawyer_billing_profiles"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    owner_id: Mapped[int] = mapped_column(ForeignKey("users.id"), unique=True, index=True)
+    business_name: Mapped[str] = mapped_column(String(255), default="")
+    currency: Mapped[str] = mapped_column(String(8), default="PKR")
+    hourly_rate: Mapped[int] = mapped_column(Integer, default=0)
+    invoice_notes: Mapped[str] = mapped_column(Text, default="")
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
