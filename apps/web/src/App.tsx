@@ -112,7 +112,7 @@ export default function App() {
             <Route path="/hearings" element={<LawyerHearings />} />
             <Route path="/calendar" element={<LawyerCalendar />} />
             <Route path="/tasks" element={<LawyerTasks />} />
-            <Route path="/ai-strategy" element={<LawyerStrategy />} />
+            <Route path="/ai-strategy" element={<Navigate to="/strategy" replace />} />
             <Route path="/research" element={<LawyerResearch />} />
             <Route path="/strategy" element={<LawyerStrategy />} />
             <Route path="/report-generator" element={<Reports generatorOnly />} />
@@ -142,6 +142,7 @@ export default function App() {
             <Route path="/client/report-generator" element={<ClientReportGenerator />} />
             <Route path="/client/downloads" element={<ClientDownloads />} />
             <Route path="/client/billing" element={<ClientBilling />} />
+            <Route path="/client/messages" element={<LawyerMessages />} />
           </Route>
           {/* Admin routes require the server-assigned role. */}
           <Route element={<AdminRoute />}>

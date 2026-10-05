@@ -56,7 +56,7 @@ def test_case_messages_are_shared_only_between_assigned_lawyer_and_client(client
     assert client.get(f"/api/v1/lawyer-operations/messages?case_id={case['id']}", headers=outsider).status_code == 404
 
 
-def test_team_directory_and_billing_profile_are_real_and_private(client):
+def test_team_directory_and_billing_profile_are_real_and_private(client, monkeypatch):
     lawyer = register_user(client, email="office-lawyer@example.com")
     other = register_user(client, email="other-office@example.com")
 
@@ -68,6 +68,19 @@ def test_team_directory_and_billing_profile_are_real_and_private(client):
     assert member.status_code == 201, member.text
     assert len(client.get("/api/v1/lawyer-operations/team", headers=lawyer).json()) == 1
     assert client.get("/api/v1/lawyer-operations/team", headers=other).json() == []
+
+    monkeypatch.setattr("app.routers.lawyer_operations.send_email", lambda **kwargs: "provider-email-1")
+    delivered = client.post(
+        f"/api/v1/lawyer-operations/team/{member.json()['id']}/email",
+        json={"subject": "Hearing update", "body": "Please prepare the file."},
+        headers=lawyer,
+    )
+    assert delivered.status_code == 200, delivered.text
+    assert delivered.json() == {"delivered": True, "recipient": "ayesha@example.com", "provider_message_id": "provider-email-1"}
+    assert client.post(
+        f"/api/v1/lawyer-operations/team/{member.json()['id']}/email",
+        json={"subject": "No access", "body": "Should fail"}, headers=other,
+    ).status_code == 404
 
     billing = client.put(
         "/api/v1/lawyer-operations/billing",

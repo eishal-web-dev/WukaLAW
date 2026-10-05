@@ -1,3 +1,5 @@
+import httpx
+
 from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -10,8 +12,10 @@ from app.models import (
 )
 from app.schemas import (
     BillingProfileOut, BillingProfileWrite, CaseMessageCreate, CaseMessageOut,
-    CaseStrategyOut, CaseStrategyWrite, TeamMemberCreate, TeamMemberOut,
+    CaseStrategyOut, CaseStrategyWrite, EmailDeliveryOut, TeamMemberCreate,
+    TeamMemberEmailCreate, TeamMemberOut,
 )
+from app.services.email_service import EmailNotConfigured, send_email
 
 router = APIRouter(prefix="/lawyer-operations", tags=["lawyer-operations"])
 
@@ -127,6 +131,21 @@ def remove_team_member(member_id: int, db: Session = Depends(get_db), user: User
         raise HTTPException(status_code=404, detail="Team member not found.")
     db.delete(item); db.commit()
     return Response(status_code=204)
+
+
+@router.post("/team/{member_id}/email", response_model=EmailDeliveryOut)
+def email_team_member(payload: TeamMemberEmailCreate, member_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    _lawyer(user)
+    item = db.scalar(select(LawyerTeamMember).where(LawyerTeamMember.id == member_id, LawyerTeamMember.owner_id == user.id))
+    if item is None:
+        raise HTTPException(status_code=404, detail="Team member not found.")
+    try:
+        provider_message_id = send_email(recipient=item.email, subject=payload.subject.strip(), body=payload.body.strip())
+    except EmailNotConfigured as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except httpx.HTTPError as exc:
+        raise HTTPException(status_code=502, detail="The email provider could not deliver this message.") from exc
+    return {"delivered": True, "recipient": item.email, "provider_message_id": provider_message_id}
 
 
 def _billing_out(db: Session, user: User, item: LawyerBillingProfile | None) -> dict:

@@ -465,6 +465,17 @@ class TeamMemberOut(TeamMemberCreate):
     created_at: datetime
 
 
+class TeamMemberEmailCreate(BaseModel):
+    subject: str = Field(min_length=1, max_length=255)
+    body: str = Field(min_length=1, max_length=20000)
+
+
+class EmailDeliveryOut(BaseModel):
+    delivered: bool
+    recipient: str
+    provider_message_id: str
+
+
 class BillingProfileWrite(BaseModel):
     business_name: str = Field(default="", max_length=255)
     currency: Literal["PKR", "USD", "GBP", "AED"] = "PKR"

@@ -78,6 +78,11 @@ class Settings(BaseSettings):
     openai_api_key: str = ""
     openai_model: str = "gpt-4.1-mini"
 
+    # Transactional email for team communication. Keep the provider key on
+    # the backend; when unset, endpoints fail clearly instead of pretending.
+    resend_api_key: str = ""
+    email_from: str = ""
+
     # auth — override SECRET_KEY in .env for anything beyond local development
     secret_key: str = "dev-only-change-me"
     token_expire_hours: int = 24 * 7

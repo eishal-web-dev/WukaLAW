@@ -1154,6 +1154,10 @@ export function removeTeamMember(id: number): Promise<void> {
   return del(`/lawyer-operations/team/${id}`)
 }
 
+export function emailTeamMember(id: number, subject: string, body: string): Promise<{ delivered: boolean; recipient: string; provider_message_id: string }> {
+  return postJson(`/lawyer-operations/team/${id}/email`, { subject, body })
+}
+
 export function getBillingProfile(): Promise<BillingProfile> {
   return request<BillingProfile>('/lawyer-operations/billing')
 }

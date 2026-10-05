@@ -13,7 +13,7 @@ vi.mock('recharts', () => ({ ResponsiveContainer: ({ children }: { children: unk
 vi.mock('../../lib/api', () => ({
   listCases: vi.fn(), getCaseStrategy: vi.fn(), saveCaseStrategy: vi.fn(),
   listCaseMessages: vi.fn(), sendCaseMessage: vi.fn(), getStoredUser: vi.fn(),
-  listTeamMembers: vi.fn(), addTeamMember: vi.fn(), removeTeamMember: vi.fn(),
+  listTeamMembers: vi.fn(), addTeamMember: vi.fn(), removeTeamMember: vi.fn(), emailTeamMember: vi.fn(),
   getBillingProfile: vi.fn(), saveBillingProfile: vi.fn(),
   listMyReports: vi.fn(), generateReport: vi.fn(), getReport: vi.fn(),
   listLawyerTasks: vi.fn(), listHearings: vi.fn(),
@@ -46,6 +46,13 @@ describe('live lawyer operations pages', () => {
     vi.mocked(api.listTeamMembers).mockResolvedValue([]); vi.mocked(api.addTeamMember).mockResolvedValue({ id: 2, name: 'Ayesha', email: 'a@example.com', role: 'Paralegal', notes: '', created_at: '' })
     render(<LawyerTeam/>); fireEvent.click(await screen.findByRole('button', { name: /Add member/i })); fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Ayesha' } }); fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'a@example.com' } }); fireEvent.click(screen.getByRole('button', { name: 'Save member' }))
     await waitFor(() => expect(api.addTeamMember).toHaveBeenCalled())
+  })
+
+  it('emails a saved team member through the backend', async () => {
+    const member = { id: 2, name: 'Ayesha', email: 'a@example.com', role: 'Paralegal', notes: '', created_at: '' }
+    vi.mocked(api.listTeamMembers).mockResolvedValue([member]); vi.mocked(api.emailTeamMember).mockResolvedValue({ delivered: true, recipient: member.email, provider_message_id: 'email-1' })
+    render(<LawyerTeam/>); fireEvent.click(await screen.findByRole('button', { name: 'Email member' })); fireEvent.change(screen.getByLabelText('Subject'), { target: { value: 'Hearing update' } }); fireEvent.change(screen.getByLabelText('Message'), { target: { value: 'Please prepare the file.' } }); fireEvent.click(screen.getByRole('button', { name: 'Send email' }))
+    expect(await screen.findByText('Email sent to a@example.com')).toBeInTheDocument()
   })
 
   it('shows actual billing usage and saves invoice defaults', async () => {
