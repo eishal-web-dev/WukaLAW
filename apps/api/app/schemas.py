@@ -323,6 +323,46 @@ class AdminSystemOut(BaseModel):
     backup_configured: bool
 
 
+class BillingPlanWrite(BaseModel):
+    name: str = Field(min_length=2, max_length=120)
+    monthly_price: int = Field(default=0, ge=0, le=100000000)
+    currency: Literal["PKR", "USD", "GBP", "AED"] = "PKR"
+    features: list[str] = Field(default_factory=list, max_length=50)
+    active: bool = True
+
+
+class BillingPlanOut(BillingPlanWrite):
+    id: int
+    created_at: datetime
+
+
+class SupportTicketWrite(BaseModel):
+    requester_email: str = Field(min_length=5, max_length=255)
+    subject: str = Field(min_length=2, max_length=255)
+    description: str = Field(min_length=2, max_length=20000)
+    priority: Literal["Low", "Normal", "High", "Urgent"] = "Normal"
+    status: Literal["Open", "In Progress", "Resolved", "Closed"] = "Open"
+
+
+class SupportTicketOut(SupportTicketWrite):
+    id: int
+    created_at: datetime
+
+
+class CmsPostWrite(BaseModel):
+    title: str = Field(min_length=2, max_length=255)
+    slug: str = Field(min_length=2, max_length=255, pattern=r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
+    excerpt: str = Field(default="", max_length=2000)
+    body: str = Field(min_length=2, max_length=100000)
+    status: Literal["Draft", "Published", "Archived"] = "Draft"
+
+
+class CmsPostOut(CmsPostWrite):
+    id: int
+    created_at: datetime
+    updated_at: datetime
+
+
 class OrganizerBase(BaseModel):
     case_id: int | None = None
 

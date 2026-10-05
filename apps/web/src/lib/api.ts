@@ -948,6 +948,17 @@ export function adminGetSystem(): Promise<AdminSystem> {
   return request<AdminSystem>('/admin/system')
 }
 
+export interface BillingPlan { id:number; name:string; monthly_price:number; currency:'PKR'|'USD'|'GBP'|'AED'; features:string[]; active:boolean; created_at:string }
+export interface SupportTicket { id:number; requester_email:string; subject:string; description:string; priority:'Low'|'Normal'|'High'|'Urgent'; status:'Open'|'In Progress'|'Resolved'|'Closed'; created_at:string }
+export interface CmsPost { id:number; title:string; slug:string; excerpt:string; body:string; status:'Draft'|'Published'|'Archived'; created_at:string; updated_at:string }
+
+export const adminListBillingPlans = () => request<BillingPlan[]>('/admin/billing-plans')
+export const adminSaveBillingPlan = (value: Omit<BillingPlan,'id'|'created_at'>, id?:number) => request<BillingPlan>(id ? `/admin/billing-plans/${id}` : '/admin/billing-plans', { method:id?'PUT':'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(value) })
+export const adminListSupportTickets = () => request<SupportTicket[]>('/admin/support-tickets')
+export const adminSaveSupportTicket = (value: Omit<SupportTicket,'id'|'created_at'>, id?:number) => request<SupportTicket>(id ? `/admin/support-tickets/${id}` : '/admin/support-tickets', { method:id?'PUT':'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(value) })
+export const adminListCmsPosts = () => request<CmsPost[]>('/admin/cms-posts')
+export const adminSaveCmsPost = (value: Omit<CmsPost,'id'|'created_at'|'updated_at'>, id?:number) => request<CmsPost>(id ? `/admin/cms-posts/${id}` : '/admin/cms-posts', { method:id?'PUT':'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(value) })
+
 // Lawyer organizer contracts
 export interface CalendarEvent {
   id: number

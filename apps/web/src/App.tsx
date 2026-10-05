@@ -35,6 +35,7 @@ import Profile from './pages/Profile'
 import Notifications from './pages/Notifications'
 import AdminDashboard from './pages/AdminDashboard'
 import AdminOperations from './pages/AdminOperations'
+import AdminBusiness from './pages/AdminBusiness'
 
 // App screens (preview — sample data)
 import LawyerWorkspace from './pages/LawyerWorkspace'
@@ -162,9 +163,9 @@ export default function App() {
             <Route path="/admin/audit" element={<AdminOperations />} />
             <Route path="/admin/security" element={<Navigate to="/admin/settings" replace />} />
             <Route path="/admin/api" element={<Navigate to="/admin/settings" replace />} />
-            <Route path="/admin/billing" element={<AdminOperations />} />
-            <Route path="/admin/support" element={<AdminOperations />} />
-            <Route path="/admin/cms" element={<AdminOperations />} />
+            <Route path="/admin/billing" element={<AdminBusiness />} />
+            <Route path="/admin/support" element={<AdminBusiness />} />
+            <Route path="/admin/cms" element={<AdminBusiness />} />
             <Route path="/admin/settings" element={<AdminOperations />} />
             <Route path="/admin/backup" element={<AdminOperations />} />
             <Route path="/admin/health" element={<AdminOperations />} />
