@@ -105,7 +105,8 @@ export default function ClientCourtPrediction({
   }
 
   return (
-    <div className="p-6 sm:p-8 max-w-2xl mx-auto space-y-5">
+    <div className="h-full overflow-y-auto" data-testid="court-prediction-scroll">
+      <div className="p-6 sm:p-8 max-w-2xl mx-auto space-y-5">
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-2">
           <Scale size={18} style={{ color: G }} />
@@ -334,6 +335,7 @@ export default function ClientCourtPrediction({
           <p className="text-xs text-muted-foreground text-center">{prediction.disclaimer}</p>
         </div>
       ) : null}
+      </div>
     </div>
   )
 }
