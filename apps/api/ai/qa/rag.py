@@ -147,7 +147,11 @@ def _answer_prompt(
 def _configured_providers():
     providers = {
         "gemini": lambda: GeminiProvider(settings.gemini_model, settings.gemini_api_key),
-        "groq": lambda: GroqProvider(settings.groq_model, settings.groq_api_key),
+        "groq": lambda: GroqProvider(
+            settings.groq_model,
+            settings.groq_api_key,
+            settings.groq_fallback_models,
+        ),
         "openai": lambda: OpenAIProvider(settings.openai_model, settings.openai_api_key),
         "ollama": lambda: OllamaProvider(settings.ollama_model, settings.ollama_base_url),
     }

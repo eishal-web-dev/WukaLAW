@@ -83,3 +83,20 @@ def test_precedent_generation_uses_settings_backed_assistant_providers(monkeypat
 
     assert isinstance(provider, FallbackLLMProvider)
     assert [name for name, _ in provider.providers] == ["groq", "ollama"]
+
+
+def test_provider_outage_brief_never_invents_case_facts():
+    result = precedent_briefs._provider_outage_brief(
+        SimpleNamespace(
+            title="A v B", case_number="C.A. 1/2020",
+            court="Supreme Court of Pakistan",
+            explicit_outcome_phrase="appeal was allowed",
+            laws_cited=["Family Courts Act"], sections_cited=[], articles_cited=[],
+        ),
+        has_substantive_client_issue=True,
+    )
+
+    assert result["final_decision"] == "appeal was allowed"
+    assert result["background_facts"] == []
+    assert result["argument_to_consider"] == []
+    assert result["key_laws"] == ["Family Courts Act"]
