@@ -6,15 +6,19 @@ is no public or self-service admin registration.
 """
 
 import os
+import sqlite3
+from datetime import datetime, timezone
+from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import FileResponse
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.auth import require_admin
 from app.config import settings
 from app.db import engine, get_db
-from app.models import Case, Chunk, Document, User
+from app.models import BillingPlan, Case, Chunk, CmsPost, Document, SupportTicket, User
 from app.schemas import (
     AdminActivityOut,
     AdminCaseOut,
@@ -23,9 +27,119 @@ from app.schemas import (
     AdminStatsOut,
     AdminSystemOut,
     AdminUserOut,
+    BillingPlanOut,
+    BillingPlanWrite,
+    BackupSnapshotOut,
+    CmsPostOut,
+    CmsPostWrite,
+    SupportTicketOut,
+    SupportTicketWrite,
 )
 
 router = APIRouter(prefix="/admin", tags=["admin"])
+
+
+def _backup_directory() -> Path:
+    directory = settings.storage_dir / "admin_backups"
+    directory.mkdir(parents=True, exist_ok=True)
+    return directory
+
+
+def _backup_out(path: Path) -> dict:
+    stat = path.stat()
+    return {"filename": path.name, "size_bytes": stat.st_size, "created_at": datetime.fromtimestamp(stat.st_mtime, timezone.utc), "storage": "local"}
+
+
+@router.get("/backups", response_model=list[BackupSnapshotOut])
+def list_backups(_admin: User = Depends(require_admin)):
+    return [_backup_out(path) for path in sorted(_backup_directory().glob("wakulaw-*.sqlite3"), key=lambda p: p.stat().st_mtime, reverse=True)]
+
+
+@router.post("/backups", response_model=BackupSnapshotOut, status_code=201)
+def create_backup(_admin: User = Depends(require_admin)):
+    if not engine.url.drivername.startswith("sqlite") or not engine.url.database or engine.url.database == ":memory:":
+        raise HTTPException(status_code=501, detail="On-demand snapshots are currently supported only for file-backed SQLite deployments.")
+    source = Path(engine.url.database).resolve()
+    if not source.is_file():
+        raise HTTPException(status_code=503, detail="The SQLite database file is not available for backup.")
+    target = _backup_directory() / f"wakulaw-{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}.sqlite3"
+    # SQLite's online backup API produces a consistent snapshot even while
+    # the application is serving reads and writes.
+    with sqlite3.connect(source) as source_db, sqlite3.connect(target) as target_db:
+        source_db.backup(target_db)
+    return _backup_out(target)
+
+
+@router.get("/backups/{filename}/download")
+def download_backup(filename: str, _admin: User = Depends(require_admin)):
+    if Path(filename).name != filename:
+        raise HTTPException(status_code=400, detail="Invalid backup filename.")
+    path = _backup_directory() / filename
+    if not path.is_file():
+        raise HTTPException(status_code=404, detail="Backup not found.")
+    return FileResponse(path, filename=filename, media_type="application/vnd.sqlite3")
+
+
+def _save(db: Session, item, payload):
+    for key, value in payload.model_dump().items():
+        setattr(item, key, value)
+    db.add(item); db.commit(); db.refresh(item)
+    return item
+
+
+@router.get("/billing-plans", response_model=list[BillingPlanOut])
+def list_billing_plans(db: Session = Depends(get_db), _admin: User = Depends(require_admin)):
+    return db.scalars(select(BillingPlan).order_by(BillingPlan.created_at.desc())).all()
+
+
+@router.post("/billing-plans", response_model=BillingPlanOut, status_code=201)
+def create_billing_plan(payload: BillingPlanWrite, db: Session = Depends(get_db), _admin: User = Depends(require_admin)):
+    if db.scalar(select(BillingPlan).where(func.lower(BillingPlan.name) == payload.name.casefold())):
+        raise HTTPException(status_code=409, detail="A plan with this name already exists.")
+    return _save(db, BillingPlan(), payload)
+
+
+@router.put("/billing-plans/{item_id}", response_model=BillingPlanOut)
+def update_billing_plan(item_id: int, payload: BillingPlanWrite, db: Session = Depends(get_db), _admin: User = Depends(require_admin)):
+    item = db.get(BillingPlan, item_id)
+    if item is None: raise HTTPException(status_code=404, detail="Billing plan not found.")
+    return _save(db, item, payload)
+
+
+@router.get("/support-tickets", response_model=list[SupportTicketOut])
+def list_support_tickets(db: Session = Depends(get_db), _admin: User = Depends(require_admin)):
+    return db.scalars(select(SupportTicket).order_by(SupportTicket.created_at.desc())).all()
+
+
+@router.post("/support-tickets", response_model=SupportTicketOut, status_code=201)
+def create_support_ticket(payload: SupportTicketWrite, db: Session = Depends(get_db), _admin: User = Depends(require_admin)):
+    return _save(db, SupportTicket(), payload)
+
+
+@router.put("/support-tickets/{item_id}", response_model=SupportTicketOut)
+def update_support_ticket(item_id: int, payload: SupportTicketWrite, db: Session = Depends(get_db), _admin: User = Depends(require_admin)):
+    item = db.get(SupportTicket, item_id)
+    if item is None: raise HTTPException(status_code=404, detail="Support ticket not found.")
+    return _save(db, item, payload)
+
+
+@router.get("/cms-posts", response_model=list[CmsPostOut])
+def list_cms_posts(db: Session = Depends(get_db), _admin: User = Depends(require_admin)):
+    return db.scalars(select(CmsPost).order_by(CmsPost.updated_at.desc())).all()
+
+
+@router.post("/cms-posts", response_model=CmsPostOut, status_code=201)
+def create_cms_post(payload: CmsPostWrite, db: Session = Depends(get_db), _admin: User = Depends(require_admin)):
+    if db.scalar(select(CmsPost).where(CmsPost.slug == payload.slug)):
+        raise HTTPException(status_code=409, detail="This post slug is already in use.")
+    return _save(db, CmsPost(), payload)
+
+
+@router.put("/cms-posts/{item_id}", response_model=CmsPostOut)
+def update_cms_post(item_id: int, payload: CmsPostWrite, db: Session = Depends(get_db), _admin: User = Depends(require_admin)):
+    item = db.get(CmsPost, item_id)
+    if item is None: raise HTTPException(status_code=404, detail="CMS post not found.")
+    return _save(db, item, payload)
 
 
 @router.get("/stats", response_model=AdminStatsOut)

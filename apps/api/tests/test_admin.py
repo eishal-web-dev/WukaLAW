@@ -114,6 +114,27 @@ def test_admin_operations_remain_admin_only(client):
         assert client.get(f"/api/v1/admin/{path}", headers=headers).status_code == 403
 
 
+def test_admin_business_records_are_persisted_and_editable(client):
+    headers = register_user(client, email="admin@gmail.com")
+    _make_admin("admin@gmail.com")
+    plan = client.post("/api/v1/admin/billing-plans", headers=headers, json={"name":"Chambers","monthly_price":12000,"currency":"PKR","features":["10 cases"],"active":True})
+    assert plan.status_code == 201, plan.text
+    assert client.get("/api/v1/admin/billing-plans", headers=headers).json()[0]["name"] == "Chambers"
+    ticket = client.post("/api/v1/admin/support-tickets", headers=headers, json={"requester_email":"client@example.com","subject":"Upload help","description":"Image upload failed","priority":"High","status":"Open"})
+    assert ticket.status_code == 201, ticket.text
+    updated = client.put(f"/api/v1/admin/support-tickets/{ticket.json()['id']}", headers=headers, json={**ticket.json(),"status":"Resolved"})
+    assert updated.status_code == 200 and updated.json()["status"] == "Resolved"
+    post = client.post("/api/v1/admin/cms-posts", headers=headers, json={"title":"Family court guide","slug":"family-court-guide","excerpt":"A guide","body":"Full verified content","status":"Draft"})
+    assert post.status_code == 201, post.text
+    assert client.get("/api/v1/admin/cms-posts", headers=headers).json()[0]["slug"] == "family-court-guide"
+
+    backup = client.post("/api/v1/admin/backups", headers=headers)
+    assert backup.status_code == 201, backup.text
+    assert backup.json()["filename"].endswith(".sqlite3")
+    assert client.get("/api/v1/admin/backups", headers=headers).json()
+    assert client.get(f"/api/v1/admin/backups/{backup.json()['filename']}/download", headers=headers).status_code == 200
+
+
 def test_registration_cannot_grant_admin_and_role_survives_login(client):
     response = client.post('/api/v1/auth/register', json={
         'email': 'role@example.com', 'name': 'Role Test', 'password': 'secret123', 'role': 'admin',
