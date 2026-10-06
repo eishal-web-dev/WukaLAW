@@ -1,5 +1,6 @@
 ﻿"""End-to-end deterministic similar Pakistani judgment search."""
 from __future__ import annotations
+from copy import deepcopy
 import time
 from ai.legal_intelligence.pipeline import analyze
 from .candidate_retriever import CandidateRetriever
@@ -7,6 +8,7 @@ from .explanation_builder import build_differences, build_explanation
 from .models import SimilarCaseResponse, SimilarCaseResult
 from .query_builder import build_candidate_query
 from .result_ranker import label, rank_candidates, SimilarityThresholds
+from .similarity_features import focused_issue_queries, has_cross_domain_conflict
 
 
 class SimilarCasePipeline:
@@ -44,7 +46,27 @@ class SimilarCasePipeline:
         intelligence = self.analyze(seed)
         instructions = build_candidate_query(request, intelligence, self.adapter)
         instructions.retrieval_query = intelligence.normalized_query or seed
-        raw = self.candidates.retrieve(instructions, exclude)
+        issue_queries = focused_issue_queries(seed)
+        if issue_queries:
+            # Retrieve each claim independently. Keep the best vector hit when
+            # the same chunk appears in more than one focused search.
+            merged = {}
+            for _family, query in issue_queries:
+                focused = deepcopy(instructions)
+                focused.retrieval_query = query
+                focused.top_k = max(request.top_k * 2, 20)
+                for candidate in self.candidates.retrieve(focused, exclude):
+                    current = merged.get(candidate.canonical_chunk_id)
+                    if current is None or candidate.score > current.score:
+                        merged[candidate.canonical_chunk_id] = candidate
+            raw = list(merged.values())
+            warnings.append(
+                "Focused precedent retrieval used for: "
+                + ", ".join(family.replace("_", " ") for family, _query in issue_queries)
+                + "."
+            )
+        else:
+            raw = self.candidates.retrieve(instructions, exclude)
 
         source_hashes = {
             x.payload.get("duplicate_hash")
@@ -56,6 +78,14 @@ class SimilarCasePipeline:
             if not x.payload.get("duplicate_hash")
             or x.payload.get("duplicate_hash") not in source_hashes
         ]
+
+        conflicting = [x for x in raw if has_cross_domain_conflict(seed, x)]
+        if conflicting:
+            blocked_documents = len({x.document_id for x in conflicting if x.document_id})
+            warnings.append(
+                f"Excluded {blocked_documents} criminal bail/homicide judgment(s) from the family-law results."
+            )
+            raw = [x for x in raw if not has_cross_domain_conflict(seed, x)]
 
         ranked = rank_candidates(raw, intelligence, request, self.weights, self.thresholds)
         # Retrieval returns passages. Public API/UI counts must describe unique
