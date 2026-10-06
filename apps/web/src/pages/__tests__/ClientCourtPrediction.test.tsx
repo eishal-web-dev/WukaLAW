@@ -26,6 +26,12 @@ beforeEach(() => {
 })
 
 describe('ClientCourtPrediction', () => {
+  it('keeps long assessments scrollable inside the portal', async () => {
+    vi.mocked(api.listCases).mockResolvedValue({ items: [makeCase({})], total: 1 })
+    vi.mocked(api.getCasePrediction).mockResolvedValue({ available: false, generated_at: null, probability: null, factors: [], disclaimer: 'Not generated.' })
+    render(<ClientCourtPrediction />)
+    expect(await screen.findByTestId('court-prediction-scroll')).toHaveClass('h-full', 'overflow-y-auto')
+  })
   it('shows a genuine empty state when the client has no cases', async () => {
     vi.mocked(api.listCases).mockResolvedValue({ items: [], total: 0 })
     render(<ClientCourtPrediction />)

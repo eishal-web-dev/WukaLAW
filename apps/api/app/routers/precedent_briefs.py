@@ -86,6 +86,34 @@ def _has_substantive_client_issue(text: str) -> bool:
     return any(term in value for term in SUBSTANTIVE_CLIENT_TERMS)
 
 
+def _provider_outage_brief(first, has_substantive_client_issue: bool) -> dict[str, Any]:
+    """Build a metadata-only response when every configured LLM is offline."""
+    title = first.title or first.case_number or "The selected judgment"
+    court = first.court or "the recorded court"
+    outcome = first.explicit_outcome_phrase or "Not available in the supplied judgment record."
+    laws = list(dict.fromkeys([
+        *list(first.laws_cited or []),
+        *list(first.sections_cited or []),
+        *list(first.articles_cited or []),
+    ]))
+    return {
+        "case_overview": f"{title} is a judgment from {court}. Its source record was found, but detailed AI analysis is temporarily unavailable.",
+        "background_facts": [], "procedural_history": [], "legal_issues": [],
+        "court_reasoning": [], "ratio_or_principle": [],
+        "final_decision": outcome, "relief_or_order": outcome,
+        "similarities_to_client": [],
+        "important_differences": ["Detailed factual comparison is unavailable until an AI provider responds."],
+        "how_it_may_help": [],
+        "client_effect": "mixed" if has_substantive_client_issue else "insufficient_client_facts",
+        "research_strength": "limited",
+        "research_strength_reason": "The judgment was retrieved, but provider-independent metadata is insufficient for a reliable full legal brief.",
+        "argument_to_consider": [], "opponent_distinction": [],
+        "next_verification_steps": ["Retry the detailed brief later and verify the official judgment before relying on it."],
+        "key_laws": laws,
+        "evidence_limitations": "Detailed AI analysis is temporarily unavailable; no unsupported facts or legal conclusions were generated.",
+    }
+
+
 def _s3_client():
     if not settings.aws_s3_bucket:
         return None
@@ -368,8 +396,16 @@ Return ONLY valid JSON with this exact schema:
   "evidence_limitations": "important information missing from either record that limits the comparison"
 }}
 """
-        raw = llm.generate(prompt)
-        brief = _clean_json(raw)
+        provider_warning = None
+        try:
+            raw = llm.generate(prompt)
+            brief = _clean_json(raw)
+        except (RuntimeError, ValueError):
+            provider_warning = (
+                "Detailed AI analysis is temporarily unavailable. Showing verified judgment "
+                "metadata only; retry for the full brief."
+            )
+            brief = _provider_outage_brief(first, has_substantive_client_issue)
     except HTTPException:
         raise
     except (RuntimeError, ValueError) as exc:
@@ -415,5 +451,6 @@ Return ONLY valid JSON with this exact schema:
         "next_verification_steps": _list(brief.get("next_verification_steps")),
         "key_laws": _list(brief.get("key_laws")),
         "evidence_limitations": _text(brief.get("evidence_limitations")),
+        "generation_warning": provider_warning,
         "disclaimer": "AI-generated research analysis, not legal advice or a binding-authority determination. Verify the official judgment, ratio, later treatment and client facts before relying on it.",
     }

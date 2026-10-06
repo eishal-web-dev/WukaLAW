@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { BookOpen, ChevronUp, ShieldCheck, Scale, Swords } from 'lucide-react'
+import { AlertTriangle, BookOpen, ChevronUp, ShieldCheck, Scale, Swords } from 'lucide-react'
 import { Btn, Card, G, Badge } from './design'
 import ErrorAlert from './ErrorAlert'
 import Spinner from './Spinner'
@@ -80,6 +80,12 @@ export default function PrecedentBrief({ caseId, documentId }: { caseId: number 
           {error && <ErrorAlert message={error} />}
           {!loading && !error && brief && (
             <Card className="p-5 space-y-5 border-[#D4AF37]/15 bg-[#D4AF37]/[0.02]">
+              {brief.generation_warning && (
+                <div className="flex gap-2 rounded-xl border border-amber-500/20 bg-amber-500/[0.06] p-3 text-xs text-amber-200">
+                  <AlertTriangle size={15} className="mt-0.5 shrink-0" />
+                  <span>{brief.generation_warning}</span>
+                </div>
+              )}
               <div>
                 <div className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">What happened in this earlier case</div>
                 <h5 className="text-sm font-semibold text-foreground mt-1">{brief.title || brief.case_number || 'Pakistani judgment'}</h5>

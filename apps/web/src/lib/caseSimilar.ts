@@ -97,6 +97,7 @@ export interface PrecedentBrief {
   next_verification_steps: string[]
   key_laws: string[]
   evidence_limitations: string
+  generation_warning?: string | null
   disclaimer: string
 }
 

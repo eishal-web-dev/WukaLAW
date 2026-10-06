@@ -22,6 +22,7 @@ load_dotenv(ROOT / ".env", override=False)
 load_dotenv(ROOT / "apps" / "api" / ".env", override=False)
 
 from ai.embeddings.model_provider import create_provider  # noqa: E402
+from ai.retrieval.supabase_retriever import normalize_supabase_project_url  # noqa: E402
 
 OUTCOME_PATTERNS = (
     re.compile(
@@ -94,7 +95,9 @@ def metadata(path: str) -> dict:
 
 class SupabaseCorpusIndexer:
     def __init__(self, url: str, key: str, bucket: str, provider):
-        self.url, self.key, self.bucket, self.provider = url.rstrip("/"), key, bucket, provider
+        # The dashboard often exposes the Storage S3 endpoint. Index rows and
+        # RPCs belong to the project Data API, so normalize either form.
+        self.url, self.key, self.bucket, self.provider = normalize_supabase_project_url(url), key, bucket, provider
         self.headers = {"apikey": key, "Authorization": f"Bearer {key}", "Content-Type": "application/json"}
         self.client = httpx.Client(headers=self.headers, timeout=60.0)
 
