@@ -135,8 +135,11 @@ def system_status(db: Session = Depends(get_db), _admin: User = Depends(require_
     ai_provider = "Groq" if bool(os.getenv("GROQ_API_KEY", "").strip()) else "Ollama"
     ai_configured = bool(os.getenv("GROQ_API_KEY", "").strip()) or bool(getattr(settings, "ollama_base_url", ""))
     legal_backend = str(getattr(settings, "legal_retrieval_backend", os.getenv("LEGAL_RETRIEVAL_BACKEND", "local")))
+    # Settings loads both the repository and apps/api dotenv files. Reading
+    # os.environ here made the admin screen disagree with Similar Cases when
+    # credentials were supplied only through either dotenv file.
     legal_configured = bool(
-        os.getenv("SUPABASE_URL", "").strip() and os.getenv("SUPABASE_SERVICE_ROLE_KEY", "").strip()
+        settings.supabase_url.strip() and settings.supabase_service_role_key.strip()
     ) or bool(os.getenv("QDRANT_URL", "").strip()) or bool(os.getenv("QDRANT_LOCAL_PATH", "").strip())
     return {
         "api_status": "healthy",
