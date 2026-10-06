@@ -8,7 +8,7 @@ from .explanation_builder import build_differences, build_explanation
 from .models import SimilarCaseResponse, SimilarCaseResult
 from .query_builder import build_candidate_query
 from .result_ranker import label, rank_candidates, SimilarityThresholds
-from .similarity_features import focused_issue_queries
+from .similarity_features import focused_issue_queries, has_cross_domain_conflict
 
 
 class SimilarCasePipeline:
@@ -78,6 +78,14 @@ class SimilarCasePipeline:
             if not x.payload.get("duplicate_hash")
             or x.payload.get("duplicate_hash") not in source_hashes
         ]
+
+        conflicting = [x for x in raw if has_cross_domain_conflict(seed, x)]
+        if conflicting:
+            blocked_documents = len({x.document_id for x in conflicting if x.document_id})
+            warnings.append(
+                f"Excluded {blocked_documents} criminal bail/homicide judgment(s) from the family-law results."
+            )
+            raw = [x for x in raw if not has_cross_domain_conflict(seed, x)]
 
         ranked = rank_candidates(raw, intelligence, request, self.weights, self.thresholds)
         # Retrieval returns passages. Public API/UI counts must describe unique

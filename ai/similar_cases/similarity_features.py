@@ -89,6 +89,18 @@ FOCUSED_ISSUE_QUERIES: dict[str, str] = {
     "dowry_gifts": "Pakistani family court judgment recovery of dowry articles bridal gifts jahez",
 }
 
+FAMILY_ISSUES = {
+    "custody_guardianship", "maintenance", "dissolution_khula",
+    "dower_mehr", "dowry_gifts",
+}
+
+FAMILY_AUTHORITY_TERMS = (
+    "family court", "guardian court", "guardians and wards act",
+    "welfare of the minor", "welfare of minor", "visitation rights",
+    "hizanat", "dower", "haq mehr", "haq meher", "dowry articles",
+    "dissolution of marriage", "khula", "maintenance allowance",
+)
+
 
 def overlap(a, b):
     right = {str(x).casefold() for x in b}
@@ -123,6 +135,34 @@ def focused_issue_queries(text: str, limit: int = 5) -> list[tuple[str, str]]:
         for family, query in FOCUSED_ISSUE_QUERIES.items()
         if family in detected
     ][:limit]
+
+
+def has_cross_domain_conflict(source_text: str, candidate) -> bool:
+    """Reject criminal bail/homicide judgments masquerading as family cases.
+
+    Dataset folders and generated labels are not trusted here. A judgment can
+    mention marriage, a child, or physical custody while deciding only murder
+    or bail. Family search results therefore need an actual family-law anchor
+    when strong criminal-procedure signals are present.
+    """
+    source_specific = _families(source_text, SPECIFIC_ISSUES)
+    if not source_specific.intersection(FAMILY_ISSUES):
+        return False
+
+    candidate_text = " ".join([
+        candidate.title or "", candidate.case_number or "",
+        candidate.text_preview or "", candidate.explicit_outcome_phrase or "",
+        " ".join(candidate.laws_cited or []),
+        " ".join(candidate.sections_cited or []),
+    ]).casefold()
+    candidate_specific = _families(candidate_text, SPECIFIC_ISSUES)
+    serious_criminal = bool(candidate_specific.intersection({"bail", "murder_homicide"}))
+    criminal_procedure = any(_contains_term(candidate_text, term) for term in (
+        "pre-arrest bail", "post-arrest bail", "fir", "criminal petition",
+        "penal code", "ppc", "cr.p.c", "crpc", "section 302",
+    ))
+    family_authority = any(_contains_term(candidate_text, term) for term in FAMILY_AUTHORITY_TERMS)
+    return (serious_criminal or criminal_procedure) and not family_authority
 
 
 def compute_features(intelligence, candidate, request, weights=None):
