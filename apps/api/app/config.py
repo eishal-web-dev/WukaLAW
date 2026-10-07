@@ -2,9 +2,9 @@ from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from app.paths import resolve_project_roots
 
-API_ROOT = Path(__file__).resolve().parents[1]
-REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
+API_ROOT, REPOSITORY_ROOT = resolve_project_roots(__file__)
 ENV_FILES = (REPOSITORY_ROOT / ".env", API_ROOT / ".env")
 
 
