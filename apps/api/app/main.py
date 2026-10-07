@@ -1,10 +1,12 @@
 ﻿import os
 import sys
-from pathlib import Path
+
+from app.paths import resolve_project_roots
 
 # make `app` and the repository-level `ai` package importable regardless of cwd
-_API_ROOT = str(Path(__file__).resolve().parents[1])
-_REPO_ROOT = str(Path(__file__).resolve().parents[3])
+_api_root_path, _repo_root_path = resolve_project_roots(__file__)
+_API_ROOT = str(_api_root_path)
+_REPO_ROOT = str(_repo_root_path)
 for _path in (_API_ROOT, _REPO_ROOT):
     if _path in sys.path:
         sys.path.remove(_path)
