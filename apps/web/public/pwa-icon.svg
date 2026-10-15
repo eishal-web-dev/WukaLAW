@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="wukaLAW">
+  <rect width="512" height="512" rx="112" fill="#0D1117"/>
+  <circle cx="256" cy="256" r="188" fill="#131C2E" stroke="#D4AF37" stroke-width="16"/>
+  <path d="M256 118v238M170 170h172M188 170l-62 112h124L188 170Zm136 0-62 112h124L324 170ZM190 362h132" fill="none" stroke="#D4AF37" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
