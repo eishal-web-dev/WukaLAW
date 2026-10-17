@@ -45,3 +45,21 @@ describe('mobile portal navigation', () => {
     expect(screen.queryByRole('dialog', { name: 'Navigation menu' })).not.toBeInTheDocument()
   })
 })
+
+describe('FigmaAppShell', () => {
+  it('provides one vertical scroll viewport for every portal route', () => {
+    render(
+      <MemoryRouter initialEntries={['/client']}>
+        <Routes>
+          <Route element={<FigmaAppShell />}>
+            <Route path="/client" element={<div>Client dashboard content</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    )
+
+    const viewport = screen.getByTestId('portal-scroll-viewport')
+    expect(viewport).toHaveClass('min-h-0', 'overflow-y-auto', 'overflow-x-hidden')
+    expect(viewport).toContainElement(screen.getByText('Client dashboard content'))
+  })
+})

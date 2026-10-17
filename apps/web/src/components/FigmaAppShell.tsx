@@ -35,7 +35,6 @@ const LAWYER_NAV: NavGroup[] = [
     { path: '/evidence', label: 'Evidence', icon: Search },
   ] },
   { label: 'AI Intelligence', items: [
-    { path: '/ai-strategy', label: 'AI Strategy', icon: Sparkles },
     { path: '/research', label: 'Legal Research', icon: BookOpen },
     { path: '/prediction', label: 'Court Prediction', icon: Brain },
     { path: '/similar-cases', label: 'Similar Cases', icon: GitBranch },
@@ -83,6 +82,9 @@ const CLIENT_NAV: NavGroup[] = [
   { label: 'Reports', items: [
     { path: '/client/report-generator', label: 'Report Generator', icon: BarChart2 },
     { path: '/client/downloads', label: 'Downloads', icon: Download },
+  ] },
+  { label: 'Communication', items: [
+    { path: '/client/messages', label: 'Messages', icon: MessageCircle },
   ] },
   { label: 'Account', items: [
     { path: '/client/billing', label: 'Billing', icon: CreditCard },
@@ -246,6 +248,6 @@ export default function FigmaAppShell() {
       <button type="button" className="absolute inset-0 bg-black/65 backdrop-blur-sm" aria-label="Close navigation" onClick={() => setMobileOpen(false)} />
       <div className="relative h-full"><Sidebar collapsed={false} mobile onToggle={() => undefined} onNavigate={() => setMobileOpen(false)} /></div>
     </div>}
-    <div className="flex flex-col flex-1 min-w-0 overflow-hidden"><Topbar onOpenMenu={() => setMobileOpen(true)} /><main className="wk-portal-main flex-1 min-h-0 overflow-y-auto overflow-x-hidden bg-background"><Outlet /></main></div>
+    <div className="flex flex-col flex-1 min-w-0 overflow-hidden"><Topbar onOpenMenu={() => setMobileOpen(true)} /><main data-testid="portal-scroll-viewport" className="wk-portal-main flex-1 min-h-0 overflow-y-auto overflow-x-hidden bg-background"><Outlet /></main></div>
   </div>
 }

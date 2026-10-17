@@ -1,71 +1,23 @@
-import {
-  Briefcase, Brain, Search, DollarSign, AlertCircle, TrendingUp,
-  FileText, Eye, Download,
-} from 'lucide-react'
-import { Btn, Card, Badge, SectionHeader, G } from '../components/design'
-import PreviewBanner from '../components/PreviewBanner'
+import { useEffect, useState } from 'react'
+import { Download, FilePlus2, FileText, Loader2, X } from 'lucide-react'
+import { errorMessage, generateReport, getReport, listCases, listMyReports, type Case, type ReportDetail, type ReportSummary } from '../lib/api'
+import { Card, G } from '../components/design'
+import ErrorAlert from '../components/ErrorAlert'
 
-export default function Reports() {
-  const templates = [
-    { name: 'Case Status Report', desc: 'Comprehensive status summary across all active cases', icon: <Briefcase size={18} />, time: '~2 min' },
-    { name: 'AI Prediction Summary', desc: 'Win probability trends and model insights', icon: <Brain size={18} />, time: '~1 min' },
-    { name: 'Evidence Audit Report', desc: 'Complete evidence inventory with confidence scores', icon: <Search size={18} />, time: '~3 min' },
-    { name: 'Billing & Time Report', desc: 'Attorney hours, billing codes, and fee summaries', icon: <DollarSign size={18} />, time: '~2 min' },
-    { name: 'Deadline Risk Report', desc: 'Upcoming deadlines with risk classification', icon: <AlertCircle size={18} />, time: '~1 min' },
-    { name: 'Portfolio Analytics', desc: 'Win rate, case types, and performance benchmarking', icon: <TrendingUp size={18} />, time: '~4 min' },
-  ]
-  const recent = [
-    { name: 'Case Status Report — February 2024', date: 'Mar 1, 2024', size: '2.4 MB', status: 'Ready' },
-    { name: 'AI Prediction Summary — Q4 2023', date: 'Jan 3, 2024', size: '1.1 MB', status: 'Ready' },
-    { name: 'Evidence Audit — WL-2024-003', date: 'Feb 28, 2024', size: '3.7 MB', status: 'Ready' },
-  ]
-
-  return (
-    <div className="p-8 space-y-8 overflow-y-auto h-full">
-      <PreviewBanner />
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Reports</h1>
-        <p className="text-muted-foreground text-sm mt-1">Generate AI-powered legal reports and analysis documents</p>
-      </div>
-
-      <div>
-        <SectionHeader title="Report Templates" />
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {templates.map((t) => (
-            <Card key={t.name} className="p-5 hover:border-white/10 transition-all cursor-pointer group">
-              <div className="flex items-start justify-between mb-3">
-                <div className="p-2.5 rounded-xl" style={{ backgroundColor: `${G}15`, color: G }}>{t.icon}</div>
-                <span className="text-[10px] text-muted-foreground border border-white/10 px-2 py-0.5 rounded-md">{t.time}</span>
-              </div>
-              <div className="text-sm font-semibold text-foreground mb-1">{t.name}</div>
-              <div className="text-xs text-muted-foreground mb-4 leading-relaxed">{t.desc}</div>
-              <Btn variant="secondary" size="sm" className="w-full justify-center group-hover:border-white/20">Generate Report</Btn>
-            </Card>
-          ))}
-        </div>
-      </div>
-
-      <div>
-        <SectionHeader title="Recent Reports" action={<Btn variant="ghost" size="sm">View all</Btn>} />
-        <Card className="overflow-hidden">
-          {recent.map((r, i) => (
-            <div key={r.name} className={`flex items-center gap-4 px-5 py-4 hover:bg-white/[0.03] transition-colors cursor-pointer ${i < recent.length - 1 ? 'border-b border-white/[0.05]' : ''}`}>
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: 'rgba(239,68,68,0.1)' }}>
-                <FileText size={16} className="text-red-400" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-sm font-medium text-foreground">{r.name}</div>
-                <div className="text-xs text-muted-foreground mt-0.5">{r.date} · {r.size}</div>
-              </div>
-              <Badge label={r.status} variant="Active" />
-              <div className="flex gap-1">
-                <button className="p-2 rounded-lg hover:bg-white/[0.06] text-muted-foreground hover:text-foreground transition-colors"><Eye size={14} /></button>
-                <button className="p-2 rounded-lg hover:bg-white/[0.06] text-muted-foreground hover:text-foreground transition-colors"><Download size={14} /></button>
-              </div>
-            </div>
-          ))}
-        </Card>
-      </div>
-    </div>
-  )
+export default function Reports({ generatorOnly = false }: { generatorOnly?: boolean }) {
+  const [cases, setCases] = useState<Case[]>([]), [reports, setReports] = useState<ReportSummary[]>([])
+  const [caseId, setCaseId] = useState(''), [detail, setDetail] = useState<ReportDetail | null>(null)
+  const [loading, setLoading] = useState(true), [generating, setGenerating] = useState(false), [error, setError] = useState('')
+  const load = async () => { try { const [caseResult, reportResult] = await Promise.all([listCases(), listMyReports()]); const owned = caseResult.items.filter(item => Boolean(item.lawyer_name)); setCases(owned); setReports(reportResult); setError('') } catch (err) { setError(errorMessage(err)) } finally { setLoading(false) } }
+  useEffect(() => { void load() }, [])
+  const generate = async () => { if (!caseId) return; setGenerating(true); try { const created = await generateReport(Number(caseId)); setDetail(created); await load() } catch (err) { setError(errorMessage(err)) } finally { setGenerating(false) } }
+  const open = async (id: number) => { try { setDetail(await getReport(id)) } catch (err) { setError(errorMessage(err)) } }
+  const download = (report: ReportDetail) => { const blob = new Blob([report.content], { type: 'text/plain;charset=utf-8' }); const url = URL.createObjectURL(blob); const anchor = document.createElement('a'); anchor.href = url; anchor.download = `${report.title.replace(/[^a-z0-9]+/gi, '_')}.txt`; anchor.click(); URL.revokeObjectURL(url) }
+  return <div className="h-full overflow-auto p-6 space-y-6">
+    <header><h1 className="text-2xl font-bold">{generatorOnly ? 'Report Generator' : 'Reports'}</h1><p className="mt-1 text-sm text-muted-foreground">Generate and download reports from saved case data and documents.</p></header>
+    {error ? <ErrorAlert message={error}/> : null}
+    <Card className="p-5"><div className="flex items-center gap-2"><FilePlus2 size={18} style={{ color: G }}/><h2 className="font-bold">Generate case summary</h2></div><p className="mt-1 text-xs text-muted-foreground">Choose one assigned case. The report includes its current details and document summaries.</p><div className="mt-4 flex flex-col gap-3 sm:flex-row"><label className="flex-1 text-xs font-semibold text-muted-foreground">Case<select aria-label="Report case" value={caseId} onChange={event => setCaseId(event.target.value)} className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm"><option value="">Choose a case…</option>{cases.map(item => <option key={item.id} value={item.id}>{item.case_number} — {item.title}</option>)}</select></label><button disabled={!caseId || generating} onClick={() => void generate()} className="self-end rounded-xl px-5 py-2.5 text-sm font-bold text-black disabled:opacity-50" style={{ background: G }}>{generating ? <span className="flex items-center gap-2"><Loader2 className="animate-spin" size={15}/>Generating…</span> : 'Generate report'}</button></div></Card>
+    {!generatorOnly ? <section><h2 className="mb-3 font-bold">Generated reports</h2>{loading ? <p className="text-sm text-muted-foreground">Loading reports…</p> : reports.length ? <div className="space-y-2">{reports.map(report => <button key={report.id} onClick={() => void open(report.id)} className="flex w-full items-center gap-3 rounded-xl border border-border bg-card p-4 text-left hover:border-[#D4AF37]/30"><FileText size={18} className="text-red-400"/><div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold">{report.title}</p><p className="text-xs text-muted-foreground">{report.case_number} · {new Date(report.created_at).toLocaleString()}</p></div><span className="text-xs" style={{ color: G }}>Open</span></button>)}</div> : <Card className="p-8 text-center text-sm text-muted-foreground">No reports generated yet.</Card>}</section> : null}
+    {detail ? <div className="fixed inset-0 z-50 grid place-items-center bg-black/70 p-4"><Card className="max-h-[85vh] w-full max-w-3xl overflow-auto p-6"><div className="flex items-start justify-between gap-3"><div><h2 className="font-bold">{detail.title}</h2><p className="text-xs text-muted-foreground">{detail.case_number} · {new Date(detail.created_at).toLocaleString()}</p></div><button aria-label="Close report" onClick={() => setDetail(null)}><X size={18}/></button></div><pre className="mt-5 whitespace-pre-wrap rounded-xl bg-background p-4 text-sm leading-relaxed">{detail.content}</pre><div className="mt-4 flex justify-end"><button onClick={() => download(detail)} className="flex items-center gap-2 rounded-xl border border-border px-4 py-2 text-sm"><Download size={15}/>Download .txt</button></div></Card></div> : null}
+  </div>
 }

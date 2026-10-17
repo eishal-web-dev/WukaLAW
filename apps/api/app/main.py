@@ -1,10 +1,12 @@
 ﻿import os
 import sys
-from pathlib import Path
+
+from app.paths import resolve_project_roots
 
 # make `app` and the repository-level `ai` package importable regardless of cwd
-_API_ROOT = str(Path(__file__).resolve().parents[1])
-_REPO_ROOT = str(Path(__file__).resolve().parents[3])
+_api_root_path, _repo_root_path = resolve_project_roots(__file__)
+_API_ROOT = str(_api_root_path)
+_REPO_ROOT = str(_repo_root_path)
 for _path in (_API_ROOT, _REPO_ROOT):
     if _path in sys.path:
         sys.path.remove(_path)
@@ -17,7 +19,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.auth import ADMIN_EMAIL, sync_configured_admin
 from app.config import settings
 from app.db import Base, SessionLocal, engine
-from app.routers import lawyer_workflow, admin, auth_routes, case_pathway, cases, documents, evidence_files, legal_intelligence, notifications, precedent_briefs, qa, rag, reports, search, similar_cases
+from app.routers import lawyer_operations, lawyer_workflow, admin, auth_routes, case_pathway, cases, documents, evidence_files, legal_intelligence, notifications, precedent_briefs, qa, rag, reports, search, similar_cases
 
 app = FastAPI(
     title="wukaLAW API",
@@ -130,6 +132,7 @@ api.include_router(admin.router)
 api.include_router(notifications.router)
 api.include_router(cases.router)
 api.include_router(lawyer_workflow.router)
+api.include_router(lawyer_operations.router)
 api.include_router(precedent_briefs.router)
 api.include_router(case_pathway.router)
 api.include_router(documents.router)

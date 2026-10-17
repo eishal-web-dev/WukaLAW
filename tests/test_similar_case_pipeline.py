@@ -25,3 +25,60 @@ def test_missing_outcome_and_no_results():
  assert empty.results==[] and empty.warnings
 def test_document_not_found_safe():
  out=SimilarCasePipeline(FakeRetriever([]),intelligence_analyzer=intel).run(SimilarCaseRequest(document_id="missing"));assert out.results==[] and out.warnings
+
+
+def family_intel(q):
+ return LegalQuery(Intent.SIMILAR_CASE,.9,LegalDomain.FAMILY,[],Language.ENGLISH,Jurisdiction.PAKISTAN,{},[],"dower mehr family dispute pakistan",[])
+
+
+def test_low_vector_family_judgment_survives_when_specific_issue_matches():
+ candidate=hit("mehr-case","mehr-chunk",.22,text="The Family Court decreed recovery of dower and unpaid mehr for the wife.")
+ out=SimilarCasePipeline(FakeRetriever([candidate]),intelligence_analyzer=family_intel).run(SimilarCaseRequest("My husband has not paid my haq meher and I seek dower recovery."))
+ assert len(out.results)==1
+ assert any(f.factor=="same_specific_issue" and "dower_mehr" in f.value for f in out.results[0].matching_factors)
+
+
+def test_low_vector_unrelated_judgment_is_still_rejected():
+ candidate=hit("tax-case","tax-chunk",.22,text="The taxpayer challenged an income tax assessment before the revenue authority.")
+ out=SimilarCasePipeline(FakeRetriever([candidate]),intelligence_analyzer=family_intel).run(SimilarCaseRequest("My husband has not paid my haq meher and I seek dower recovery."))
+ assert out.results==[]
+
+
+def test_multi_claim_family_case_runs_focused_retrieval_per_issue():
+ retriever=FakeRetriever([hit("mehr-case","mehr-chunk",.4,text="Family Court recovery of unpaid dower and haq mehr.")])
+ out=SimilarCasePipeline(retriever,intelligence_analyzer=family_intel).run(SimilarCaseRequest("I seek haq meher, dowry articles, child custody and maintenance."))
+ queries=[query.query for query in retriever.queries]
+ assert any("unpaid dower" in query for query in queries)
+ assert any("dowry articles" in query for query in queries)
+ assert any("child custody" in query for query in queries)
+ assert any("child maintenance" in query for query in queries)
+ assert out.results
+
+
+def test_honour_killing_bail_case_is_never_shown_as_child_custody_precedent():
+ candidate=hit(
+  "criminal-bail", "criminal-bail-chunk", .78,
+  text=("The petitioners sought pre-arrest bail in an FIR for honour killing and murder "
+        "under section 302 PPC. The deceased married of her own choice. The Supreme Court "
+        "dismissed the criminal petition and recalled ad-interim bail."),
+  outcome="bail refused",
+  laws=["Pakistan Penal Code", "Code of Criminal Procedure"],
+  sections=["302", "497", "498"],
+ )
+ out=SimilarCasePipeline(FakeRetriever([candidate]),intelligence_analyzer=family_intel).run(
+  SimilarCaseRequest("I seek child custody, haq meher, dowry and maintenance.")
+ )
+ assert out.results==[]
+ assert any("criminal bail/homicide" in warning for warning in out.warnings)
+
+
+def test_real_guardianship_case_survives_cross_domain_filter():
+ candidate=hit(
+  "custody-case", "custody-chunk", .42,
+  text=("The Guardian Court decided child custody under the Guardians and Wards Act, "
+        "applying welfare of the minor and visitation rights."),
+ )
+ out=SimilarCasePipeline(FakeRetriever([candidate]),intelligence_analyzer=family_intel).run(
+  SimilarCaseRequest("I seek child custody and safe visitation rights.")
+ )
+ assert len(out.results)==1
