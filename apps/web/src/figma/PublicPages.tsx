@@ -1,7 +1,11 @@
+Warning: truncated output (original token count: 50799)
+Total output lines: 2610
+
 // @ts-nocheck -- faithfully imported Figma Make presentation components
 /* oxlint-disable -- preserve generated Figma Make source without semantic rewrites */
 import React, { useState, useRef, useEffect } from "react";
 import { wukaIcon } from "./assets";
+import { useI18n } from "../lib/i18n";
 import {
   LayoutDashboard, Briefcase, FileText, Search, Brain, GitBranch, MessageSquare,
   Cpu, Clock, BarChart2, TrendingUp, Bell, User, Settings, Shield, Layers, Upload,
@@ -98,6 +102,7 @@ const AREA_DATA = [
 
 export function PublicNav({ navigate, dark, toggleDark, current }: PubProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { t } = useI18n();
   const TX  = dark ? "#F0F0F5"                   : "#0E0A03";
   const TX2 = dark ? "#8892A4"                   : "#5C4A28";
   const GA  = dark ? G                           : "#8B5E0A";
@@ -127,7 +132,7 @@ export function PublicNav({ navigate, dark, toggleDark, current }: PubProps) {
           {navLinks.map(nl => (
             <button key={nl.label} onClick={() => navigate(nl.page)}
               style={{ color: current === nl.page ? GA : TX2, fontSize: 13.5, background: "none", border: "none", cursor: "pointer", fontWeight: current === nl.page ? 600 : 450, transition: "color 0.15s", fontFamily: "Inter, sans-serif", letterSpacing: "-0.01em" }}>
-              {nl.label}
+              {t(nl.label)}
             </button>
           ))}
         </nav>
@@ -136,9 +141,9 @@ export function PublicNav({ navigate, dark, toggleDark, current }: PubProps) {
           <button onClick={toggleDark} style={{ width: 34, height: 34, borderRadius: 8, border: `1px solid ${BD}`, backgroundColor: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: TX2, transition: "background 0.15s" }}>
             {dark ? <Sun size={14} /> : <Moon size={14} />}
           </button>
-          <button onClick={() => navigate("login")} style={{ color: TX2, fontSize: 13.5, background: "none", border: "none", cursor: "pointer", fontFamily: "Inter, sans-serif", letterSpacing: "-0.01em" }}>Sign in</button>
+          <button onClick={() => navigate("login")} style={{ color: TX2, fontSize: 13.5, background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", letterSpacing: "-0.01em" }}>{t('Sign in')}</button>
           <button onClick={() => navigate("register")} style={{ background: `linear-gradient(135deg, ${P}, ${P}CC)`, color: "#FFFFFF", fontSize: 13, fontWeight: 600, padding: "9px 20px", borderRadius: 8, border: "none", cursor: "pointer", fontFamily: "Inter, sans-serif", letterSpacing: "-0.01em", boxShadow: `0 4px 20px ${P}40` }}>
-            Get Started
+            {t('Get Started')}
           </button>
         </div>
       </div>
@@ -147,6 +152,7 @@ export function PublicNav({ navigate, dark, toggleDark, current }: PubProps) {
 }
 
 export function PublicFooter({ navigate, dark }: { navigate: (p: Page) => void; dark: boolean }) {
+  const { t } = useI18n();
   const TX  = dark ? "#F0F0F5"                   : "#0E0A03";
   const TX2 = dark ? "#8892A4"                   : "#5C4A28";
   const GA  = dark ? G                           : "#8B5E0A";
@@ -178,10 +184,10 @@ export function PublicFooter({ navigate, dark }: { navigate: (p: Page) => void; 
           </div>
           {cols.map(col => (
             <div key={col.heading}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: TX, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 18 }}>{col.heading}</div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: TX, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 18 }}>{t(col.heading)}</div>
               <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                 {col.links.map(([label, page]) => (
-                  <button key={label} onClick={() => navigate(page as Page)} style={{ fontSize: 13, color: TX2, background: "none", border: "none", cursor: "pointer", textAlign: "left", fontFamily: "Inter, sans-serif", padding: 0, transition: "color 0.15s" }}>{label}</button>
+                  <button key={label} onClick={() => navigate(page as Page)} style={{ fontSize: 13, color: TX2, background: "none", border: "none", cursor: "pointer", textAlign: "start", fontFamily: "inherit", padding: 0, transition: "color 0.15s" }}>{t(label)}</button>
                 ))}
               </div>
             </div>
@@ -191,7 +197,7 @@ export function PublicFooter({ navigate, dark }: { navigate: (p: Page) => void; 
           <span style={{ fontSize: 12, color: TX2 }}>© 2024 wukaLAW Inc. · AI Legal Intelligence. Human Justice.</span>
           <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
             <div style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: "#34D399" }} />
-            <span style={{ fontSize: 12, color: TX2 }}>All systems operational</span>
+            <span style={{ fontSize: 12, color: TX2 }}>{t('All systems operational')}</span>
           </div>
         </div>
       </div>
@@ -1333,55 +1339,7 @@ export function PricingPage({ navigate, dark, toggleDark }: { navigate: (p: Page
     {
       name: "Enterprise",
       monthly: null,
-      desc: "Large firms and corporate legal departments",
-      recommended: false,
-      features: [
-        { label: "Active cases", value: "Unlimited" },
-        { label: "AI court prediction", value: true },
-        { label: "Case workspace", value: true },
-        { label: "Document storage", value: "Unlimited" },
-        { label: "Dedicated CSM", value: true },
-        { label: "Similar case search", value: true },
-        { label: "Team seats", value: "Custom" },
-        { label: "API access", value: true },
-        { label: "White-label", value: true },
-      ],
-    },
-  ];
-
-  const faqs = [
-    { q: "How accurate is wukaLAW's AI prediction?", a: "Our AI achieves 94.2% accuracy verified against historical Pakistani court cases spanning 2010–2024." },
-    { q: "Is my client data secure?", a: "Zero-knowledge architecture. AES-256 + TLS 1.3. Your data is never used to train our models — ever." },
-    { q: "Does it work for all Pakistani courts?", a: "Supreme Court, all 4 High Courts, Federal Shariat Court, and district courts across all provinces including AJK and GB." },
-    { q: "How quickly can I get started?", a: "Most firms onboard in under 30 minutes. Solo practitioners self-serve in minutes with guided setup." },
-    { q: "Can I import existing cases?", a: "Yes — PDF, DOCX, Excel/Sheets, CSV. Plus direct integrations with Clio, Thomson Reuters, and LexisNexis." },
-    { q: "Is there a free trial?", a: "14-day free trial on all plans. No credit card required. Enterprise trials available with a demo call." },
-  ];
-
-  const price = (monthly: number | null) => {
-    if (monthly === null) return "Custom";
-    const v = annual ? Math.round(monthly * 0.8) : monthly;
-    return `PKR ${v.toLocaleString()}`;
-  };
-
-  return (
-    <div style={{ minHeight: "100vh", backgroundColor: BG, fontFamily: "Inter, sans-serif" }}>
-      <PublicNav navigate={navigate} dark={dark} toggleDark={toggleDark} current="pricing" />
-
-      {/* Hero */}
-      <section style={{ padding: "80px 24px 60px", textAlign: "center" as const }}>
-        <div style={{ maxWidth: 640, margin: "0 auto" }}>
-          <div style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "5px 16px", borderRadius: 999, backgroundColor: `${GA}15`, marginBottom: 24 }}>
-            <div style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: GA }} />
-            <span style={{ fontSize: 11, color: GA, fontWeight: 700, letterSpacing: "0.08em" }}>14-DAY FREE TRIAL · NO CREDIT CARD</span>
-          </div>
-          <h1 style={{ fontSize: "clamp(32px, 5vw, 60px)", fontWeight: 900, color: TX, letterSpacing: "-0.04em", lineHeight: 1.08, marginBottom: 20 }}>Simple, transparent pricing</h1>
-          <p style={{ fontSize: 18, color: TX2, marginBottom: 40, lineHeight: 1.6 }}>Start free, scale as you grow. Every plan includes full AI capabilities.</p>
-
-          {/* Monthly/Annual Toggle */}
-          <div style={{ display: "inline-flex", alignItems: "center", gap: 12, padding: "6px 6px 6px 16px", borderRadius: 999, border: `1px solid ${BD}`, backgroundColor: CARDBG }}>
-            <span style={{ fontSize: 13, fontWeight: 600, color: annual ? TX2 : TX }}>Monthly</span>
-            <button onClick={() => setAnnual(a => !a)}
+      desc: "Large firms and corpo…799 tokens truncated…ck={() => setAnnual(a => !a)}
               style={{ width: 48, height: 26, borderRadius: 999, border: "none", cursor: "pointer", position: "relative", backgroundColor: annual ? GA : dark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.1)", transition: "background-color 0.2s" }}>
               <div style={{ width: 20, height: 20, borderRadius: "50%", backgroundColor: "#FFFFFF", position: "absolute", top: 3, left: annual ? 25 : 3, transition: "left 0.2s" }} />
             </button>
