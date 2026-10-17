@@ -37,7 +37,25 @@ def test_supabase_retriever_maps_rpc_rows(monkeypatch):
         captured.update(url=url, body=kwargs["json"], headers=kwargs["headers"])
         return Response()
 
+    class FullTextResponse:
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return [{
+                "canonical_chunk_id": "chunk-1",
+                "text_content": (
+                    "The opening procedural history. " + "background " * 100
+                    + "The wife sought recovery of unpaid dower and haq mehr."
+                ),
+            }]
+
+    def fake_get(url, **kwargs):
+        captured.update(full_text_url=url, full_text_params=kwargs["params"])
+        return FullTextResponse()
+
     monkeypatch.setattr("ai.retrieval.supabase_retriever.httpx.post", fake_post)
+    monkeypatch.setattr("ai.retrieval.supabase_retriever.httpx.get", fake_get)
     retriever = SupabaseLegalRetriever("https://example.supabase.co", "secret", Provider())
     rows = retriever.search(LegalSearchQuery("dower recovery", top_k=5, jurisdictions=["Pakistan"]))
 
@@ -48,6 +66,32 @@ def test_supabase_retriever_maps_rpc_rows(monkeypatch):
     assert rows[0].score == 0.81
     assert rows[0].explicit_outcome_phrase == "appeal was allowed"
     assert rows[0].payload["decision_date"] == "2020-01-01"
+    assert captured["full_text_url"].endswith("/rest/v1/legal_judgment_chunks")
+    assert captured["full_text_params"]["canonical_chunk_id"] == "in.(chunk-1)"
+    assert "unpaid dower and haq mehr" in rows[0].text_preview
+
+
+def test_supabase_retriever_skips_enrichment_when_rpc_has_full_text(monkeypatch):
+    class FullRpcResponse(Response):
+        def json(self):
+            rows = super().json()
+            rows[0]["text_content"] = "Complete dower judgment returned by RPC."
+            return rows
+
+    monkeypatch.setattr(
+        "ai.retrieval.supabase_retriever.httpx.post",
+        lambda *args, **kwargs: FullRpcResponse(),
+    )
+    monkeypatch.setattr(
+        "ai.retrieval.supabase_retriever.httpx.get",
+        lambda *args, **kwargs: (_ for _ in ()).throw(AssertionError("unexpected enrichment")),
+    )
+
+    rows = SupabaseLegalRetriever(
+        "https://example.supabase.co", "secret", Provider()
+    ).search(LegalSearchQuery("dower recovery", top_k=5))
+
+    assert rows[0].text_preview == "Complete dower judgment returned by RPC."
 
 
 def test_exact_document_lookup_does_not_use_semantic_rpc(monkeypatch):

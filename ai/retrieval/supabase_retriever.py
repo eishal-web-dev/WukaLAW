@@ -91,7 +91,58 @@ class SupabaseLegalRetriever:
         except httpx.HTTPError as exc:
             raise RuntimeError("Supabase legal corpus network request failed.") from exc
 
-        return self._map_rows(response.json(), "Retrieved from Supabase pgvector.")
+        rows = response.json()
+        # Older deployments of match_legal_judgments return only text_preview
+        # (the first 700 characters).  The vector was generated from the full
+        # chunk, so legal terms that occur later can produce a strong semantic
+        # hit and then be incorrectly discarded by the issue-aware ranker.
+        # Enrich those RPC rows in one PostgREST request.  Newer RPC versions
+        # may return text_content directly, in which case this is a no-op.
+        rows = self._enrich_full_text(rows)
+        return self._map_rows(rows, "Retrieved from Supabase pgvector.")
+
+    def _enrich_full_text(self, rows: list[dict]) -> list[dict]:
+        missing_ids = [
+            str(row.get("canonical_chunk_id") or "")
+            for row in rows
+            if row.get("canonical_chunk_id") and not row.get("text_content")
+        ]
+        if not missing_ids:
+            return rows
+
+        # canonical_chunk_id values are generated SHA-256 identifiers, so they
+        # are safe and compact in a PostgREST `in` filter.  Search is capped at
+        # 100 candidates, keeping this to a single bounded request.
+        try:
+            response = httpx.get(
+                f"{self.url}/rest/v1/legal_judgment_chunks",
+                headers=self.headers,
+                params={
+                    "select": "canonical_chunk_id,text_content",
+                    "canonical_chunk_id": f"in.({','.join(missing_ids)})",
+                    "limit": str(len(missing_ids)),
+                },
+                timeout=self.timeout,
+            )
+            response.raise_for_status()
+        except httpx.HTTPStatusError as exc:
+            raise self._status_error("matched-chunk lookup", exc) from exc
+        except httpx.TimeoutException as exc:
+            raise RuntimeError("Supabase matched-chunk lookup timed out.") from exc
+        except httpx.ConnectError as exc:
+            raise RuntimeError("Supabase matched-chunk lookup could not connect.") from exc
+        except httpx.HTTPError as exc:
+            raise RuntimeError("Supabase matched-chunk lookup failed.") from exc
+
+        full_text = {
+            str(item.get("canonical_chunk_id") or ""): str(item.get("text_content") or "")
+            for item in response.json()
+        }
+        return [
+            {**row, "text_content": full_text.get(str(row.get("canonical_chunk_id") or ""), "")}
+            if not row.get("text_content") else row
+            for row in rows
+        ]
 
     def _exact_documents(self, query: LegalSearchQuery) -> list[LegalSearchResult]:
         columns = ",".join((
