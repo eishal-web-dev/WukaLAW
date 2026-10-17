@@ -185,7 +185,7 @@ export default function AIChat() {
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="px-6 py-4 border-b border-white/[0.06] flex items-center justify-between flex-shrink-0 flex-wrap gap-3">
+      <div className="px-4 sm:px-6 py-4 border-b border-white/[0.06] flex items-center justify-between flex-shrink-0 flex-wrap gap-3">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ backgroundColor: `${G}20` }}>
             <Sparkles size={16} style={{ color: G }} />
@@ -206,7 +206,7 @@ export default function AIChat() {
                 setSelectedCaseId(Number(e.target.value))
                 setMessages([])
               }}
-              className="text-xs px-3 py-2 rounded-xl border border-white/10 bg-white/[0.04] text-foreground outline-none focus:border-[#D4AF37]/50"
+              className="w-full sm:w-auto text-xs px-3 py-2 rounded-xl border border-white/10 bg-white/[0.04] text-foreground outline-none focus:border-[#D4AF37]/50"
             >
               {cases.map((c) => (
                 <option key={c.id} value={c.id}>
@@ -225,7 +225,7 @@ export default function AIChat() {
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-5">
+      <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5">
         {isClient && casesLoading && (
           <div className="text-center py-8 text-sm text-muted-foreground">Loading your cases…</div>
         )}
@@ -251,7 +251,7 @@ export default function AIChat() {
             <div className="text-muted-foreground text-sm mb-6">
               Questions are answered from your uploaded documents, with sources and confidence.
             </div>
-            <div className="grid grid-cols-2 gap-2 max-w-lg mx-auto">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-w-lg mx-auto">
               {quickPrompts.map((p) => (
                 <button
                   key={p}
@@ -275,7 +275,7 @@ export default function AIChat() {
               <Avatar name={user?.name || 'You'} size="sm" />
             )}
             <div
-              className={`max-w-[70%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${m.role === 'user' ? 'text-[#0D1117]' : 'text-muted-foreground'}`}
+              className={`max-w-[88%] sm:max-w-[70%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${m.role === 'user' ? 'text-[#0D1117]' : 'text-muted-foreground'}`}
               style={m.role === 'user' ? { backgroundColor: G } : { backgroundColor: C, border: '1px solid rgba(255,255,255,0.06)' }}
             >
               <div className="whitespace-pre-line">{m.text}</div>
@@ -330,7 +330,7 @@ export default function AIChat() {
       `}</style>
 
       {/* Input */}
-      <div className="border-t border-white/[0.06] p-4 flex-shrink-0">
+      <div className="border-t border-white/[0.06] p-3 sm:p-4 flex-shrink-0 bg-background/95 backdrop-blur">
         <div className="flex gap-3 max-w-4xl mx-auto">
           <div className="flex-1 relative">
             <input

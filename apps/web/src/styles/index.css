@@ -1,3 +1,14 @@
 @import './fonts.css';
 @import './tailwind.css';
 @import './theme.css';
+
+.wk-portal-main {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+@supports (padding: env(safe-area-inset-bottom)) {
+  .wk-app-shell {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
