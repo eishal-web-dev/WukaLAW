@@ -8,6 +8,7 @@ import type { AskResponse, Confidence, Source, Case } from '../lib/api'
 import { groupSources, passageSummary } from '../lib/sources'
 import { formatScore, excerpt } from '../lib/format'
 import { useAuth } from '../lib/auth'
+import { useI18n } from '../lib/i18n'
 import { Avatar, Badge, Btn, G, C } from '../components/design'
 import Disclaimer from '../components/Disclaimer'
 import ErrorAlert from '../components/ErrorAlert'
@@ -86,6 +87,7 @@ function ConfidenceLine({ confidence, model }: { confidence: Confidence; model?:
 }
 
 export default function AIChat() {
+  const { t } = useI18n()
   const { user } = useAuth()
   const isClient = user?.role === 'client'
   const navigate = useNavigate()
@@ -191,10 +193,10 @@ export default function AIChat() {
             <Sparkles size={16} style={{ color: G }} />
           </div>
           <div>
-            <div className="text-sm font-semibold text-foreground">wukaLAW AI Assistant</div>
+            <div className="text-sm font-semibold text-foreground">{t('wukaLAW AI Assistant')}</div>
             <div className="text-xs text-emerald-400 flex items-center gap-1">
               <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-              {isClient ? 'Answers from your case documents only' : 'Answers from your document library'}
+              {t(isClient ? 'Answers from your case documents only' : 'Answers from your document library')}
             </div>
           </div>
         </div>
@@ -249,16 +251,16 @@ export default function AIChat() {
             </div>
             <div className="text-foreground font-semibold mb-2">Ask wukaLAW AI anything</div>
             <div className="text-muted-foreground text-sm mb-6">
-              Questions are answered from your uploaded documents, with sources and confidence.
+              {t('Questions are answered from your uploaded documents, with sources and confidence.')}
             </div>
             <div className="grid grid-cols-2 gap-2 max-w-lg mx-auto">
               {quickPrompts.map((p) => (
                 <button
                   key={p}
-                  onClick={() => setInput(p)}
+                  onClick={() => setInput(t(p))}
                   className="p-3 rounded-xl border border-white/[0.08] text-xs text-muted-foreground hover:text-foreground hover:border-white/20 hover:bg-white/[0.04] transition-all text-left"
                 >
-                  {p}
+                  {t(p)}
                 </button>
               ))}
             </div>

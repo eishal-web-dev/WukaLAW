@@ -1,3 +1,13 @@
 @import './fonts.css';
 @import './tailwind.css';
 @import './theme.css';
+
+html[dir='rtl'] body {
+  font-family: 'Noto Nastaliq Urdu', 'Noto Sans Arabic', Tahoma, Arial, sans-serif;
+}
+
+html[dir='rtl'] input,
+html[dir='rtl'] textarea,
+html[dir='rtl'] select {
+  text-align: right;
+}
