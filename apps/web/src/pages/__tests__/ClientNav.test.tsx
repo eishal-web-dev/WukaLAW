@@ -49,9 +49,10 @@ describe('Client sidebar navigation (spec: never send clients to Lawyer pages)',
     open('/client')
     await screen.findByRole('heading', { name: 'Client dashboard content' })
 
-    for (const label of ['Task Board', 'Hearings', 'AI Strategy', 'Legal Research', 'Strategy Builder', 'Messages', 'Team', 'Case Management']) {
+    for (const label of ['Task Board', 'Hearings', 'AI Strategy', 'Legal Research', 'Strategy Builder', 'Team', 'Case Management']) {
       expect(screen.queryByText(label)).not.toBeInTheDocument()
     }
+    expect(screen.getByRole('button', { name: 'Messages' })).toBeInTheDocument()
   })
 
   it('clicking "My Cases" in the sidebar actually renders the client cases page, not the lawyer one', async () => {
