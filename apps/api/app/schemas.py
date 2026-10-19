@@ -76,6 +76,8 @@ class DocumentMeta(BaseModel):
     has_summary: bool
     ocr_used: bool = False
     ocr_review_status: str | None = None
+    has_original: bool = False
+    original_media_type: str | None = None
 
 
 class DocumentOut(DocumentMeta):

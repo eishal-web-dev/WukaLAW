@@ -82,6 +82,8 @@ class Document(Base):
     text: Mapped[str] = mapped_column(Text)
     ocr_used: Mapped[bool] = mapped_column(Boolean, default=False)
     ocr_review_status: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    source_storage: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    source_key: Mapped[str | None] = mapped_column(String(1024), nullable=True)
     summary: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
