@@ -41,8 +41,7 @@ import AdminBackup from './pages/AdminBackup'
 // App screens (preview — sample data)
 import LawyerWorkspace from './pages/LawyerWorkspace'
 import LawyerCalendar from './pages/LawyerCalendar'
-import LawyerTasks from './pages/LawyerTasks'
-import LawyerHearings from './pages/LawyerHearings'
+import LawyerWorkBoard from './pages/LawyerWorkBoard'
 import LawyerResearch from './pages/LawyerResearch'
 import LawyerStrategy from './pages/LawyerStrategy'
 import LawyerMessages from './pages/LawyerMessages'
@@ -111,9 +110,9 @@ export default function App() {
             <Route path="/billing" element={<LawyerBilling />} />
             <Route path="/clients" element={<LawyerClients />} />
             <Route path="/clients/:clientId" element={<LawyerClients />} />
-            <Route path="/hearings" element={<LawyerHearings />} />
+            <Route path="/hearings" element={<Navigate to="/tasks?view=hearings" replace />} />
             <Route path="/calendar" element={<LawyerCalendar />} />
-            <Route path="/tasks" element={<LawyerTasks />} />
+            <Route path="/tasks" element={<LawyerWorkBoard />} />
             <Route path="/ai-strategy" element={<Navigate to="/strategy" replace />} />
             <Route path="/research" element={<LawyerResearch />} />
             <Route path="/strategy" element={<LawyerStrategy />} />
