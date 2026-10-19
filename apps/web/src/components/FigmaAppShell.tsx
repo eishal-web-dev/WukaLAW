@@ -4,7 +4,7 @@ import type { LucideIcon } from 'lucide-react'
 import {
   Activity, BarChart2, Bell, BookOpen, Brain, Briefcase, Calendar,
   ChevronLeft, ChevronRight, Clock, CreditCard, Database, Download,
-  FilePlus2, FileSearch, FileText, Gavel, GitBranch, HardDrive, Key, Layers,
+  FilePlus2, FileSearch, FileText, GitBranch, HardDrive, Key, Layers,
   LayoutDashboard, LogOut, MessageCircle, MessageSquare, Moon, Newspaper,
   Menu, Search, Settings, Sparkles, Sun, Target, TrendingUp, Upload, X,
   User, UserCheck, Users, UsersRound,
@@ -30,7 +30,6 @@ const LAWYER_NAV: NavGroup[] = [
   { label: 'Case Work', items: [
     { path: '/cases', label: 'Case Management', icon: Briefcase },
     { path: '/workspace', label: 'Case Workspace', icon: Layers },
-    { path: '/hearings', label: 'Hearings', icon: Gavel },
     { path: '/documents', label: 'Documents', icon: FileText },
     { path: '/evidence', label: 'Evidence', icon: Search },
   ] },
