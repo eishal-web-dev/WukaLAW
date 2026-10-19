@@ -177,8 +177,14 @@ def test_client_can_upload_image_and_word_documents_for_search(client):
     assert image.json()["ocr_used"] is True
     assert image.json()["ocr_review_status"] == "needs_review"
     assert image.json()["num_chunks"] == 0
+    assert image.json()["has_original"] is True
+    assert image.json()["original_media_type"] == "image/png"
 
     document_id = image.json()["id"]
+    original = client.get(f"/api/v1/documents/{document_id}/original", headers=headers)
+    assert original.status_code == 200
+    assert original.content == b"fake test image"
+    assert original.headers["content-type"].startswith("image/png")
     corrected = " ".join(["درست عدالتی دستاویز کا تصدیق شدہ متن"] * 12)
     verified = client.patch(
         f"/api/v1/documents/{document_id}",

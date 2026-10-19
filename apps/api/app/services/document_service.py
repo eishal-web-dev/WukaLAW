@@ -195,14 +195,23 @@ def ingest_upload(db: Session, file: UploadFile, owner_id: int) -> Document:
     content = file.file.read()
     _validate_size(len(content), max_mb=settings.max_upload_mb)
 
-    destination = settings.upload_dir / f"{uuid4().hex}_{filename}"
+    original_dir = settings.upload_dir / "originals"
+    original_dir.mkdir(parents=True, exist_ok=True)
+    relative_key = f"originals/{uuid4().hex}_{filename}"
+    destination = settings.upload_dir / relative_key
     destination.write_bytes(content)
     try:
-        return _index_extracted_document(
+        document = _index_extracted_document(
             db, source_path=destination, filename=filename, owner_id=owner_id, size_bytes=len(content),
         )
-    finally:
+        document.source_storage = "local"
+        document.source_key = relative_key
+        db.commit()
+        db.refresh(document)
+        return document
+    except Exception:
         destination.unlink(missing_ok=True)
+        raise
 
 
 def ingest_s3_object(
@@ -229,13 +238,18 @@ def ingest_s3_object(
         except s3_storage.S3StorageError as error:
             raise HTTPException(status_code=422, detail=str(error)) from error
 
-        return _index_extracted_document(
+        document = _index_extracted_document(
             db,
             source_path=destination,
             filename=filename,
             owner_id=owner_id,
             size_bytes=size,
         )
+        document.source_storage = "s3"
+        document.source_key = object_key
+        db.commit()
+        db.refresh(document)
+        return document
     finally:
         # S3 is the durable source; the backend working copy is temporary.
         destination.unlink(missing_ok=True)

@@ -1,6 +1,9 @@
+import mimetypes
 from pathlib import Path
+from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Response, UploadFile
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -30,6 +33,7 @@ router = APIRouter(prefix="/documents", tags=["documents"])
 
 
 def _meta(document: Document, num_chunks: int) -> dict:
+    media_type = mimetypes.guess_type(document.filename)[0] if document.source_key else None
     return {
         "id": document.id,
         "filename": document.filename,
@@ -40,6 +44,8 @@ def _meta(document: Document, num_chunks: int) -> dict:
         "has_summary": document.summary is not None,
         "ocr_used": document.ocr_used,
         "ocr_review_status": document.ocr_review_status or ("needs_review" if document.ocr_used else None),
+        "has_original": bool(document.source_storage and document.source_key),
+        "original_media_type": media_type,
     }
 
 
@@ -61,6 +67,14 @@ def _get_owned_document(db: Session, document_id: int, user: User) -> Document:
         if case is not None and case.client_id == user.id:
             return document
     raise HTTPException(status_code=404, detail="Document not found.")
+
+
+def _local_source_path(source_key: str) -> Path:
+    upload_root = settings.upload_dir.resolve()
+    source_path = (upload_root / source_key).resolve()
+    if upload_root not in source_path.parents:
+        raise HTTPException(status_code=404, detail="Original document file was not found.")
+    return source_path
 
 
 def _attach_to_case(db: Session, document: Document, case_id: int, user: User) -> None:
@@ -274,6 +288,32 @@ def get_document(
     return {**_meta(document, len(document.chunks)), "text": document.text, "summary": document.summary}
 
 
+@router.get("/{document_id}/original")
+def get_document_original(
+    document_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Return the private original upload for an authorized document viewer."""
+    document = _get_owned_document(db, document_id, user)
+    if not document.source_storage or not document.source_key:
+        raise HTTPException(status_code=404, detail="Original document preview is unavailable for this older upload.")
+    media_type = mimetypes.guess_type(document.filename)[0] or "application/octet-stream"
+    headers = {"Content-Disposition": f"inline; filename*=UTF-8''{quote(Path(document.filename).name)}"}
+    if document.source_storage == "s3":
+        try:
+            content, stored_media_type = s3_storage.read_object(document.owner_id, document.source_key)
+        except s3_storage.S3StorageError as error:
+            raise HTTPException(status_code=503, detail=str(error)) from error
+        return Response(content=content, media_type=stored_media_type or media_type, headers=headers)
+    if document.source_storage == "local":
+        source_path = _local_source_path(document.source_key)
+        if not source_path.is_file():
+            raise HTTPException(status_code=404, detail="Original document file was not found.")
+        return FileResponse(source_path, media_type=media_type, filename=document.filename, content_disposition_type="inline")
+    raise HTTPException(status_code=404, detail="Original document preview is unavailable.")
+
+
 @router.delete("/{document_id}", status_code=204)
 def delete_document(
     document_id: int,
@@ -282,6 +322,13 @@ def delete_document(
 ):
     """Delete an accessible document and remove its private retrieval vectors."""
     document = _get_owned_document(db, document_id, user)
+    if document.source_storage == "s3" and document.source_key:
+        try:
+            s3_storage.delete_object(document.owner_id, document.source_key)
+        except s3_storage.S3StorageError as error:
+            raise HTTPException(status_code=503, detail="Original file could not be removed. Please try again.") from error
+    elif document.source_storage == "local" and document.source_key:
+        _local_source_path(document.source_key).unlink(missing_ok=True)
     chunk_ids = [chunk.id for chunk in document.chunks]
     try:
         vector_index.delete_chunks(chunk_ids)
