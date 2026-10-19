@@ -68,7 +68,7 @@ describe('Client sidebar navigation (spec: never send clients to Lawyer pages)',
     auth.user = { id: 1, name: 'Test Lawyer', email: 'lawyer@example.com', role: 'lawyer' }
     open('/dashboard')
     expect(await screen.findByRole('heading', { name: 'Lawyer dashboard content' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Case Management' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Cases' })).toBeInTheDocument()
     expect(screen.queryByText('My Cases')).not.toBeInTheDocument()
   })
 

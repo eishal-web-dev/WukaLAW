@@ -138,7 +138,13 @@ function CaseFormDialog({
   )
 }
 
-export default function Cases() {
+export default function Cases({
+  embedded = false,
+  onOpenWorkspace,
+}: {
+  embedded?: boolean
+  onOpenWorkspace?: (caseId: number) => void
+} = {}) {
   const navigate = useNavigate()
   const [cases, setCases] = useState<Case[]>([])
   const [loading, setLoading] = useState(true)
@@ -152,6 +158,11 @@ export default function Cases() {
   const [deleting, setDeleting] = useState<Case | null>(null)
   const [deleteBusy, setDeleteBusy] = useState(false)
   const [claimingId, setClaimingId] = useState<number | null>(null)
+
+  const openCase = (caseId: number) => {
+    if (onOpenWorkspace) onOpenWorkspace(caseId)
+    else navigate(`/cases/${caseId}`)
+  }
 
   const refresh = useCallback(async () => {
     try {
@@ -225,10 +236,10 @@ export default function Cases() {
   }
 
   return (
-    <div className="p-8 space-y-7 overflow-y-auto h-full">
+    <div className={`${embedded ? 'p-4 sm:p-6' : 'p-8'} space-y-7 overflow-y-auto h-full`}>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Case Management</h1>
+          <h2 className={`${embedded ? 'text-xl' : 'text-2xl'} font-bold text-foreground`}>{embedded ? 'All Cases' : 'Case Management'}</h2>
           <p className="text-muted-foreground text-sm mt-1">
             {cases.length} total case{cases.length === 1 ? '' : 's'} · {activeCount} active
           </p>
@@ -312,7 +323,7 @@ export default function Cases() {
             <Card
               key={c.id}
               className="p-4 hover:border-[#D4AF37]/30 cursor-pointer transition-all"
-              onClick={() => navigate(`/cases/${c.id}`)}
+              onClick={() => openCase(c.id)}
             >
               <div className="flex items-start justify-between mb-3">
                 <div>
@@ -346,7 +357,7 @@ export default function Cases() {
                   <tr
                     key={c.id}
                     className={`border-b border-white/[0.03] hover:bg-white/[0.03] cursor-pointer transition-colors ${i === filtered.length - 1 ? 'border-0' : ''}`}
-                    onClick={() => navigate(`/cases/${c.id}`)}
+                    onClick={() => openCase(c.id)}
                   >
                     <td className="px-4 py-3.5 text-xs font-mono" style={{ color: G }}>{c.case_number}</td>
                     <td className="px-4 py-3.5">
@@ -387,7 +398,7 @@ export default function Cases() {
                           <>
                             <button
                               title="Open"
-                              onClick={() => navigate(`/cases/${c.id}`)}
+                              onClick={() => openCase(c.id)}
                               className="p-1.5 rounded-lg hover:bg-white/[0.08] text-muted-foreground hover:text-foreground transition-colors"
                             >
                               <Eye size={13} />
