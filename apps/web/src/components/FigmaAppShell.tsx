@@ -28,8 +28,7 @@ const LAWYER_NAV: NavGroup[] = [
     { path: '/tasks', label: 'Task Board', icon: Layers },
   ] },
   { label: 'Case Work', items: [
-    { path: '/cases', label: 'Case Management', icon: Briefcase },
-    { path: '/workspace', label: 'Case Workspace', icon: Layers },
+    { path: '/cases', label: 'Cases', icon: Briefcase },
     { path: '/hearings', label: 'Hearings', icon: Gavel },
     { path: '/documents', label: 'Documents', icon: FileText },
     { path: '/evidence', label: 'Evidence', icon: Search },
