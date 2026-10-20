@@ -12,4 +12,4 @@ RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/wh
 COPY ai ./ai
 COPY scripts/index_supabase_legal_corpus.py ./scripts/index_supabase_legal_corpus.py
 
-CMD ["python", "scripts/index_supabase_legal_corpus.py", "--prefix", "datasets/raw/", "--device", "cpu", "--batch-size", "8"]
+CMD ["python", "scripts/index_supabase_legal_corpus.py", "--prefix", "datasets/raw/", "--device", "cpu", "--batch-size", "8", "--offset", "279"]
