@@ -83,7 +83,7 @@ export default function ClientDashboard() {
   const hasNoCases = (cases ?? []).length === 0;
 
   return (
-    <div className="p-6 sm:p-8 max-w-6xl mx-auto space-y-6">
+    <div className="w-full max-w-6xl mx-auto p-4 sm:p-6 lg:p-8 space-y-5 sm:space-y-6">
       <div>
         <div className="text-xs text-muted-foreground mb-1">Welcome back</div>
         <h1 className="text-2xl font-bold text-foreground tracking-tight">{firstName}</h1>
@@ -100,7 +100,7 @@ export default function ClientDashboard() {
         </Card>
       ) : (
         <>
-          <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4">
             <KPICard icon={<Briefcase size={18} />} label="Active Cases" value={String(activeCases)} sub={`${(cases ?? []).length} total`} color={G} />
             <KPICard icon={<Calendar size={18} />} label="In Review" value={String(reviewCases)} color="#8B5CF6" />
             <KPICard icon={<Briefcase size={18} />} label="Closed" value={String(closedCases)} color="#6B7280" />
@@ -108,7 +108,7 @@ export default function ClientDashboard() {
             <KPICard icon={<Bell size={18} />} label="Unread Notifications" value={String(unread ?? 0)} color="#10B981" />
           </div>
 
-          <div className="grid lg:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5">
             <Card className="lg:col-span-2 overflow-hidden">
               <div className="flex items-center justify-between px-5 py-4 border-b border-border">
                 <span className="font-bold text-foreground text-sm">Your Cases</span>
@@ -123,7 +123,7 @@ export default function ClientDashboard() {
                 <button
                   key={c.id}
                   onClick={() => navigate(`/client/cases/${c.id}/workspace`)}
-                  className="w-full text-left flex items-center gap-4 px-5 py-4 border-b border-border last:border-0 hover:bg-sidebar-accent transition-colors"
+                  className="w-full text-left flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 px-4 sm:px-5 py-4 border-b border-border last:border-0 hover:bg-sidebar-accent transition-colors"
                 >
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
@@ -136,7 +136,7 @@ export default function ClientDashboard() {
                     </div>
                   </div>
                   {c.deadline && (
-                    <div className="text-xs text-muted-foreground flex-shrink-0">{formatDate(c.deadline)}</div>
+                    <div className="text-xs text-muted-foreground sm:flex-shrink-0">{formatDate(c.deadline)}</div>
                   )}
                 </button>
               ))}
