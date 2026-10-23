@@ -1,4 +1,5 @@
-import { ChangeEvent, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
+import type { ChangeEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Camera, Hash, LogOut, Mail, RefreshCw, Save } from 'lucide-react'
 import {
