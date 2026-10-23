@@ -535,3 +535,56 @@ class LawyerClientOut(BaseModel):
     document_count: int
     last_case_at: datetime
     cases: list[CaseOut] = Field(default_factory=list)
+
+
+class ContactSubmissionCreate(BaseModel):
+    name: str = Field(min_length=2, max_length=255)
+    email: str = Field(min_length=5, max_length=255, pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+    subject: str = Field(min_length=2, max_length=255)
+    message: str = Field(min_length=10, max_length=10000)
+
+
+class ContactSubmissionOut(BaseModel):
+    id: int
+    received: bool
+    email_delivered: bool
+
+
+class LawyerProfileUpdate(BaseModel):
+    profile_image: str | None = Field(default=None, max_length=2_800_000)
+    lawyer_title: str = Field(default="", max_length=120)
+    specialization: str = Field(default="", max_length=255)
+    city: str = Field(default="", max_length=120)
+    years_experience: int = Field(default=0, ge=0, le=80)
+    consultation_fee: int = Field(default=0, ge=0, le=100000000)
+    lawyer_bio: str = Field(default="", max_length=5000)
+    accepting_consultations: bool = True
+
+
+class PublicLawyerOut(BaseModel):
+    id: int
+    name: str
+    email: str
+    profile_image: str | None
+    lawyer_title: str
+    specialization: str
+    city: str
+    years_experience: int
+    consultation_fee: int
+    lawyer_bio: str
+    accepting_consultations: bool
+
+
+class ConsultationRequestCreate(BaseModel):
+    lawyer_id: int
+    client_name: str = Field(min_length=2, max_length=255)
+    client_email: str = Field(min_length=5, max_length=255, pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+    client_phone: str = Field(default="", max_length=80)
+    requested_at: datetime
+    notes: str = Field(default="", max_length=5000)
+
+
+class ConsultationRequestOut(BaseModel):
+    id: int
+    status: str
+    created_at: datetime
