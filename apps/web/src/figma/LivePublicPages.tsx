@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react'
-import { ArrowLeft, Briefcase, Calendar, Check, Mail, MapPin, Search, Upload, UserRound } from 'lucide-react'
+import { ArrowLeft, Calendar, Check, Mail, MapPin, Search, UserRound } from 'lucide-react'
 import { PublicFooter, PublicNav } from './PublicPages'
 import {
   errorMessage,
