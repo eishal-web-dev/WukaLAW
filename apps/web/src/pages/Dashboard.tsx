@@ -126,7 +126,7 @@ export default function Dashboard() {
   }, [cases, events, hearings])
 
   return (
-    <div className="p-8 space-y-8 overflow-y-auto h-full">
+    <div className="w-full max-w-[1600px] mx-auto p-4 sm:p-6 lg:p-8 space-y-5 sm:space-y-8">
       {/* Welcome */}
       <div className="flex items-center justify-between">
         <div>
@@ -141,7 +141,7 @@ export default function Dashboard() {
       {error && <ErrorAlert message={error} />}
 
       {/* KPI Cards — every value is live; colors and layout follow the Figma design. */}
-      <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
         <KPICard icon={<Briefcase size={18} />} label="Total Cases" value={loading ? '…' : String(caseTotal)} sub={`${activeCases} active`} color={G} />
         <KPICard icon={<Activity size={18} />} label="Active Cases" value={loading ? '…' : String(activeCases)} sub="Currently in progress" color="#34D399" />
         <KPICard icon={<FileText size={18} />} label="Documents" value={loading ? '…' : String(docTotal)} sub="Across all cases" color="#7C3AED" />
@@ -149,8 +149,8 @@ export default function Dashboard() {
       </div>
 
       {/* Chart + Case Status Breakdown */}
-      <div className="grid lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-2 p-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+        <Card className="lg:col-span-2 p-4 sm:p-6">
           <SectionHeader
             title="Workspace Activity"
             action={
@@ -216,7 +216,7 @@ export default function Dashboard() {
       </div>
 
       {/* Get Started — styled like the Figma design's AI panel treatment, honest content */}
-      <Card className="p-6 relative overflow-hidden" style={{ background: 'linear-gradient(135deg, rgba(139,92,246,0.08), transparent)' }}>
+      <Card className="p-4 sm:p-6 relative overflow-hidden" style={{ background: 'linear-gradient(135deg, rgba(139,92,246,0.08), transparent)' }}>
         <div className="flex items-center gap-2 mb-4">
           <Sparkles size={16} style={{ color: '#8B5CF6' }} />
           <span className="text-sm font-bold text-foreground">Get Started</span>
@@ -227,7 +227,7 @@ export default function Dashboard() {
             Live
           </span>
         </div>
-        <div className="grid sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
           {insights.map((ins, i) => (
             <div
               key={i}
@@ -251,8 +251,8 @@ export default function Dashboard() {
       </Card>
 
       {/* Recent Cases + Deadlines */}
-      <div className="grid lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-2 p-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+        <Card className="lg:col-span-2 p-4 sm:p-6">
           <SectionHeader title="Recent Cases" action={<Btn variant="ghost" size="sm" onClick={() => navigate('/cases')}>View all</Btn>} />
           {cases.length === 0 ? (
             <p className="text-sm text-muted-foreground py-6 text-center">
