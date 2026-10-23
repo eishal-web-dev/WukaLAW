@@ -84,6 +84,16 @@ class Settings(BaseSettings):
     token_expire_hours: int = 24 * 7
     admin_bootstrap_password: str = ""
 
+    # Public website integrations. SMTP is required for contact and
+    # consultation emails; submissions are still stored in the database.
+    contact_recipient_email: str = "ashes.ai.26@gmail.com"
+    smtp_host: str = ""
+    smtp_port: int = 587
+    smtp_username: str = ""
+    smtp_password: str = ""
+    smtp_sender_email: str = ""
+    smtp_use_tls: bool = True
+
     # Explicit values are retained for backwards-compatible experiments; normal
     # uploads use the adaptive chunker without forcing these values.
     chunk_words: int = 300
