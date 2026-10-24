@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { useTheme } from '../lib/theme'
+import LanguageToggle from '../components/LanguageToggle'
 import {
   AboutPage,
   BlogPage,
@@ -71,5 +72,8 @@ export default function FigmaPublicPage({ page }: { page: FigmaPublicPageName })
     navigate(PAGE_PATHS[destination] ?? `/${destination}`)
   }
 
-  return <Page navigate={navigateFromFigma} dark={dark} toggleDark={toggleDark} />
+  return <div className="relative">
+    <div className="fixed end-3 top-[76px] z-[70] sm:end-5"><LanguageToggle /></div>
+    <Page navigate={navigateFromFigma} dark={dark} toggleDark={toggleDark} />
+  </div>
 }

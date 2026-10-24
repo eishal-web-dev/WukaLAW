@@ -2,6 +2,7 @@
 /* oxlint-disable -- preserve generated Figma Make source without semantic rewrites */
 import React, { useState, useRef, useEffect } from "react";
 import { wukaIcon } from "./assets";
+import { useI18n } from "../lib/i18n";
 import {
   LayoutDashboard, Briefcase, FileText, Search, Brain, GitBranch, MessageSquare,
   Cpu, Clock, BarChart2, TrendingUp, Bell, User, Settings, Shield, Layers, Upload,
@@ -98,6 +99,7 @@ const AREA_DATA = [
 
 export function PublicNav({ navigate, dark, toggleDark, current }: PubProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { t } = useI18n();
   const TX  = dark ? "#F0F0F5"                   : "#0E0A03";
   const TX2 = dark ? "#8892A4"                   : "#5C4A28";
   const GA  = dark ? G                           : "#8B5E0A";
@@ -127,7 +129,7 @@ export function PublicNav({ navigate, dark, toggleDark, current }: PubProps) {
           {navLinks.map(nl => (
             <button key={nl.label} onClick={() => navigate(nl.page)}
               style={{ color: current === nl.page ? GA : TX2, fontSize: 13.5, background: "none", border: "none", cursor: "pointer", fontWeight: current === nl.page ? 600 : 450, transition: "color 0.15s", fontFamily: "Inter, sans-serif", letterSpacing: "-0.01em" }}>
-              {nl.label}
+              {t(nl.label)}
             </button>
           ))}
         </nav>
@@ -136,9 +138,9 @@ export function PublicNav({ navigate, dark, toggleDark, current }: PubProps) {
           <button onClick={toggleDark} style={{ width: 34, height: 34, borderRadius: 8, border: `1px solid ${BD}`, backgroundColor: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: TX2, transition: "background 0.15s" }}>
             {dark ? <Sun size={14} /> : <Moon size={14} />}
           </button>
-          <button onClick={() => navigate("login")} style={{ color: TX2, fontSize: 13.5, background: "none", border: "none", cursor: "pointer", fontFamily: "Inter, sans-serif", letterSpacing: "-0.01em" }}>Sign in</button>
+          <button onClick={() => navigate("login")} style={{ color: TX2, fontSize: 13.5, background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", letterSpacing: "-0.01em" }}>{t('Sign in')}</button>
           <button onClick={() => navigate("register")} style={{ background: `linear-gradient(135deg, ${P}, ${P}CC)`, color: "#FFFFFF", fontSize: 13, fontWeight: 600, padding: "9px 20px", borderRadius: 8, border: "none", cursor: "pointer", fontFamily: "Inter, sans-serif", letterSpacing: "-0.01em", boxShadow: `0 4px 20px ${P}40` }}>
-            Get Started
+            {t('Get Started')}
           </button>
         </div>
       </div>
@@ -147,6 +149,7 @@ export function PublicNav({ navigate, dark, toggleDark, current }: PubProps) {
 }
 
 export function PublicFooter({ navigate, dark }: { navigate: (p: Page) => void; dark: boolean }) {
+  const { t } = useI18n();
   const TX  = dark ? "#F0F0F5"                   : "#0E0A03";
   const TX2 = dark ? "#8892A4"                   : "#5C4A28";
   const GA  = dark ? G                           : "#8B5E0A";
@@ -178,10 +181,10 @@ export function PublicFooter({ navigate, dark }: { navigate: (p: Page) => void; 
           </div>
           {cols.map(col => (
             <div key={col.heading}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: TX, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 18 }}>{col.heading}</div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: TX, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 18 }}>{t(col.heading)}</div>
               <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                 {col.links.map(([label, page]) => (
-                  <button key={label} onClick={() => navigate(page as Page)} style={{ fontSize: 13, color: TX2, background: "none", border: "none", cursor: "pointer", textAlign: "left", fontFamily: "Inter, sans-serif", padding: 0, transition: "color 0.15s" }}>{label}</button>
+                  <button key={label} onClick={() => navigate(page as Page)} style={{ fontSize: 13, color: TX2, background: "none", border: "none", cursor: "pointer", textAlign: "start", fontFamily: "inherit", padding: 0, transition: "color 0.15s" }}>{t(label)}</button>
                 ))}
               </div>
             </div>
@@ -191,7 +194,7 @@ export function PublicFooter({ navigate, dark }: { navigate: (p: Page) => void; 
           <span style={{ fontSize: 12, color: TX2 }}>© 2024 wukaLAW Inc. · AI Legal Intelligence. Human Justice.</span>
           <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
             <div style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: "#34D399" }} />
-            <span style={{ fontSize: 12, color: TX2 }}>All systems operational</span>
+            <span style={{ fontSize: 12, color: TX2 }}>{t('All systems operational')}</span>
           </div>
         </div>
       </div>
