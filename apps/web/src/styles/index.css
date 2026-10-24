@@ -11,3 +11,14 @@ html[dir='rtl'] textarea,
 html[dir='rtl'] select {
   text-align: right;
 }
+
+.wk-portal-main {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+@supports (padding: env(safe-area-inset-bottom)) {
+  .wk-app-shell {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
