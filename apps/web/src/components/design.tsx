@@ -143,6 +143,7 @@ export function Input({
   onChange,
   type = 'text',
   icon,
+  endAction,
   className = '',
   required,
   readOnly,
@@ -154,6 +155,7 @@ export function Input({
   onChange?: (v: string) => void
   type?: string
   icon?: React.ReactNode
+  endAction?: React.ReactNode
   className?: string
   required?: boolean
   readOnly?: boolean
@@ -172,8 +174,11 @@ export function Input({
         required={required}
         readOnly={readOnly}
         onChange={(e) => { if (!readOnly) onChange?.(e.target.value) }}
-        className={`w-full rounded-xl border border-border bg-muted/40 text-foreground placeholder-muted-foreground text-sm focus:outline-none focus:border-primary/50 transition-colors ${icon ? 'pl-9 pr-4 py-2.5' : 'px-4 py-2.5'}`}
+        className={`w-full rounded-xl border border-border bg-muted/40 text-foreground placeholder-muted-foreground text-sm focus:outline-none focus:border-primary/50 transition-colors ${icon ? 'pl-9' : 'pl-4'} ${endAction ? 'pr-11' : 'pr-4'} py-2.5`}
       />
+      {endAction && (
+        <span className="absolute right-2 top-1/2 -translate-y-1/2">{endAction}</span>
+      )}
     </div>
   )
 }

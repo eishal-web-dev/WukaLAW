@@ -105,6 +105,8 @@ const urdu: Record<string, string> = {
   'Choose your portal, then sign in to your account.': 'اپنا پورٹل منتخب کریں، پھر اپنے اکاؤنٹ میں سائن اِن کریں۔',
   'Email address': 'ای میل ایڈریس',
   'Password': 'پاس ورڈ',
+  'Show password': 'پاس ورڈ دکھائیں',
+  'Hide password': 'پاس ورڈ چھپائیں',
   'Choose a portal to continue': 'جاری رکھنے کے لیے پورٹل منتخب کریں',
   'Signing in…': 'سائن اِن ہو رہا ہے۔۔۔',
   'No account?': 'اکاؤنٹ نہیں ہے؟',

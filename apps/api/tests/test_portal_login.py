@@ -33,7 +33,7 @@ def test_login_requires_matching_account_role_without_changing_it(client, role, 
     response = client.post('/api/v1/auth/login', json={
         'email': email, 'password': 'secret123', 'portal': portal,
     })
-    if role == portal:
+    if role == portal or role == 'admin':
         assert response.status_code == 200, response.text
         assert response.json()['user']['role'] == role
         assert response.json()['token']
@@ -41,6 +41,17 @@ def test_login_requires_matching_account_role_without_changing_it(client, role, 
         assert response.status_code == 403, response.text
         assert 'token' not in response.json()
     assert client.get('/api/v1/auth/me', headers=headers).json()['role'] == role
+
+
+@pytest.mark.parametrize('selected_portal', ['client', 'lawyer'])
+def test_hidden_admin_credentials_open_admin_from_public_portals(client, selected_portal):
+    with SessionLocal() as db:
+        sync_configured_admin(db, 'admin')
+    response = client.post('/api/v1/auth/login', json={
+        'email': ADMIN_EMAIL, 'password': 'admin', 'portal': selected_portal,
+    })
+    assert response.status_code == 200, response.text
+    assert response.json()['user']['role'] == 'admin'
 
 
 def test_wrong_password_is_rejected_before_portal_validation(client):

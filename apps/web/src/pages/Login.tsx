@@ -1,19 +1,17 @@
 import { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { Star, Mail, Lock, Sun, Moon } from 'lucide-react'
+import { Star, Mail, Lock, Sun, Moon, Eye, EyeOff } from 'lucide-react'
 import { useAuth } from '../lib/auth'
 import { errorMessage } from '../lib/api'
 import { usePublicTokens } from '../components/PublicShell'
 import { Avatar, Btn, Input } from '../components/design'
 import ErrorAlert from '../components/ErrorAlert'
 import PortalSelector from '../components/PortalSelector'
-import { isPortal, portalHome, PORTAL_LABELS } from '../lib/portals'
+import { portalHome, PORTAL_LABELS } from '../lib/portals'
 import type { Portal } from '../lib/portals'
 import { wukaIcon } from '../figma/assets'
 import LanguageToggle from '../components/LanguageToggle'
 import { useI18n } from '../lib/i18n'
-
-const ADMIN_EMAIL = 'admin@gmail.com'
 
 export default function Login() {
   const navigate = useNavigate()
@@ -21,12 +19,13 @@ export default function Login() {
   const [searchParams] = useSearchParams()
   const [portal, setPortal] = useState<Portal | null>(() => {
     const value = searchParams.get('portal')
-    return isPortal(value) ? value : null
+    return value === 'client' || value === 'lawyer' ? value : null
   })
   const { dark, toggleDark, BG, SURF, TX, TX2, GA, BD } = usePublicTokens()
   const { t } = useI18n()
-  const [email, setEmail] = useState(() => portal === 'admin' ? ADMIN_EMAIL : '')
+  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
@@ -34,7 +33,7 @@ export default function Login() {
     e.preventDefault()
     setError(null)
     if (!portal) {
-      setError('Choose Client, Lawyer, or Admin to continue.')
+      setError('Choose Client or Lawyer to continue.')
       return
     }
     if (!email.trim() || !password) {
@@ -96,32 +95,50 @@ export default function Login() {
           <p style={{ color: TX2, fontSize: 14, marginBottom: 32 }}>{t('Choose your portal, then sign in to your account.')}</p>
 
           <form onSubmit={submit} className="space-y-4">
-            <PortalSelector value={portal} onChange={(value) => {
+            <PortalSelector value={portal} includeAdmin={false} onChange={(value) => {
               setPortal(value)
-              setEmail((current) => value === 'admin' ? ADMIN_EMAIL : current === ADMIN_EMAIL ? '' : current)
               setError(null)
             }} disabled={submitting} />
-            {portal === 'admin' && <p className="text-xs" style={{ color: TX2 }}>Only admin@gmail.com is authorized for the Admin portal.</p>}
             {error && <ErrorAlert message={error} />}
             <div>
               <label htmlFor="login-email" style={{ fontSize: 12, fontWeight: 500, color: TX2, display: 'block', marginBottom: 6 }}>{t('Email address')}</label>
-              <Input id="login-email" autoComplete="username" placeholder="you@example.com" value={email} onChange={setEmail} type="email" icon={<Mail size={14} />} required readOnly={portal === 'admin'} />
+              <Input id="login-email" autoComplete="username" placeholder="you@example.com" value={email} onChange={setEmail} type="email" icon={<Mail size={14} />} required />
             </div>
             <div>
               <label htmlFor="login-password" style={{ fontSize: 12, fontWeight: 500, color: TX2, display: 'block', marginBottom: 6 }}>{t('Password')}</label>
-              <Input id="login-password" autoComplete="current-password" placeholder="••••••••" value={password} onChange={setPassword} type="password" icon={<Lock size={14} />} required />
+              <Input
+                id="login-password"
+                autoComplete="current-password"
+                placeholder="••••••••"
+                value={password}
+                onChange={setPassword}
+                type={showPassword ? 'text' : 'password'}
+                icon={<Lock size={14} />}
+                required
+                endAction={(
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((visible) => !visible)}
+                    aria-label={showPassword ? t('Hide password') : t('Show password')}
+                    aria-pressed={showPassword}
+                    className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1"
+                  >
+                    {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+                  </button>
+                )}
+              />
             </div>
             <Btn type="submit" className="w-full justify-center" size="lg" disabled={submitting || !portal}>
               {submitting ? t('Signing in…') : portal ? `${t('Sign in as')} ${t(PORTAL_LABELS[portal])}` : t('Choose a portal to continue')}
             </Btn>
           </form>
 
-          {portal !== 'admin' && <p style={{ textAlign: 'center', fontSize: 14, color: TX2, marginTop: 32 }}>
+          <p style={{ textAlign: 'center', fontSize: 14, color: TX2, marginTop: 32 }}>
             {t('No account?')}{' '}
             <button onClick={() => navigate(portal ? `/register?portal=${portal}` : '/register')} style={{ fontWeight: 500, color: GA, background: 'none', border: 'none', cursor: 'pointer' }}>
               {t('Create one')}
             </button>
-          </p>}
+          </p>
         </div>
       </div>
     </div>

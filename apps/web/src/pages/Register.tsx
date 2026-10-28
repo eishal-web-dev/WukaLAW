@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { User, Mail, Lock, Sun, Moon } from 'lucide-react'
+import { User, Mail, Lock, Sun, Moon, Eye, EyeOff } from 'lucide-react'
 import { useAuth } from '../lib/auth'
 import { errorMessage } from '../lib/api'
 import { usePublicTokens } from '../components/PublicShell'
@@ -21,6 +21,7 @@ export default function Register() {
   const { dark, toggleDark, BG, CARDBG, TX, TX2, GA, BD } = usePublicTokens()
   const { t } = useI18n()
   const [form, setForm] = useState({ name: '', email: '', password: '' })
+  const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const set = (k: keyof typeof form) => (v: string) => setForm((p) => ({ ...p, [k]: v }))
@@ -77,7 +78,27 @@ export default function Register() {
             </div>
             <div>
               <label htmlFor="register-password" style={{ fontSize: 12, fontWeight: 500, color: TX2, display: 'block', marginBottom: 6 }}>{t('Password')}</label>
-              <Input id="register-password" autoComplete="new-password" placeholder={t('At least 8 characters')} value={form.password} onChange={set('password')} type="password" icon={<Lock size={14} />} required />
+              <Input
+                id="register-password"
+                autoComplete="new-password"
+                placeholder={t('At least 8 characters')}
+                value={form.password}
+                onChange={set('password')}
+                type={showPassword ? 'text' : 'password'}
+                icon={<Lock size={14} />}
+                required
+                endAction={(
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((visible) => !visible)}
+                    aria-label={showPassword ? t('Hide password') : t('Show password')}
+                    aria-pressed={showPassword}
+                    className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1"
+                  >
+                    {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+                  </button>
+                )}
+              />
             </div>
           </div>
           <Btn type="submit" className="w-full justify-center mt-6" size="lg" disabled={submitting}>
