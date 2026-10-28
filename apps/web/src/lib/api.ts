@@ -1178,3 +1178,65 @@ export function saveBillingProfile(payload: Pick<BillingProfile, 'business_name'
     method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
   })
 }
+
+
+export interface PublicLawyer {
+  id: number
+  name: string
+  email: string
+  profile_image: string | null
+  lawyer_title: string
+  specialization: string
+  city: string
+  years_experience: number
+  consultation_fee: number
+  lawyer_bio: string
+  accepting_consultations: boolean
+}
+
+export interface LawyerProfilePayload {
+  profile_image?: string | null
+  lawyer_title: string
+  specialization: string
+  city: string
+  years_experience: number
+  consultation_fee: number
+  lawyer_bio: string
+  accepting_consultations: boolean
+}
+
+export function listPublicLawyers(): Promise<PublicLawyer[]> {
+  return request<PublicLawyer[]>('/public/lawyers')
+}
+
+export function getPublicLawyer(id: number): Promise<PublicLawyer> {
+  return request<PublicLawyer>(`/public/lawyers/${id}`)
+}
+
+export function updateLawyerProfile(payload: LawyerProfilePayload): Promise<PublicLawyer> {
+  return request<PublicLawyer>('/public/lawyer-profile', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+}
+
+export function submitPublicContact(payload: {
+  name: string
+  email: string
+  subject: string
+  message: string
+}): Promise<{ id: number; received: boolean; email_delivered: boolean }> {
+  return postJson('/public/contact', payload)
+}
+
+export function requestConsultation(payload: {
+  lawyer_id: number
+  client_name: string
+  client_email: string
+  client_phone: string
+  requested_at: string
+  notes: string
+}): Promise<{ id: number; status: string; created_at: string }> {
+  return postJson('/public/consultations', payload)
+}

@@ -19,6 +19,14 @@ class User(Base):
     password_hash: Mapped[str] = mapped_column(String(255))
     role: Mapped[str] = mapped_column(String(50), default="lawyer", server_default="lawyer")
     notifications_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    profile_image: Mapped[str | None] = mapped_column(Text, nullable=True)
+    lawyer_title: Mapped[str] = mapped_column(String(120), default="")
+    specialization: Mapped[str] = mapped_column(String(255), default="")
+    city: Mapped[str] = mapped_column(String(120), default="")
+    years_experience: Mapped[int] = mapped_column(Integer, default=0)
+    consultation_fee: Mapped[int] = mapped_column(Integer, default=0)
+    lawyer_bio: Mapped[str] = mapped_column(Text, default="")
+    accepting_consultations: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
     documents: Mapped[list["Document"]] = relationship(back_populates="owner")
@@ -274,3 +282,29 @@ class CmsPost(Base):
     status: Mapped[str] = mapped_column(String(32), default="Draft", index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
+
+
+class ContactSubmission(Base):
+    __tablename__ = "contact_submissions"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(255))
+    email: Mapped[str] = mapped_column(String(255), index=True)
+    subject: Mapped[str] = mapped_column(String(255))
+    message: Mapped[str] = mapped_column(Text)
+    email_delivered: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
+
+
+class ConsultationRequest(Base):
+    __tablename__ = "consultation_requests"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    lawyer_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    client_name: Mapped[str] = mapped_column(String(255))
+    client_email: Mapped[str] = mapped_column(String(255), index=True)
+    client_phone: Mapped[str] = mapped_column(String(80), default="")
+    requested_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    notes: Mapped[str] = mapped_column(Text, default="")
+    status: Mapped[str] = mapped_column(String(32), default="Requested", index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
