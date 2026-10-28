@@ -4,7 +4,7 @@ import { MemoryRouter, Outlet } from 'react-router-dom'
 import App from '../../App'
 import { AuthProvider } from '../../lib/auth'
 import { ThemeProvider } from '../../lib/theme'
-import { getStoredToken, getStoredUser } from '../../lib/api'
+import { getStoredUser } from '../../lib/api'
 
 vi.mock('../../components/FigmaAppShell', () => ({ default: () => <Outlet /> }))
 vi.mock('../Dashboard', () => ({ default: () => <h1>Lawyer home</h1> }))
@@ -19,8 +19,8 @@ function open(path = '/login') {
   render(<MemoryRouter initialEntries={[path]}><ThemeProvider><AuthProvider><App /></AuthProvider></ThemeProvider></MemoryRouter>)
 }
 
-function response(role: string) {
-  return new Response(JSON.stringify({ token: 'test-token', user: { id: 1, email: 'test@example.com', name: 'Portal User', role } }), { status: 200 })
+function response(role: string, email = 'test@example.com') {
+  return new Response(JSON.stringify({ token: 'test-token', user: { id: 1, email, name: 'Portal User', role } }), { status: 200 })
 }
 
 function fillLogin() {
@@ -31,11 +31,12 @@ function fillLogin() {
 describe('Portal sign-in', () => {
   it('asks for a portal before signing in', () => {
     open()
-    for (const name of ['Client', 'Lawyer', 'Admin']) expect(screen.getByRole('radio', { name })).not.toBeChecked()
+    for (const name of ['Client', 'Lawyer']) expect(screen.getByRole('radio', { name })).not.toBeChecked()
+    expect(screen.queryByRole('radio', { name: 'Admin' })).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Choose a portal to continue' })).toBeDisabled()
   })
 
-  it.each(['client', 'lawyer', 'admin'])('signs in a %s and opens their own portal', async (role) => {
+  it.each(['client', 'lawyer'])('signs in a %s and opens their own portal', async (role) => {
     const fetch = vi.spyOn(globalThis, 'fetch').mockResolvedValue(response(role))
     open()
     const label = role[0].toUpperCase() + role.slice(1)
@@ -44,22 +45,40 @@ describe('Portal sign-in', () => {
     fireEvent.click(screen.getByRole('button', { name: `Sign in as ${label}` }))
     expect(await screen.findByRole('heading', { name: `${label} home` })).toBeInTheDocument()
     const body = JSON.parse(fetch.mock.calls[0][1]?.body as string)
-    expect(body).toEqual({ email: role === 'admin' ? 'admin@gmail.com' : 'test@example.com', password: 'secret123', portal: role })
+    expect(body).toEqual({ email: 'test@example.com', password: 'secret123', portal: role })
     expect(getStoredUser()?.role).toBe(role)
   })
 
-  it('does not create a session after a portal mismatch', async () => {
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify({ detail: 'Wrong portal for this account.' }), { status: 403 }))
+  it('routes valid hidden admin credentials to the admin portal', async () => {
+    const fetch = vi.spyOn(globalThis, 'fetch').mockResolvedValue(response('admin', 'admin@gmail.com'))
     open('/login?portal=admin')
-    expect(screen.getByRole('radio', { name: 'Admin' })).toBeChecked()
-    expect(screen.getByLabelText('Email address')).toHaveValue('admin@gmail.com')
-    expect(screen.getByLabelText('Email address')).toHaveAttribute('readonly')
-    expect(screen.queryByRole('button', { name: 'Create one' })).not.toBeInTheDocument()
-    fillLogin()
-    fireEvent.click(screen.getByRole('button', { name: 'Sign in as Admin' }))
-    expect(await screen.findByRole('alert')).toHaveTextContent('Wrong portal for this account.')
-    expect(getStoredToken()).toBeNull()
-    expect(screen.getByRole('heading', { name: 'Welcome back' })).toBeInTheDocument()
+    expect(screen.queryByRole('radio', { name: 'Admin' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Choose a portal to continue' })).toBeDisabled()
+    fireEvent.click(screen.getByRole('radio', { name: 'Client' }))
+    fireEvent.change(screen.getByLabelText('Email address'), { target: { value: 'admin@gmail.com' } })
+    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'secret123' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Sign in as Client' }))
+    expect(await screen.findByRole('heading', { name: 'Admin home' })).toBeInTheDocument()
+    expect(JSON.parse(fetch.mock.calls[0][1]?.body as string)).toEqual({ email: 'admin@gmail.com', password: 'secret123', portal: 'client' })
+    expect(getStoredUser()?.role).toBe('admin')
+  })
+
+  it('shows and hides the login password', () => {
+    open('/login?portal=client')
+    const password = screen.getByLabelText('Password')
+    expect(password).toHaveAttribute('type', 'password')
+    fireEvent.click(screen.getByRole('button', { name: 'Show password' }))
+    expect(password).toHaveAttribute('type', 'text')
+    fireEvent.click(screen.getByRole('button', { name: 'Hide password' }))
+    expect(password).toHaveAttribute('type', 'password')
+  })
+
+  it('shows and hides the registration password', () => {
+    open('/register?portal=client')
+    const password = screen.getByLabelText('Password')
+    expect(password).toHaveAttribute('type', 'password')
+    fireEvent.click(screen.getByRole('button', { name: 'Show password' }))
+    expect(password).toHaveAttribute('type', 'text')
   })
 
   it('carries the chosen client portal into registration', () => {
