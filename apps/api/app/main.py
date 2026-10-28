@@ -19,7 +19,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.auth import ADMIN_EMAIL, sync_configured_admin
 from app.config import settings
 from app.db import Base, SessionLocal, engine
-from app.routers import lawyer_operations, lawyer_workflow, admin, auth_routes, case_pathway, cases, documents, evidence_files, legal_intelligence, notifications, precedent_briefs, qa, rag, reports, search, similar_cases
+from app.routers import lawyer_operations, lawyer_workflow, admin, auth_routes, case_pathway, cases, documents, evidence_files, legal_intelligence, notifications, precedent_briefs, public_portal, qa, rag, reports, search, similar_cases
 
 app = FastAPI(
     title="wukaLAW API",
@@ -59,9 +59,27 @@ with engine.connect() as connection:
     if columns and "ocr_review_status" not in columns:
         connection.execute(text("ALTER TABLE documents ADD COLUMN ocr_review_status VARCHAR(32)"))
         connection.execute(text("UPDATE documents SET ocr_review_status = 'needs_review' WHERE ocr_used = 1"))
+    if columns and "source_storage" not in columns:
+        connection.execute(text("ALTER TABLE documents ADD COLUMN source_storage VARCHAR(16)"))
+    if columns and "source_key" not in columns:
+        connection.execute(text("ALTER TABLE documents ADD COLUMN source_key VARCHAR(1024)"))
     user_columns = [row[1] for row in connection.execute(text("PRAGMA table_info(users)"))]
     if user_columns and "notifications_enabled" not in user_columns:
         connection.execute(text("ALTER TABLE users ADD COLUMN notifications_enabled BOOLEAN NOT NULL DEFAULT 1"))
+    lawyer_profile_columns = {
+        "profile_image": "TEXT",
+        "lawyer_title": "VARCHAR(120) NOT NULL DEFAULT ''",
+        "specialization": "VARCHAR(255) NOT NULL DEFAULT ''",
+        "city": "VARCHAR(120) NOT NULL DEFAULT ''",
+        "years_experience": "INTEGER NOT NULL DEFAULT 0",
+        "consultation_fee": "INTEGER NOT NULL DEFAULT 0",
+        "lawyer_bio": "TEXT NOT NULL DEFAULT ''",
+        "accepting_consultations": "BOOLEAN NOT NULL DEFAULT 1",
+    }
+    user_column_names = {row[1] for row in connection.execute(text("PRAGMA table_info(users)"))}
+    for column_name, column_type in lawyer_profile_columns.items():
+        if user_column_names and column_name not in user_column_names:
+            connection.execute(text(f"ALTER TABLE users ADD COLUMN {column_name} {column_type}"))
     connection.commit()
 
     user_columns = [row[1] for row in connection.execute(text("PRAGMA table_info(users)"))]
@@ -128,6 +146,7 @@ def health():
 
 
 api.include_router(auth_routes.router)
+api.include_router(public_portal.router)
 api.include_router(admin.router)
 api.include_router(notifications.router)
 api.include_router(cases.router)

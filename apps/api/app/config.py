@@ -50,8 +50,8 @@ class Settings(BaseSettings):
     ocr_enabled: bool = True
     ocr_min_words: int = 20  # below this word count, a PDF is treated as scanned and OCR is attempted
     ocr_dpi: int = 300
-    # Pakistani case files commonly mix Urdu and English on the same page.
-    ocr_language: str = "eng+urd"
+    # Default to Urdu-only OCR; deployments can override with OCR_LANGUAGE.
+    ocr_language: str = "urd"
     ocr_max_pages: int = 50  # safety cap so a huge scanned PDF can't hang an upload request
     tesseract_cmd: str = ""  # optional full path, useful on Windows when Tesseract is not on PATH
     ocr_provider: str = "tesseract"  # tesseract (offline) or gemini (vision OCR)
@@ -83,6 +83,16 @@ class Settings(BaseSettings):
     secret_key: str = "dev-only-change-me"
     token_expire_hours: int = 24 * 7
     admin_bootstrap_password: str = ""
+
+    # Public website integrations. SMTP is required for contact and
+    # consultation emails; submissions are still stored in the database.
+    contact_recipient_email: str = "ashes.ai.26@gmail.com"
+    smtp_host: str = ""
+    smtp_port: int = 587
+    smtp_username: str = ""
+    smtp_password: str = ""
+    smtp_sender_email: str = ""
+    smtp_use_tls: bool = True
 
     # Explicit values are retained for backwards-compatible experiments; normal
     # uploads use the adaptive chunker without forcing these values.

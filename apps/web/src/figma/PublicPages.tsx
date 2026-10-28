@@ -2,6 +2,7 @@
 /* oxlint-disable -- preserve generated Figma Make source without semantic rewrites */
 import React, { useState, useRef, useEffect } from "react";
 import { wukaIcon } from "./assets";
+import { useI18n } from "../lib/i18n";
 import {
   LayoutDashboard, Briefcase, FileText, Search, Brain, GitBranch, MessageSquare,
   Cpu, Clock, BarChart2, TrendingUp, Bell, User, Settings, Shield, Layers, Upload,
@@ -24,7 +25,7 @@ function BrowserWindow({ children, url = "app.wukalaw.ai", className = "", style
   children: React.ReactNode; url?: string; className?: string; style?: React.CSSProperties;
 }) {
   return (
-    <div className={`rounded-2xl overflow-hidden shadow-2xl ${className}`}
+    <div className={`wk-browser-window rounded-2xl overflow-hidden shadow-2xl ${className}`}
       style={{ border: "1px solid rgba(255,255,255,0.09)", backgroundColor: C, ...style }}>
       <div className="h-10 flex items-center px-4 gap-3 flex-shrink-0"
         style={{ backgroundColor: S, borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
@@ -98,6 +99,7 @@ const AREA_DATA = [
 
 export function PublicNav({ navigate, dark, toggleDark, current }: PubProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { t } = useI18n();
   const TX  = dark ? "#F0F0F5"                   : "#0E0A03";
   const TX2 = dark ? "#8892A4"                   : "#5C4A28";
   const GA  = dark ? G                           : "#8B5E0A";
@@ -111,42 +113,79 @@ export function PublicNav({ navigate, dark, toggleDark, current }: PubProps) {
     { label: "About",          page: "about"           as Page },
   ];
   return (
+    <>
+      <style>{`
+        .wk-public-mobile-toggle,.wk-public-mobile-menu{display:none}
+        @media (max-width: 900px){
+          .wk-public-nav-inner{height:60px!important;padding:0 16px!important}
+          .wk-public-desktop-nav,.wk-public-desktop-actions{display:none!important}
+          .wk-public-mobile-toggle{display:flex!important}
+          .wk-public-mobile-menu{display:flex!important}
+        }
+        @media (max-width: 420px){
+          .wk-public-brand-tagline{display:none!important}
+        }
+      `}</style>
     <header style={{ position: "sticky", top: 0, zIndex: 50, backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)", borderBottom: `1px solid ${BD}`, backgroundColor: NAVBG, fontFamily: "Inter, sans-serif" }}>
-      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 24px", height: 68, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+      <div className="wk-public-nav-inner" style={{ maxWidth: 1200, margin: "0 auto", padding: "0 24px", height: 68, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         {/* Logo */}
         <button onClick={() => navigate("landing")} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 10 }}>
           <img src={wukaIcon} alt="wukaLAW" style={{ width: 38, height: 38, objectFit: "contain" }} />
           <div>
             <div style={{ color: TX, fontWeight: 800, fontSize: 17, letterSpacing: "-0.02em", lineHeight: 1 }}>wukaLAW</div>
-            <div style={{ color: GA, fontSize: 9, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", marginTop: 2 }}>AI Legal Intelligence</div>
+            <div className="wk-public-brand-tagline" style={{ color: GA, fontSize: 9, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", marginTop: 2 }}>AI Legal Intelligence</div>
           </div>
         </button>
 
         {/* Desktop nav */}
-        <nav style={{ display: "flex", gap: 28, alignItems: "center" }}>
+        <nav className="wk-public-desktop-nav" style={{ display: "flex", gap: 28, alignItems: "center" }}>
           {navLinks.map(nl => (
             <button key={nl.label} onClick={() => navigate(nl.page)}
               style={{ color: current === nl.page ? GA : TX2, fontSize: 13.5, background: "none", border: "none", cursor: "pointer", fontWeight: current === nl.page ? 600 : 450, transition: "color 0.15s", fontFamily: "Inter, sans-serif", letterSpacing: "-0.01em" }}>
-              {nl.label}
+              {t(nl.label)}
             </button>
           ))}
         </nav>
 
-        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+        <div className="wk-public-desktop-actions" style={{ display: "flex", gap: 10, alignItems: "center" }}>
           <button onClick={toggleDark} style={{ width: 34, height: 34, borderRadius: 8, border: `1px solid ${BD}`, backgroundColor: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: TX2, transition: "background 0.15s" }}>
             {dark ? <Sun size={14} /> : <Moon size={14} />}
           </button>
-          <button onClick={() => navigate("login")} style={{ color: TX2, fontSize: 13.5, background: "none", border: "none", cursor: "pointer", fontFamily: "Inter, sans-serif", letterSpacing: "-0.01em" }}>Sign in</button>
+          <button onClick={() => navigate("login")} style={{ color: TX2, fontSize: 13.5, background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", letterSpacing: "-0.01em" }}>{t('Sign in')}</button>
           <button onClick={() => navigate("register")} style={{ background: `linear-gradient(135deg, ${P}, ${P}CC)`, color: "#FFFFFF", fontSize: 13, fontWeight: 600, padding: "9px 20px", borderRadius: 8, border: "none", cursor: "pointer", fontFamily: "Inter, sans-serif", letterSpacing: "-0.01em", boxShadow: `0 4px 20px ${P}40` }}>
-            Get Started
+            {t('Get Started')}
           </button>
         </div>
+        <button
+          type="button"
+          className="wk-public-mobile-toggle"
+          aria-label={mobileOpen ? "Close navigation" : "Open navigation"}
+          aria-expanded={mobileOpen}
+          onClick={() => setMobileOpen(open => !open)}
+          style={{ width: 44, height: 44, borderRadius: 10, border: `1px solid ${BD}`, background: "transparent", color: TX, alignItems: "center", justifyContent: "center", cursor: "pointer" }}
+        >
+          {mobileOpen ? <X size={21} /> : <Menu size={21} />}
+        </button>
       </div>
+      {mobileOpen && (
+        <div className="wk-public-mobile-menu" style={{ padding: "10px 16px 18px", borderTop: `1px solid ${BD}`, flexDirection: "column", gap: 6 }}>
+          {navLinks.map(nl => (
+            <button key={nl.label} onClick={() => { setMobileOpen(false); navigate(nl.page); }} style={{ minHeight: 44, padding: "10px 12px", borderRadius: 10, textAlign: "left", border: "none", background: current === nl.page ? `${GA}18` : "transparent", color: current === nl.page ? GA : TX, fontFamily: "Inter, sans-serif", fontSize: 14, fontWeight: 600 }}>{nl.label}</button>
+          ))}
+          <div style={{ display: "grid", gridTemplateColumns: "44px 1fr 1.25fr", gap: 8, marginTop: 8 }}>
+            <button onClick={toggleDark} aria-label="Toggle theme" style={{ minHeight: 44, borderRadius: 10, border: `1px solid ${BD}`, background: "transparent", color: TX2, display: "grid", placeItems: "center" }}>{dark ? <Sun size={16} /> : <Moon size={16} />}</button>
+            <button onClick={() => { setMobileOpen(false); navigate("login"); }} style={{ minHeight: 44, borderRadius: 10, border: `1px solid ${BD}`, background: "transparent", color: TX, fontWeight: 600 }}>Sign in</button>
+            <button onClick={() => { setMobileOpen(false); navigate("register"); }} style={{ minHeight: 44, borderRadius: 10, border: "none", background: P, color: "#fff", fontWeight: 700 }}>Get Started</button>
+          </div>
+        </div>
+      )}
     </header>
+    </>
   );
 }
 
 export function PublicFooter({ navigate, dark }: { navigate: (p: Page) => void; dark: boolean }) {
+  const { t } = useI18n();
   const TX  = dark ? "#F0F0F5"                   : "#0E0A03";
   const TX2 = dark ? "#8892A4"                   : "#5C4A28";
   const GA  = dark ? G                           : "#8B5E0A";
@@ -160,7 +199,7 @@ export function PublicFooter({ navigate, dark }: { navigate: (p: Page) => void; 
   return (
     <footer style={{ borderTop: `1px solid ${BD}`, backgroundColor: SURF, padding: "64px 24px 32px", fontFamily: "Inter, sans-serif" }}>
       <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", gap: 48, marginBottom: 48 }}>
+        <div className="wk-public-footer-grid" style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", gap: 48, marginBottom: 48 }}>
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
               <img src={wukaIcon} alt="wukaLAW" style={{ width: 40, height: 40, objectFit: "contain" }} />
@@ -178,20 +217,20 @@ export function PublicFooter({ navigate, dark }: { navigate: (p: Page) => void; 
           </div>
           {cols.map(col => (
             <div key={col.heading}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: TX, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 18 }}>{col.heading}</div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: TX, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 18 }}>{t(col.heading)}</div>
               <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                 {col.links.map(([label, page]) => (
-                  <button key={label} onClick={() => navigate(page as Page)} style={{ fontSize: 13, color: TX2, background: "none", border: "none", cursor: "pointer", textAlign: "left", fontFamily: "Inter, sans-serif", padding: 0, transition: "color 0.15s" }}>{label}</button>
+                  <button key={label} onClick={() => navigate(page as Page)} style={{ fontSize: 13, color: TX2, background: "none", border: "none", cursor: "pointer", textAlign: "start", fontFamily: "inherit", padding: 0, transition: "color 0.15s" }}>{t(label)}</button>
                 ))}
               </div>
             </div>
           ))}
         </div>
-        <div style={{ paddingTop: 24, borderTop: `1px solid ${BD}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div className="wk-public-footer-bottom" style={{ paddingTop: 24, borderTop: `1px solid ${BD}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <span style={{ fontSize: 12, color: TX2 }}>© 2024 wukaLAW Inc. · AI Legal Intelligence. Human Justice.</span>
           <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
             <div style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: "#34D399" }} />
-            <span style={{ fontSize: 12, color: TX2 }}>All systems operational</span>
+            <span style={{ fontSize: 12, color: TX2 }}>{t('All systems operational')}</span>
           </div>
         </div>
       </div>
@@ -262,6 +301,33 @@ export function LandingPage({ navigate, dark, toggleDark }: { navigate: (p: Page
         .wk-card-hover:hover { transform: translateY(-6px) scale(1.01); box-shadow: 0 32px 80px rgba(0,0,0,0.3) !important; }
         .wk-img-zoom img { transition: transform 0.5s ease; }
         .wk-img-zoom:hover img { transform: scale(1.05); }
+        .wk-responsive-scroll{max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+        @media (max-width: 900px){
+          .wk-landing-two-col,.wk-landing-team-grid{grid-template-columns:1fr!important;gap:48px!important}
+          .wk-public-footer-grid{grid-template-columns:1.4fr 1fr 1fr!important;gap:32px!important}
+          .wk-public-footer-grid>div:first-child{grid-column:1/-1}
+          .wk-legal-overlay{padding:36px!important;align-items:flex-start!important}
+          .wk-legal-result-card{display:none!important}
+          .wk-legal-library-image{height:500px!important}
+          .wk-responsive-grid-4{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+          .wk-responsive-grid-3{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+          .wk-responsive-grid-2{grid-template-columns:1fr!important}
+        }
+        @media (max-width: 640px){
+          .wk-landing-section{padding-left:16px!important;padding-right:16px!important;padding-top:72px!important;padding-bottom:72px!important}
+          .wk-landing-hero{padding:48px 16px 0!important}
+          .wk-landing-hero h1{font-size:clamp(38px,12vw,58px)!important;line-height:1.02!important}
+          .wk-landing-hero-actions{flex-direction:column!important;align-items:stretch!important}
+          .wk-landing-hero-actions button{width:100%!important;justify-content:center!important;min-height:48px!important}
+          .wk-public-footer-grid{grid-template-columns:1fr 1fr!important;gap:28px 20px!important}
+          .wk-public-footer-bottom{flex-direction:column!important;align-items:flex-start!important;gap:12px!important}
+          .wk-responsive-grid-4,.wk-responsive-grid-3{grid-template-columns:1fr!important}
+          .wk-legal-overlay{padding:28px 22px!important}
+          .wk-legal-library-image{height:560px!important}
+          .wk-browser-window{overflow-x:auto!important}
+          .wk-browser-window>div:not(:first-child){min-width:720px}
+          .wk-hide-mobile{display:none!important}
+        }
       `}</style>
 
       {/* ── Ambient orbs (dark only) ── */}
@@ -280,7 +346,7 @@ export function LandingPage({ navigate, dark, toggleDark }: { navigate: (p: Page
       <PublicNav navigate={navigate} dark={dark} toggleDark={toggleDark} />
 
       {/* ══ HERO ═════════════════════════════════════════════════════════════ */}
-      <section style={{ position: "relative", zIndex: 1, padding: "72px 24px 0", overflow: "hidden" }}>
+      <section className="wk-landing-hero" style={{ position: "relative", zIndex: 1, padding: "72px 24px 0", overflow: "hidden" }}>
         {/* Ambient glow orbs */}
         <div style={{ position: "absolute", top: -100, left: "50%", transform: "translateX(-50%)", width: 800, height: 500, borderRadius: "50%", background: `radial-gradient(ellipse, ${P}22 0%, transparent 65%)`, filter: "blur(80px)", pointerEvents: "none" }} />
         <div style={{ position: "absolute", top: 200, right: -100, width: 400, height: 400, borderRadius: "50%", background: `radial-gradient(ellipse, ${GA}18 0%, transparent 65%)`, filter: "blur(60px)", pointerEvents: "none" }} />
@@ -439,8 +505,8 @@ export function LandingPage({ navigate, dark, toggleDark }: { navigate: (p: Page
       </section>
 
       {/* ══ SECTION: AI Prediction — text left, mockup right ══════════════════ */}
-      <section style={{ position: "relative", zIndex: 1, padding: "120px 24px" }}>
-        <div style={{ maxWidth: 1200, margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 1.5fr", gap: 80, alignItems: "center" }}>
+      <section className="wk-landing-section" style={{ position: "relative", zIndex: 1, padding: "120px 24px" }}>
+        <div className="wk-landing-two-col" style={{ maxWidth: 1200, margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 1.5fr", gap: 80, alignItems: "center" }}>
           {/* Text */}
           <div>
             <div style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "5px 14px", borderRadius: 999, border: `1px solid ${GA}40`, backgroundColor: `${GA}12`, marginBottom: 28 }}>
@@ -519,14 +585,14 @@ export function LandingPage({ navigate, dark, toggleDark }: { navigate: (p: Page
       </section>
 
       {/* ══ SECTION: Legal Library image + AI overlay ═════════════════════════ */}
-      <section style={{ position: "relative", zIndex: 1, padding: "0 24px 120px" }}>
+      <section className="wk-landing-section" style={{ position: "relative", zIndex: 1, padding: "0 24px 120px" }}>
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
           <div style={{ position: "relative", borderRadius: 28, overflow: "hidden", boxShadow: dark ? "0 40px 100px rgba(0,0,0,0.8)" : "0 40px 80px rgba(100,70,0,0.18)" }}>
-            <img src="https://images.unsplash.com/photo-1521587760476-6c12a4b040da?w=1100&h=600&fit=crop&auto=format" alt="Legal library with law books" style={{ width: "100%", height: 480, objectFit: "cover", display: "block", filter: dark ? "brightness(0.4)" : "brightness(0.65)" }} />
+            <img className="wk-legal-library-image" src="https://images.unsplash.com/photo-1521587760476-6c12a4b040da?w=1100&h=600&fit=crop&auto=format" alt="Legal library with law books" style={{ width: "100%", height: 480, objectFit: "cover", display: "block", filter: dark ? "brightness(0.4)" : "brightness(0.65)" }} />
             {/* Overlay gradient */}
             <div style={{ position: "absolute", inset: 0, background: dark ? `linear-gradient(135deg, rgba(13,17,23,0.85) 0%, rgba(13,17,23,0.4) 60%, transparent 100%)` : `linear-gradient(135deg, rgba(248,244,236,0.9) 0%, rgba(248,244,236,0.5) 50%, transparent 100%)` }} />
             {/* Content */}
-            <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", padding: "0 72px" }}>
+            <div className="wk-legal-overlay" style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", padding: "0 72px" }}>
               <div style={{ maxWidth: 520 }}>
                 <div style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "5px 14px", borderRadius: 999, border: `1px solid ${GA}40`, backgroundColor: `${GA}15`, marginBottom: 24 }}>
                   <BookOpen size={12} color={GA} />
@@ -544,7 +610,7 @@ export function LandingPage({ navigate, dark, toggleDark }: { navigate: (p: Page
               </div>
             </div>
             {/* Floating search result card */}
-            <div style={{ position: "absolute", right: 48, top: "50%", transform: "translateY(-50%)", width: 300 }}>
+            <div className="wk-legal-result-card" style={{ position: "absolute", right: 48, top: "50%", transform: "translateY(-50%)", width: 300 }}>
               <div style={{ borderRadius: 16, overflow: "hidden", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", backgroundColor: dark ? "rgba(22,27,34,0.92)" : "rgba(255,255,255,0.92)", border: `1px solid ${BD}`, boxShadow: "0 24px 60px rgba(0,0,0,0.3)" }}>
                 <div style={{ padding: "14px 16px", borderBottom: `1px solid ${BD}`, display: "flex", alignItems: "center", gap: 8 }}>
                   <Search size={12} color={GA} />
@@ -563,7 +629,7 @@ export function LandingPage({ navigate, dark, toggleDark }: { navigate: (p: Page
       </section>
 
       {/* ══ SECTION: Full workspace mockup ════════════════════════════════════ */}
-      <section style={{ position: "relative", zIndex: 1, padding: "0 24px 120px" }}>
+      <section className="wk-landing-section" style={{ position: "relative", zIndex: 1, padding: "0 24px 120px" }}>
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
           <div style={{ textAlign: "center", marginBottom: 60 }}>
             <div style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "5px 14px", borderRadius: 999, border: `1px solid ${dark ? "#4F8EF7" : "#3070D0"}40`, backgroundColor: dark ? "rgba(79,142,247,0.1)" : "rgba(48,112,208,0.08)", marginBottom: 22 }}>
@@ -606,7 +672,7 @@ export function LandingPage({ navigate, dark, toggleDark }: { navigate: (p: Page
                       <div key={t} style={{ padding: "4px 9px", borderRadius: 6, fontSize: 10, fontWeight: 600, backgroundColor: i === 2 ? GA : dark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.06)", color: i === 2 ? (dark ? "#0D1117" : "#fff") : TX2, cursor: "pointer" }}>{t}</div>
                     ))}
                   </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 14 }}>
+                  <div className="wk-responsive-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 14 }}>
                     {[["Evidence Strength", 85, "#34D399"], ["Precedent Match", 72, dark ? "#4F8EF7" : "#3070D0"], ["Judge Alignment", 68, "#A78BFA"], ["Documentation", 94, "#34D399"]].map(([l, v, c]) => (
                       <div key={String(l)} style={{ padding: "10px 12px", borderRadius: 10, backgroundColor: dark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.04)", border: `1px solid ${BD}` }}>
                         <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
@@ -649,9 +715,9 @@ export function LandingPage({ navigate, dark, toggleDark }: { navigate: (p: Page
       </section>
 
       {/* ══ TEAM SECTION ═══════════════════════════════════════════════════════ */}
-      <section style={{ position: "relative", zIndex: 1, padding: "0 24px 120px" }}>
+      <section className="wk-landing-section" style={{ position: "relative", zIndex: 1, padding: "0 24px 120px" }}>
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: 80, alignItems: "start" }}>
+          <div className="wk-landing-team-grid" style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: 80, alignItems: "start" }}>
             {/* Left text */}
             <div style={{ paddingTop: 20 }}>
               <div style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "5px 14px", borderRadius: 999, border: `1px solid ${GA}40`, backgroundColor: `${GA}12`, marginBottom: 28 }}>
@@ -670,7 +736,7 @@ export function LandingPage({ navigate, dark, toggleDark }: { navigate: (p: Page
             </div>
 
             {/* Right — attorney photo grid */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
+            <div className="wk-responsive-grid-3" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
               {[
                 { name: "Barrister Ahmad Raza", role: "Managing Partner", spec: "Constitutional Law", img: "https://images.unsplash.com/photo-1642522029686-5485ea7e6042?w=400&h=500&fit=crop&auto=format", cases: 340, rating: 4.9, years: 18 },
                 { name: "Adv. Zara Sheikh", role: "Senior Partner", spec: "Corporate & IP", img: "https://images.unsplash.com/photo-1758518727888-ffa196002e59?w=400&h=500&fit=crop&auto=format", cases: 210, rating: 4.8, years: 12 },
@@ -752,14 +818,14 @@ export function LandingPage({ navigate, dark, toggleDark }: { navigate: (p: Page
       </section>
 
       {/* ══ TESTIMONIALS ════════════════════════════════════════════════════ */}
-      <section style={{ position: "relative", zIndex: 1, padding: "120px 24px" }}>
+      <section className="wk-landing-section" style={{ position: "relative", zIndex: 1, padding: "120px 24px" }}>
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
           <div style={{ textAlign: "center", marginBottom: 64 }}>
             <h2 style={{ fontSize: "clamp(26px, 3.5vw, 44px)", fontWeight: 800, color: TX, letterSpacing: "-0.03em" }}>
               Pakistan's top attorneys trust wukaLAW.
             </h2>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20 }}>
+          <div className="wk-responsive-grid-3" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20 }}>
             {[
               { name: "Justice (R) Fakhruddin", role: "Former Supreme Court Judge, Karachi", text: "The AI prediction model's accuracy on constitutional matters is exceptional. wukaLAW represents the future of Pakistani legal practice.", avatar: "FG", color: GA },
               { name: "Barrister Ayesha Mirza", role: "Managing Partner, Mirza Law Associates", text: "As a woman in Pakistani law, having AI-backed data on judicial patterns has transformed how we prepare our cases before the High Court.", avatar: "AM", color: dark ? "#4F8EF7" : "#3070D0" },
@@ -784,7 +850,7 @@ export function LandingPage({ navigate, dark, toggleDark }: { navigate: (p: Page
       </section>
 
       {/* ══ CTA with image background ════════════════════════════════════════ */}
-      <section style={{ position: "relative", zIndex: 1, padding: "0 24px 120px" }}>
+      <section className="wk-landing-section" style={{ position: "relative", zIndex: 1, padding: "0 24px 120px" }}>
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
           <div style={{ position: "relative", borderRadius: 32, overflow: "hidden", minHeight: 420, display: "flex", alignItems: "center" }}>
             <img src="https://images.unsplash.com/photo-1521587760476-6c12a4b040da?w=1100&h=600&fit=crop&auto=format" alt="Legal library" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", filter: "brightness(0.3) saturate(0.7)" }} />
@@ -865,7 +931,7 @@ export function LandingProductDemo({ dark, navigate }: { dark: boolean; navigate
             <span style={{ fontSize: 14, fontWeight: 700, color: TX }}>AI Court Prediction — DataTech LLC v. NovaTech</span>
             <span style={{ marginLeft: "auto", fontSize: 11, padding: "3px 10px", borderRadius: 999, backgroundColor: `${GA}20`, color: GA, fontWeight: 700 }}>94.2% Accuracy</span>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 20 }}>
+          <div className="wk-responsive-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 20 }}>
             <div style={{ borderRadius: 12, padding: 20, backgroundColor: dark ? "rgba(212,175,55,0.08)" : "rgba(139,101,20,0.06)", border: `1px solid ${GA}25`, textAlign: "center" as const }}>
               <div style={{ fontSize: 56, fontWeight: 900, color: GA, lineHeight: 1, letterSpacing: "-0.04em", textShadow: `0 0 40px ${GA}60` }}>82%</div>
               <div style={{ fontSize: 12, color: TX2, marginTop: 8 }}>Win Probability</div>
@@ -1054,7 +1120,7 @@ export function LandingAIFeaturesGrid({ dark }: { dark: boolean }) {
           <h2 style={{ fontSize: "clamp(28px, 4vw, 44px)", fontWeight: 900, color: TX, letterSpacing: "-0.04em", marginBottom: 16 }}>Everything your firm needs</h2>
           <p style={{ fontSize: 17, color: TX2, maxWidth: 480, margin: "0 auto" }}>Six AI-powered capabilities built specifically for Pakistani law.</p>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20 }}>
+        <div className="wk-responsive-grid-3" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20 }}>
           {features.map(f => (
             <div key={f.title}
               style={{ padding: 28, borderRadius: 18, border: `1px solid ${BD}`, backgroundColor: CARDBG, cursor: "default", transition: "transform 0.2s, box-shadow 0.2s" }}
@@ -1096,7 +1162,7 @@ export function LandingSecuritySection({ dark }: { dark: boolean }) {
             <h2 style={{ fontSize: "clamp(24px, 3.5vw, 42px)", fontWeight: 900, color: TX, letterSpacing: "-0.04em", marginBottom: 14 }}>Security you can trust with client confidences</h2>
             <p style={{ fontSize: 16, color: TX2, maxWidth: 520, margin: "0 auto" }}>Built from the ground up for the strict confidentiality demands of legal practice.</p>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 24 }}>
+          <div className="wk-responsive-grid-3" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 24 }}>
             {pillars.map(p => (
               <div key={p.title} style={{ textAlign: "center" as const, padding: 24 }}>
                 <div style={{ width: 64, height: 64, borderRadius: 20, backgroundColor: dark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px", color: GA }}>{p.icon}</div>
@@ -1129,7 +1195,7 @@ export function LandingIntegrations({ dark }: { dark: boolean }) {
       <div style={{ maxWidth: 1200, margin: "0 auto", textAlign: "center" as const }}>
         <h2 style={{ fontSize: "clamp(24px, 3vw, 38px)", fontWeight: 900, color: TX, letterSpacing: "-0.04em", marginBottom: 12 }}>Works with your existing stack</h2>
         <p style={{ fontSize: 16, color: TX2, marginBottom: 48 }}>Connect the tools your firm already uses — zero friction, instant sync.</p>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
+        <div className="wk-responsive-grid-4" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
           {integrations.map(name => (
             <div key={name} style={{ padding: "20px 16px", borderRadius: 14, border: `1px solid ${BD}`, backgroundColor: CARDBG, fontSize: 14, fontWeight: 600, color: TX2, display: "flex", alignItems: "center", justifyContent: "center", gap: 10, transition: "border-color 0.2s, color 0.2s", cursor: "default" }}
               onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.borderColor = `${GA}50`; (e.currentTarget as HTMLDivElement).style.color = TX; }}
@@ -1192,7 +1258,7 @@ export function LandingPricingSection({ dark, navigate }: { dark: boolean; navig
           <h2 style={{ fontSize: "clamp(28px, 4vw, 44px)", fontWeight: 900, color: TX, letterSpacing: "-0.04em", marginBottom: 16 }}>Simple, transparent pricing</h2>
           <p style={{ fontSize: 17, color: TX2 }}>Start free for 14 days. No credit card required.</p>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20, alignItems: "stretch" }}>
+        <div className="wk-responsive-grid-3" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20, alignItems: "stretch" }}>
           {tiers.map(tier => (
             <div key={tier.name} style={{ borderRadius: 20, border: `1px solid ${tier.recommended ? GA + "60" : BD}`, backgroundColor: CARDBG, overflow: "hidden", display: "flex", flexDirection: "column" as const, position: "relative" as const, boxShadow: tier.recommended ? `0 0 60px ${GA}20` : "none" }}>
               {tier.recommended && <div style={{ height: 4, backgroundColor: GA, width: "100%" }} />}
@@ -1688,7 +1754,7 @@ export function ContactPage({ navigate, dark, toggleDark }: { navigate: (p: Page
         </div>
 
         <div style={{ padding: "40px", borderRadius: 24, backgroundColor: CARDBG, border: `1px solid ${BD}`, boxShadow: dark ? "0 20px 60px rgba(0,0,0,0.4)" : "0 20px 40px rgba(100,70,0,0.08)" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
+          <div className="wk-responsive-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
             <div>
               <label style={{ fontSize: 12, fontWeight: 600, color: TX2, display: "block", marginBottom: 8 }}>Full Name</label>
               <input type="text" placeholder="Your name" value={form.name} onChange={e => set("name")(e.target.value)} style={inputStyle} />
@@ -1711,7 +1777,7 @@ export function ContactPage({ navigate, dark, toggleDark }: { navigate: (p: Page
           </button>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, marginTop: 32 }}>
+        <div className="wk-responsive-grid-3" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, marginTop: 32 }}>
           {[["Email", "hello@wukalaw.pk"], ["WhatsApp", "+92 300 wukaLAW"], ["Response", "Within 24 hours"]].map(([l, v]) => (
             <div key={l} style={{ padding: "18px", borderRadius: 16, backgroundColor: CARDBG, border: `1px solid ${BD}`, textAlign: "center" }}>
               <div style={{ fontSize: 11, color: TX2, letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 6 }}>{l}</div>
@@ -1942,7 +2008,7 @@ export function AboutPage({ navigate, dark, toggleDark }: { navigate: (p: Page) 
       {/* Values */}
       <div style={{ maxWidth: 1200, margin: "0 auto", padding: "80px 24px" }}>
         <h2 style={{ fontSize: "clamp(24px, 3.5vw, 40px)", fontWeight: 800, color: TX, letterSpacing: "-0.03em", marginBottom: 48, textAlign: "center" }}>What we stand for</h2>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20 }}>
+        <div className="wk-responsive-grid-3" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20 }}>
           {[
             { title: "Transparency", icon: "🔍", desc: "Our Explainable AI shows every factor behind each prediction. No black boxes — only clear, understandable reasoning." },
             { title: "Excellence", icon: "🏆", desc: "Trained on Pakistan's full legal corpus. Our AI is built specifically for Pakistani law, courts, and judicial patterns." },
@@ -2188,7 +2254,7 @@ export function LawyerProfilePage({ navigate, dark, toggleDark }: { navigate: (p
         </div>
 
         {/* Stats row */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 28 }}>
+        <div className="wk-responsive-grid-3" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 28 }}>
           {[["⏱", `${lawyer.years} years`, "Experience"], ["👥", lawyer.clients, "Clients"], ["⭐", lawyer.reviews, "Reviews"]].map(([icon, val, label]) => (
             <div key={label as string} style={{ padding: "18px 16px", borderRadius: 16, backgroundColor: CARDBG, border: `1px solid ${BD}`, textAlign: "center" }}>
               <div style={{ fontSize: 22, marginBottom: 6 }}>{icon}</div>
@@ -2223,7 +2289,7 @@ export function LawyerProfilePage({ navigate, dark, toggleDark }: { navigate: (p
           {/* Time slots */}
           <div>
             <div style={{ fontSize: 13, fontWeight: 700, color: TX, marginBottom: 14 }}>Select Time</div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10 }}>
+            <div className="wk-responsive-grid-4" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10 }}>
               {times.map((t, i) => (
                 <button key={t} onClick={() => setSelTime(i)} style={{ padding: "10px 8px", borderRadius: 12, fontSize: 12, fontWeight: 600, textAlign: "center", border: `1px solid ${i === selTime ? GA : BD}`, backgroundColor: i === selTime ? `${GA}20` : "transparent", color: i === selTime ? GA : TX2, cursor: "pointer", fontFamily: "Inter, sans-serif", display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}>
                   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>

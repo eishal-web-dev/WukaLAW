@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, FileText, Sparkles, Scale, ListChecks, Target, BookMarked, ScanText, Pencil, Check, X, AlertTriangle } from 'lucide-react'
-import { getDocument, summarizeDocument, getDocumentCitations, updateDocument, errorMessage } from '../lib/api'
+import { ArrowLeft, FileText, Sparkles, Scale, ListChecks, Target, BookMarked, ScanText, Pencil, Check, X, AlertTriangle, ExternalLink, Image as ImageIcon } from 'lucide-react'
+import { getDocument, getDocumentOriginal, summarizeDocument, getDocumentCitations, updateDocument, errorMessage } from '../lib/api'
 import type { Document, Citation, CitationType } from '../lib/api'
 import { formatBytes, formatDate } from '../lib/format'
 import { Btn, Card, Badge, G } from '../components/design'
@@ -40,6 +40,8 @@ export default function DocumentDetail() {
   const [editingText, setEditingText] = useState(false)
   const [editedText, setEditedText] = useState('')
   const [savingText, setSavingText] = useState(false)
+  const [originalUrl, setOriginalUrl] = useState<string | null>(null)
+  const [originalError, setOriginalError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!id) return
@@ -66,6 +68,26 @@ export default function DocumentDetail() {
       cancelled = true
     }
   }, [id])
+
+  useEffect(() => {
+    if (!id || !doc?.has_original || !doc.original_media_type?.startsWith('image/')) return
+    let objectUrl: string | null = null
+    let cancelled = false
+    getDocumentOriginal(id)
+      .then((blob) => {
+        if (cancelled) return
+        objectUrl = URL.createObjectURL(blob)
+        setOriginalUrl(objectUrl)
+        setOriginalError(null)
+      })
+      .catch((err) => {
+        if (!cancelled) setOriginalError(errorMessage(err))
+      })
+    return () => {
+      cancelled = true
+      if (objectUrl) URL.revokeObjectURL(objectUrl)
+    }
+  }, [id, doc?.has_original, doc?.original_media_type])
 
   const generateSummary = async () => {
     if (!id || !doc) return
@@ -133,9 +155,15 @@ export default function DocumentDetail() {
       {/* Header */}
       <Card className="p-6">
         <div className="flex items-start gap-4">
-          <div className="w-12 h-14 rounded-xl flex items-center justify-center flex-shrink-0 bg-red-500/10">
-            <FileText size={22} className="text-red-400" />
-          </div>
+          {originalUrl ? (
+            <a href={originalUrl} target="_blank" rel="noreferrer" className="w-12 h-14 rounded-xl flex-shrink-0 overflow-hidden border border-border bg-muted" title="Open original uploaded image">
+              <img src={originalUrl} alt={`${doc.title} original`} className="h-full w-full object-cover" />
+            </a>
+          ) : (
+            <div className="w-12 h-14 rounded-xl flex items-center justify-center flex-shrink-0 bg-red-500/10">
+              <FileText size={22} className="text-red-400" />
+            </div>
+          )}
           <div className="flex-1 min-w-0">
             <h1 className="text-xl font-bold text-foreground truncate">{doc.title}</h1>
             <div className="flex flex-wrap items-center gap-3 mt-2 text-xs text-muted-foreground">
@@ -276,6 +304,36 @@ export default function DocumentDetail() {
           </div>
         )}
       </div>
+
+      {doc.ocr_used && doc.original_media_type?.startsWith('image/') && (
+        <Card className="p-5">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <ImageIcon size={16} style={{ color: G }} />
+              <div>
+                <h4 className="text-sm font-semibold text-foreground">Original image reference</h4>
+                <p className="mt-0.5 text-xs text-muted-foreground">Compare this uploaded scan with the OCR text below.</p>
+              </div>
+            </div>
+            {originalUrl && (
+              <a href={originalUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-xs font-medium text-[#D4AF37]">
+                Open full image <ExternalLink size={12} />
+              </a>
+            )}
+          </div>
+          {originalUrl ? (
+            <a href={originalUrl} target="_blank" rel="noreferrer" className="block overflow-hidden rounded-xl border border-border bg-black/10">
+              <img src={originalUrl} alt={`Original scan for ${doc.title}`} className="mx-auto max-h-[560px] w-auto max-w-full object-contain" />
+            </a>
+          ) : originalError ? (
+            <p className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 text-xs text-muted-foreground">{originalError}</p>
+          ) : doc.has_original ? (
+            <div className="h-40 animate-pulse rounded-xl bg-muted/60" aria-label="Loading original image" />
+          ) : (
+            <p className="rounded-lg border border-border bg-muted/30 p-3 text-xs text-muted-foreground">This older OCR upload has no retained original image. Re-upload it once to add the visual reference.</p>
+          )}
+        </Card>
+      )}
 
       {/* Extracted text */}
       <Card className="p-5">

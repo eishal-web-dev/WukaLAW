@@ -2,6 +2,7 @@ import { Briefcase, ShieldCheck, UserRound } from 'lucide-react'
 import { PORTAL_LABELS } from '../lib/portals'
 import type { Portal } from '../lib/portals'
 import { usePublicTokens } from './PublicShell'
+import { useI18n } from '../lib/i18n'
 
 const OPTIONS = [
   { role: 'client', icon: UserRound },
@@ -16,9 +17,10 @@ export default function PortalSelector({ value, onChange, includeAdmin = true, d
   disabled?: boolean
 }) {
   const { GA, BD, TX, TX2, SURF } = usePublicTokens()
+  const { t } = useI18n()
   return (
     <fieldset disabled={disabled}>
-      <legend className="text-sm font-medium mb-3" style={{ color: TX }}>Choose your portal</legend>
+      <legend className="text-sm font-medium mb-3" style={{ color: TX }}>{t('Choose your portal')}</legend>
       <div className={`grid gap-3 ${includeAdmin ? 'grid-cols-3' : 'grid-cols-2'}`}>
         {OPTIONS.filter((option) => includeAdmin || option.role !== 'admin').map(({ role, icon: Icon }) => (
           <label key={role} className="cursor-pointer">
@@ -26,7 +28,7 @@ export default function PortalSelector({ value, onChange, includeAdmin = true, d
               type="radio"
               name="portal"
               value={role}
-              aria-label={PORTAL_LABELS[role]}
+              aria-label={t(PORTAL_LABELS[role])}
               checked={value === role}
               onChange={() => onChange(role)}
               required
@@ -37,7 +39,7 @@ export default function PortalSelector({ value, onChange, includeAdmin = true, d
               style={{ backgroundColor: SURF, borderColor: value === role ? GA : BD, color: value === role ? GA : TX2, boxShadow: value === role ? `0 0 0 1px ${GA}` : undefined }}
             >
               <Icon size={20} aria-hidden="true" />
-              {PORTAL_LABELS[role]}
+              {t(PORTAL_LABELS[role])}
             </span>
           </label>
         ))}

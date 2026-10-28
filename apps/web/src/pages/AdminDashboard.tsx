@@ -34,7 +34,7 @@ export default function AdminDashboard() {
   }, [])
 
   return (
-    <div className="p-8 space-y-7 overflow-y-auto h-full">
+    <div className="w-full max-w-[1600px] mx-auto p-4 sm:p-6 lg:p-8 space-y-5 sm:space-y-7">
       <div>
         <h1 className="text-2xl font-bold text-foreground">Platform Admin</h1>
         <p className="text-muted-foreground text-sm mt-1">
@@ -50,7 +50,7 @@ export default function AdminDashboard() {
         </div>
       ) : stats && !error ? (
         <>
-          <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
             <KPICard icon={<Users size={18} />} label="Total Users" value={String(stats?.total_users ?? 0)} color="#D4AF37" />
             <KPICard icon={<Briefcase size={18} />} label="Total Cases" value={String(stats?.total_cases ?? 0)} sub={`${stats?.active_cases ?? 0} active`} color="#8B5CF6" />
             <KPICard icon={<FileText size={18} />} label="Total Documents" value={String(stats?.total_documents ?? 0)} color="#3B82F6" />
@@ -58,7 +58,7 @@ export default function AdminDashboard() {
           </div>
 
           <Card className="overflow-hidden">
-            <div className="px-5 py-4 border-b border-white/[0.06]">
+            <div className="px-4 sm:px-5 py-4 border-b border-white/[0.06]">
               <h3 className="text-sm font-semibold text-foreground">All Users ({users.length})</h3>
             </div>
             {users.length === 0 ? (

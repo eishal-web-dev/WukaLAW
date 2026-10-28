@@ -56,6 +56,7 @@ def arguments():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--prefix", default="datasets/raw/")
     parser.add_argument("--limit", type=int)
+    parser.add_argument("--offset", type=int, default=0, help="Skip this many storage objects before indexing")
     parser.add_argument("--batch-size", type=int, default=8)
     parser.add_argument("--model", default=os.getenv("EMBEDDING_MODEL", "BAAI/bge-m3"))
     parser.add_argument("--device", default=os.getenv("EMBEDDING_DEVICE", "auto"))
@@ -121,19 +122,38 @@ class SupabaseCorpusIndexer:
         encoded = quote(path, safe="/")
         response = self.client.get(f"{self.url}/storage/v1/object/authenticated/{self.bucket}/{encoded}")
         response.raise_for_status()
-        return response.content.decode("utf-8", errors="replace")
+        # PostgreSQL text columns reject NUL characters found in some conversions.
+        return response.content.decode("utf-8", errors="replace").replace("\\x00", " ")
 
-    def upsert(self, rows: list[dict]):
+    def upsert(self, rows: list[dict]) -> int:
         response = self.client.post(
             f"{self.url}/rest/v1/legal_judgment_chunks?on_conflict=canonical_chunk_id",
             headers={**self.headers, "Prefer": "resolution=merge-duplicates,return=minimal"}, json=rows,
         )
+        if response.is_success:
+            return len(rows)
+        # Isolate malformed chunks instead of aborting a multi-hour import.
+        if response.status_code == 400 and len(rows) > 1:
+            middle = len(rows) // 2
+            return self.upsert(rows[:middle]) + self.upsert(rows[middle:])
+        if response.status_code == 400:
+            row = rows[0]
+            detail = response.text[:500].replace("\n", " ")
+            print(
+                f"\nskipped malformed chunk={row['canonical_chunk_id']} "
+                f"source={row['source_path']!r}: {detail}",
+                flush=True,
+            )
+            return 0
         response.raise_for_status()
+        return 0
 
-    def run(self, prefix: str, limit: int | None, batch_size: int):
+    def run(self, prefix: str, limit: int | None, batch_size: int, offset: int = 0):
         documents = chunks = 0
         pending: list[tuple[str, int, str, dict, str | None]] = []
-        for path in self.paths(prefix):
+        for position, path in enumerate(self.paths(prefix)):
+            if position < offset:
+                continue
             if limit is not None and documents >= limit:
                 break
             text = self.download(path)
@@ -166,8 +186,7 @@ class SupabaseCorpusIndexer:
                 "metadata": {"bucket": self.bucket, "chunk_number": number},
                 "embedding": vector.tolist(), "embedding_model": self.provider.model_name,
             })
-        self.upsert(rows)
-        return len(rows)
+        return self.upsert(rows)
 
 
 def main():
@@ -178,7 +197,9 @@ def main():
     if not url or not key:
         raise SystemExit("SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required.")
     provider = create_provider(args.model, args.device)
-    SupabaseCorpusIndexer(url, key, bucket, provider).run(args.prefix, args.limit, args.batch_size)
+    SupabaseCorpusIndexer(url, key, bucket, provider).run(
+        args.prefix, args.limit, args.batch_size, args.offset
+    )
 
 
 if __name__ == "__main__":

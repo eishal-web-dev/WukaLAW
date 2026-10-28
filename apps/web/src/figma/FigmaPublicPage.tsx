@@ -1,22 +1,20 @@
 import { useNavigate } from 'react-router-dom'
 import { useTheme } from '../lib/theme'
+import LanguageToggle from '../components/LanguageToggle'
 import {
   AboutPage,
   BlogPage,
   CareersPage,
   CaseStudiesPage,
-  ContactPage,
   FAQPage,
   FeaturesPage,
-  FindLawyerPage,
   LandingPage,
-  LawyerProfilePage,
   PracticeAreasPage,
-  PricingPage,
   PrivacyPage,
   SolutionsPage,
   TermsPage,
 } from './PublicPages'
+import { LiveContactPage, LiveFindLawyerPage, LiveLawyerProfilePage, LivePricingPage } from './LivePublicPages'
 
 const PAGE_PATHS: Record<string, string> = {
   landing: '/',
@@ -48,10 +46,10 @@ const PAGES = {
   about: AboutPage,
   'practice-areas': PracticeAreasPage,
   'case-studies': CaseStudiesPage,
-  contact: ContactPage,
-  'find-lawyer': FindLawyerPage,
-  'lawyer-profile': LawyerProfilePage,
-  pricing: PricingPage,
+  contact: LiveContactPage,
+  'find-lawyer': LiveFindLawyerPage,
+  'lawyer-profile': LiveLawyerProfilePage,
+  pricing: LivePricingPage,
   features: FeaturesPage,
   solutions: SolutionsPage,
   blog: BlogPage,
@@ -71,5 +69,8 @@ export default function FigmaPublicPage({ page }: { page: FigmaPublicPageName })
     navigate(PAGE_PATHS[destination] ?? `/${destination}`)
   }
 
-  return <Page navigate={navigateFromFigma} dark={dark} toggleDark={toggleDark} />
+  return <div className="relative">
+    <div className="fixed end-3 top-[76px] z-[70] sm:end-5"><LanguageToggle /></div>
+    <Page navigate={navigateFromFigma} dark={dark} toggleDark={toggleDark} />
+  </div>
 }
