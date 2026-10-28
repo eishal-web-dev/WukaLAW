@@ -94,6 +94,8 @@ export interface DocumentMeta {
   has_summary: boolean
   ocr_used: boolean
   ocr_review_status?: 'needs_review' | 'verified' | null
+  has_original?: boolean
+  original_media_type?: string | null
 }
 
 export interface Summary {
@@ -470,6 +472,18 @@ export function listDocuments(): Promise<DocumentListResponse> {
 /** GET /documents/{id} */
 export function getDocument(id: number | string): Promise<Document> {
   return request<Document>(`/documents/${id}`)
+}
+
+/** GET /documents/{id}/original — authenticated original upload for preview. */
+export async function getDocumentOriginal(id: number | string): Promise<Blob> {
+  const response = await fetch(`${API_BASE_URL}/documents/${id}/original`, { headers: authHeaders() })
+  if (response.status === 401) throw handleSessionExpired()
+  if (!response.ok) {
+    let detail = 'Could not load the original document.'
+    try { detail = detailFromBody(await response.json(), detail) } catch { /* non-JSON response */ }
+    throw new ApiError(detail, response.status)
+  }
+  return response.blob()
 }
 
 /** DELETE /documents/{id} — removes the document, chunks and AI index entries. */

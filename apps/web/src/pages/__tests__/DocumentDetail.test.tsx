@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import DocumentDetail from '../DocumentDetail'
@@ -7,6 +7,7 @@ import type { Document } from '../../lib/api'
 
 vi.mock('../../lib/api', () => ({
   getDocument: vi.fn(),
+  getDocumentOriginal: vi.fn(),
   summarizeDocument: vi.fn(),
   getDocumentCitations: vi.fn(),
   updateDocument: vi.fn(),
@@ -27,6 +28,8 @@ const DOC: Document = {
   text: 'Full extracted text…',
   summary: null,
 }
+
+afterEach(() => vi.unstubAllGlobals())
 
 function renderDetail() {
   return render(
@@ -91,5 +94,29 @@ describe('DocumentDetail citations section', () => {
 
       expect(await screen.findByText('No citations detected.')).toBeInTheDocument()
     })
+  })
+
+  it('shows the retained scan beside OCR text as the document reference', async () => {
+    vi.stubGlobal('URL', {
+      ...URL,
+      createObjectURL: vi.fn(() => 'blob:original-scan'),
+      revokeObjectURL: vi.fn(),
+    })
+    vi.mocked(api.getDocument).mockResolvedValue({
+      ...DOC,
+      filename: 'court-order.png',
+      ocr_used: true,
+      ocr_review_status: 'needs_review',
+      has_original: true,
+      original_media_type: 'image/png',
+    })
+    vi.mocked(api.getDocumentOriginal).mockResolvedValue(new Blob(['scan'], { type: 'image/png' }))
+    vi.mocked(api.getDocumentCitations).mockResolvedValue({ citations: [] })
+
+    renderDetail()
+
+    expect(await screen.findByRole('heading', { name: 'Original image reference' })).toBeInTheDocument()
+    expect(await screen.findByAltText('Original scan for Supreme Court Judgment')).toHaveAttribute('src', 'blob:original-scan')
+    expect(api.getDocumentOriginal).toHaveBeenCalledWith('7')
   })
 })
