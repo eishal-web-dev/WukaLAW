@@ -61,8 +61,8 @@ export default function Login() {
       {/* Left panel */}
       <div className="hidden lg:flex flex-col justify-between w-[45%] p-12 border-r" style={{ backgroundColor: SURF, borderColor: BD }}>
         <button onClick={() => navigate('/')} className="flex items-center gap-3" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
-          <img src={wukaIcon} alt="wukaLAW logo" className="w-10 h-10 object-contain" />
-          <span style={{ color: TX, fontWeight: 700 }}>wukaLAW</span>
+          <img src={wukaIcon} alt="WukaLAW logo" className="w-10 h-10 object-contain" />
+          <span style={{ color: TX, fontWeight: 700 }}>WukaLAW</span>
         </button>
         <div>
           <div className="flex mb-3 gap-1">
@@ -71,7 +71,7 @@ export default function Login() {
             ))}
           </div>
           <blockquote style={{ fontSize: 20, fontWeight: 500, color: TX, lineHeight: 1.6, marginBottom: 24 }}>
-            "wukaLAW's explainable AI gives us the evidence trail we need to trust an answer before we act on it."
+            "WukaLAW's explainable AI gives us the evidence trail we need to trust an answer before we act on it."
           </blockquote>
           <div className="flex items-center gap-3">
             <Avatar name="Legal Research Team" size="md" />
@@ -88,8 +88,8 @@ export default function Login() {
       <div className="flex-1 flex items-center justify-center p-8" style={{ backgroundColor: BG }}>
         <div className="w-full max-w-sm">
           <div className="lg:hidden flex items-center gap-3 mb-8 justify-center">
-            <img src={wukaIcon} alt="wukaLAW logo" className="w-10 h-10 object-contain" />
-            <span style={{ color: TX, fontWeight: 700, fontSize: 18 }}>wukaLAW</span>
+            <img src={wukaIcon} alt="WukaLAW logo" className="w-10 h-10 object-contain" />
+            <span style={{ color: TX, fontWeight: 700, fontSize: 18 }}>WukaLAW</span>
           </div>
           <h2 style={{ fontSize: 24, fontWeight: 700, color: TX, marginBottom: 4 }}>{t('Welcome back')}</h2>
           <p style={{ color: TX2, fontSize: 14, marginBottom: 32 }}>{t('Choose your portal, then sign in to your account.')}</p>
