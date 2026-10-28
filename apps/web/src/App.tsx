@@ -24,7 +24,7 @@ import ClientDownloads from './pages/ClientDownloads'
 import ClientBilling from './pages/ClientBilling'
 import ClientSimilarCases from './pages/ClientSimilarCases'
 import ClientSearch from './pages/ClientSearch'
-import Cases from './pages/Cases'
+import LawyerCases from './pages/LawyerCases'
 import CaseDetail from './pages/CaseDetail'
 import Documents from './pages/Documents'
 import DocumentDetail from './pages/DocumentDetail'
@@ -39,7 +39,6 @@ import AdminBusiness from './pages/AdminBusiness'
 import AdminBackup from './pages/AdminBackup'
 
 // App screens (preview — sample data)
-import LawyerWorkspace from './pages/LawyerWorkspace'
 import LawyerCalendar from './pages/LawyerCalendar'
 import LawyerTasks from './pages/LawyerTasks'
 import LawyerHearings from './pages/LawyerHearings'
@@ -96,7 +95,7 @@ export default function App() {
       {/* Authenticated app */}
       <Route element={<ProtectedRoute />}>
         <Route element={<AppShell />}>
-          <Route path="/cases" element={<Cases />} />
+          <Route path="/cases" element={<LawyerCases />} />
           <Route path="/cases/:id" element={<CaseDetail />} />
           <Route path="/documents" element={<Documents />} />
           <Route path="/documents/:id" element={<DocumentDetail />} />
@@ -120,7 +119,7 @@ export default function App() {
             <Route path="/report-generator" element={<Reports generatorOnly />} />
             <Route path="/messages" element={<LawyerMessages />} />
             <Route path="/team" element={<LawyerTeam />} />
-            <Route path="/workspace" element={<LawyerWorkspace />} />
+            <Route path="/workspace" element={<Navigate to="/cases?view=workspace" replace />} />
             <Route path="/prediction" element={<Prediction />} />
             <Route path="/explainable" element={<Explainable />} />
             <Route path="/reports" element={<Reports />} />
