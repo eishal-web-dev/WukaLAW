@@ -56,15 +56,15 @@ export default function Register() {
       </div>
       <div className="w-full max-w-md">
         <button onClick={() => navigate('/')} className="flex items-center gap-3 mb-8 justify-center w-full" style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
-          <img src={wukaIcon} alt="wukaLAW logo" className="w-11 h-11 object-contain" />
-          <span style={{ color: TX, fontWeight: 700, fontSize: 20 }}>wukaLAW</span>
+          <img src={wukaIcon} alt="WukaLAW logo" className="w-11 h-11 object-contain" />
+          <span style={{ color: TX, fontWeight: 700, fontSize: 20 }}>WukaLAW</span>
         </button>
         <form
           onSubmit={submit}
           style={{ padding: 32, borderRadius: 20, backgroundColor: CARDBG, border: `1px solid ${BD}`, boxShadow: dark ? '0 20px 60px rgba(0,0,0,0.4)' : '0 20px 40px rgba(100,70,0,0.08)' }}
         >
           <h2 style={{ fontSize: 20, fontWeight: 700, color: TX, marginBottom: 4 }}>{t('Create your account')}</h2>
-          <p style={{ color: TX2, fontSize: 14, marginBottom: 24 }}>{t("Start using wukaLAW's explainable AI legal intelligence.")}</p>
+          <p style={{ color: TX2, fontSize: 14, marginBottom: 24 }}>{t("Start using WukaLAW's explainable AI legal intelligence.")}</p>
           <div className="space-y-4">
             <PortalSelector value={role} onChange={(value) => { if (value !== 'admin') setRole(value) }} includeAdmin={false} disabled={submitting} />
             {error && <ErrorAlert message={error} />}
