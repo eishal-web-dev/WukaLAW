@@ -10,6 +10,8 @@ import PortalSelector from '../components/PortalSelector'
 import { isPortal, portalHome, PORTAL_LABELS } from '../lib/portals'
 import type { Portal } from '../lib/portals'
 import { wukaIcon } from '../figma/assets'
+import LanguageToggle from '../components/LanguageToggle'
+import { useI18n } from '../lib/i18n'
 
 const ADMIN_EMAIL = 'admin@gmail.com'
 
@@ -22,6 +24,7 @@ export default function Login() {
     return isPortal(value) ? value : null
   })
   const { dark, toggleDark, BG, SURF, TX, TX2, GA, BD } = usePublicTokens()
+  const { t } = useI18n()
   const [email, setEmail] = useState(() => portal === 'admin' ? ADMIN_EMAIL : '')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -51,13 +54,10 @@ export default function Login() {
 
   return (
     <div className="min-h-screen flex" style={{ backgroundColor: BG, position: 'relative', fontFamily: 'Inter, sans-serif' }}>
-      <button
-        onClick={toggleDark}
-        aria-label="Toggle theme"
-        style={{ position: 'absolute', top: 20, right: 20, zIndex: 10, width: 36, height: 36, borderRadius: 10, border: `1px solid ${BD}`, backgroundColor: dark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: TX2 }}
-      >
-        {dark ? <Sun size={16} /> : <Moon size={16} />}
-      </button>
+      <div className="absolute end-5 top-5 z-10 flex gap-2">
+        <LanguageToggle />
+        <button onClick={toggleDark} aria-label={t('Toggle color theme')} style={{ width: 36, height: 36, borderRadius: 10, border: `1px solid ${BD}`, backgroundColor: dark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: TX2 }}>{dark ? <Sun size={16} /> : <Moon size={16} />}</button>
+      </div>
 
       {/* Left panel */}
       <div className="hidden lg:flex flex-col justify-between w-[45%] p-12 border-r" style={{ backgroundColor: SURF, borderColor: BD }}>
@@ -92,8 +92,8 @@ export default function Login() {
             <img src={wukaIcon} alt="wukaLAW logo" className="w-10 h-10 object-contain" />
             <span style={{ color: TX, fontWeight: 700, fontSize: 18 }}>wukaLAW</span>
           </div>
-          <h2 style={{ fontSize: 24, fontWeight: 700, color: TX, marginBottom: 4 }}>Welcome back</h2>
-          <p style={{ color: TX2, fontSize: 14, marginBottom: 32 }}>Choose your portal, then sign in to your account.</p>
+          <h2 style={{ fontSize: 24, fontWeight: 700, color: TX, marginBottom: 4 }}>{t('Welcome back')}</h2>
+          <p style={{ color: TX2, fontSize: 14, marginBottom: 32 }}>{t('Choose your portal, then sign in to your account.')}</p>
 
           <form onSubmit={submit} className="space-y-4">
             <PortalSelector value={portal} onChange={(value) => {
@@ -104,22 +104,22 @@ export default function Login() {
             {portal === 'admin' && <p className="text-xs" style={{ color: TX2 }}>Only admin@gmail.com is authorized for the Admin portal.</p>}
             {error && <ErrorAlert message={error} />}
             <div>
-              <label htmlFor="login-email" style={{ fontSize: 12, fontWeight: 500, color: TX2, display: 'block', marginBottom: 6 }}>Email address</label>
+              <label htmlFor="login-email" style={{ fontSize: 12, fontWeight: 500, color: TX2, display: 'block', marginBottom: 6 }}>{t('Email address')}</label>
               <Input id="login-email" autoComplete="username" placeholder="you@example.com" value={email} onChange={setEmail} type="email" icon={<Mail size={14} />} required readOnly={portal === 'admin'} />
             </div>
             <div>
-              <label htmlFor="login-password" style={{ fontSize: 12, fontWeight: 500, color: TX2, display: 'block', marginBottom: 6 }}>Password</label>
+              <label htmlFor="login-password" style={{ fontSize: 12, fontWeight: 500, color: TX2, display: 'block', marginBottom: 6 }}>{t('Password')}</label>
               <Input id="login-password" autoComplete="current-password" placeholder="••••••••" value={password} onChange={setPassword} type="password" icon={<Lock size={14} />} required />
             </div>
             <Btn type="submit" className="w-full justify-center" size="lg" disabled={submitting || !portal}>
-              {submitting ? 'Signing in…' : portal ? `Sign in as ${PORTAL_LABELS[portal]}` : 'Choose a portal to continue'}
+              {submitting ? t('Signing in…') : portal ? `${t('Sign in as')} ${t(PORTAL_LABELS[portal])}` : t('Choose a portal to continue')}
             </Btn>
           </form>
 
           {portal !== 'admin' && <p style={{ textAlign: 'center', fontSize: 14, color: TX2, marginTop: 32 }}>
-            No account?{' '}
+            {t('No account?')}{' '}
             <button onClick={() => navigate(portal ? `/register?portal=${portal}` : '/register')} style={{ fontWeight: 500, color: GA, background: 'none', border: 'none', cursor: 'pointer' }}>
-              Create one
+              {t('Create one')}
             </button>
           </p>}
         </div>

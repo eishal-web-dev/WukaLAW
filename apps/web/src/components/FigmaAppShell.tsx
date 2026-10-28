@@ -16,6 +16,8 @@ import { wukaIcon } from '../figma/assets'
 import { Avatar, G } from './design'
 import { portalForRole, portalHome, PORTAL_LABELS } from '../lib/portals'
 import type { Portal } from '../lib/portals'
+import LanguageToggle from './LanguageToggle'
+import { useI18n } from '../lib/i18n'
 
 type NavItem = { path: string; label: string; icon: LucideIcon; notificationBadge?: boolean }
 type NavGroup = { label: string; items: NavItem[] }
@@ -146,6 +148,7 @@ function Sidebar({ collapsed, onToggle, mobile = false, onNavigate }: { collapse
   const { pathname } = useLocation()
   const { user, logout } = useAuth()
   const { unreadCount } = useNotifications()
+  const { t, isRtl } = useI18n()
   const portal = portalForRole(user?.role)
   const accent = PORTAL_COLOR[portal]
   const displayName = user?.name || 'WukaLAW User'
@@ -155,30 +158,30 @@ function Sidebar({ collapsed, onToggle, mobile = false, onNavigate }: { collapse
       <div className="flex items-center border-b border-sidebar-border">
       <button type="button" onClick={() => { navigate(portalHome(portal)); onNavigate?.() }} className="flex min-w-0 flex-1 items-center gap-2.5 px-3 py-3.5 text-left">
         <img src={wukaIcon} alt="WukaLAW" className="flex-shrink-0" style={{ width: 46, height: 46, objectFit: 'contain' }} />
-        {!collapsed && <div className="min-w-0"><div className="text-sm font-bold text-foreground tracking-tight leading-tight">WukaLAW</div><div className="text-[9px] font-semibold uppercase tracking-widest leading-tight" style={{ color: accent }}>AI Legal Intelligence</div></div>}
+        {!collapsed && <div className="min-w-0"><div className="text-sm font-bold text-foreground tracking-tight leading-tight">WukaLAW</div><div className="text-[9px] font-semibold uppercase tracking-widest leading-tight" style={{ color: accent }}>{t('AI Legal Intelligence')}</div></div>}
       </button>
       {mobile && <button type="button" onClick={onNavigate} aria-label="Close navigation" className="mr-3 grid h-11 w-11 place-items-center rounded-xl text-muted-foreground hover:bg-sidebar-accent hover:text-foreground"><X size={20} /></button>}
       </div>
 
       {!collapsed && (
         <div className="px-4 pt-4 pb-1 text-xs font-semibold" style={{ color: accent }}>
-          {PORTAL_LABELS[portal]} portal
+          {t(`${PORTAL_LABELS[portal]} portal`)}
         </div>
       )}
 
       <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-4">
         {groupsFor(portal).map((group) => (
           <div key={group.label}>
-            {!collapsed && <div className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground/40 px-2 mb-1.5 mt-1">{group.label}</div>}
+            {!collapsed && <div className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground/40 px-2 mb-1.5 mt-1">{t(group.label)}</div>}
             <div className="space-y-px">
               {group.items.map((item) => {
                 const Icon = item.icon
                 const active = pathname === item.path || (!['/client', '/admin'].includes(item.path) && pathname.startsWith(`${item.path}/`))
                 const badge = item.notificationBadge ? unreadCount : 0
                 return (
-                  <button type="button" key={`${group.label}-${item.path}-${item.label}`} onClick={() => { navigate(item.path); onNavigate?.() }} title={collapsed ? item.label : undefined} className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-xs transition-all duration-100 relative ${active ? 'font-semibold' : 'text-muted-foreground hover:text-foreground hover:bg-sidebar-accent'}`} style={active ? { backgroundColor: `${accent}15`, color: accent } : {}}>
+                  <button type="button" key={`${group.label}-${item.path}-${item.label}`} onClick={() => { navigate(item.path); onNavigate?.() }} title={collapsed ? t(item.label) : undefined} className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-xs transition-all duration-100 relative ${active ? 'font-semibold' : 'text-muted-foreground hover:text-foreground hover:bg-sidebar-accent'}`} style={active ? { backgroundColor: `${accent}15`, color: accent } : {}}>
                     <Icon size={15} className="flex-shrink-0" />
-                    {!collapsed && <span className="truncate flex-1 text-left">{item.label}</span>}
+                    {!collapsed && <span className={`truncate flex-1 ${isRtl ? 'text-right' : 'text-left'}`}>{t(item.label)}</span>}
                     {!collapsed && badge > 0 && <span className="ml-auto text-[9px] font-bold rounded-full min-w-4 h-4 px-1 flex items-center justify-center" style={{ backgroundColor: accent, color: '#07090F' }}>{badge > 99 ? '99+' : badge}</span>}
                     {collapsed && active && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-4 rounded-r" style={{ backgroundColor: accent }} />}
                   </button>
@@ -193,12 +196,12 @@ function Sidebar({ collapsed, onToggle, mobile = false, onNavigate }: { collapse
         {!collapsed ? (
           <div className="flex items-center gap-2.5 p-1.5 rounded-lg hover:bg-sidebar-accent transition-colors">
             <Avatar name={displayName} size="sm" />
-            <div className="flex-1 min-w-0"><div className="text-xs font-semibold text-foreground truncate leading-tight">{displayName}</div><div className="text-[10px] text-muted-foreground truncate leading-tight">{portal === 'admin' ? 'System Administrator' : portal === 'client' ? 'Client Portal' : 'Legal Professional'}</div></div>
-            <button type="button" onClick={logout} className="text-muted-foreground hover:text-foreground p-0.5" title="Sign out"><LogOut size={13} /></button>
+            <div className="flex-1 min-w-0"><div className="text-xs font-semibold text-foreground truncate leading-tight">{displayName}</div><div className="text-[10px] text-muted-foreground truncate leading-tight">{t(portal === 'admin' ? 'System Administrator' : portal === 'client' ? 'Client Portal' : 'Legal Professional')}</div></div>
+            <button type="button" onClick={logout} className="text-muted-foreground hover:text-foreground p-0.5" title={t('Sign out')}><LogOut size={13} /></button>
           </div>
         ) : <div className="flex justify-center py-1"><Avatar name={displayName} size="sm" /></div>}
         {!mobile && <button type="button" onClick={onToggle} className="w-full flex items-center justify-center mt-2 py-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-sidebar-accent transition-colors text-[10px] gap-1">
-          {collapsed ? <ChevronRight size={13} /> : <><ChevronLeft size={13} /><span>Collapse</span></>}
+          {collapsed ? (isRtl ? <ChevronLeft size={13} /> : <ChevronRight size={13} />) : <>{isRtl ? <ChevronRight size={13} /> : <ChevronLeft size={13} />}<span>{t('Collapse')}</span></>}
         </button>}
       </div>
     </aside>
@@ -211,15 +214,17 @@ function Topbar({ onOpenMenu }: { onOpenMenu: () => void }) {
   const { user } = useAuth()
   const { dark, toggleDark } = useTheme()
   const { unreadCount } = useNotifications()
+  const { t } = useI18n()
   return (
     <header className="h-14 flex items-center justify-between px-3 sm:px-6 border-b border-border bg-background flex-shrink-0">
       <div className="flex min-w-0 items-center gap-2 text-sm">
-        <button type="button" onClick={onOpenMenu} aria-label="Open navigation" className="grid h-11 w-11 flex-shrink-0 place-items-center rounded-xl text-muted-foreground hover:bg-muted/60 hover:text-foreground md:hidden"><Menu size={20} /></button>
-        <span className="hidden text-muted-foreground sm:inline">WukaLAW</span><ChevronRight size={14} className="hidden text-muted-foreground sm:block" /><span className="truncate text-foreground font-medium">{titleFor(pathname)}</span>
+        <button type="button" onClick={onOpenMenu} aria-label={t('Open navigation')} className="grid h-11 w-11 flex-shrink-0 place-items-center rounded-xl text-muted-foreground hover:bg-muted/60 hover:text-foreground md:hidden"><Menu size={20} /></button>
+        <span className="hidden text-muted-foreground sm:inline">WukaLAW</span><ChevronRight size={14} className="hidden text-muted-foreground sm:block rtl:rotate-180" /><span className="truncate text-foreground font-medium">{t(titleFor(pathname))}</span>
       </div>
       <div className="flex items-center gap-3">
-        <div className="relative hidden md:block"><Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" /><input placeholder="Search cases, docs, AI..." className="w-56 pl-8 pr-4 py-1.5 text-xs rounded-lg border border-border bg-muted/40 text-foreground placeholder-muted-foreground focus:outline-none focus:border-primary/50" /></div>
-        <button type="button" onClick={toggleDark} aria-label="Toggle color theme" className="w-8 h-8 rounded-lg border border-border flex items-center justify-center text-muted-foreground hover:text-foreground">{dark ? <Sun size={14} /> : <Moon size={14} />}</button>
+        <div className="relative hidden md:block"><Search size={14} className="absolute start-3 top-1/2 -translate-y-1/2 text-muted-foreground" /><input placeholder={t('Search cases, docs, AI...')} className="w-56 ps-8 pe-4 py-1.5 text-xs rounded-lg border border-border bg-muted/40 text-foreground placeholder-muted-foreground focus:outline-none focus:border-primary/50" /></div>
+        <LanguageToggle compact />
+        <button type="button" onClick={toggleDark} aria-label={t('Toggle color theme')} className="w-8 h-8 rounded-lg border border-border flex items-center justify-center text-muted-foreground hover:text-foreground">{dark ? <Sun size={14} /> : <Moon size={14} />}</button>
         <button type="button" onClick={() => navigate('/notifications')} aria-label={`${unreadCount} unread notifications`} className="relative p-2 rounded-lg hover:bg-muted/50 text-muted-foreground hover:text-foreground"><Bell size={16} />{unreadCount > 0 && <span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 rounded-full text-[9px] font-bold flex items-center justify-center text-[#07090F]" style={{ backgroundColor: G }}>{unreadCount > 99 ? '99+' : unreadCount}</span>}</button>
         <button type="button" onClick={() => navigate('/profile')} aria-label="Open profile"><Avatar name={user?.name || 'WukaLAW User'} size="sm" /></button>
       </div>
