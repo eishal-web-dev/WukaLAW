@@ -46,7 +46,10 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
         raise HTTPException(status_code=401, detail="Invalid email or password.")
     if user.role == "admin" and user.email.lower() != ADMIN_EMAIL:
         raise HTTPException(status_code=403, detail="This account is not authorized for platform administration.")
-    if request.portal is not None and user.role != request.portal:
+    # The protected administrator account is intentionally absent from the
+    # public portal picker. Valid admin credentials therefore take precedence
+    # over the selected Client/Lawyer portal and route by the server-owned role.
+    if user.role != "admin" and request.portal is not None and user.role != request.portal:
         raise HTTPException(status_code=403, detail="This account does not have access to the selected portal. Choose your account's portal to sign in.")
     return _auth_response(user)
 
