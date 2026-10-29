@@ -10,9 +10,10 @@ def _client_headers(client, email="operations-client@example.com"):
 
 
 def _claimed_case(client, lawyer, client_headers):
+    lawyer_email = client.get("/api/v1/auth/me", headers=lawyer).json()["email"]
     requested = client.post(
         "/api/v1/cases/request",
-        json={"title": "Live family matter", "case_type": "Family", "description": "Real client instructions."},
+        json={"title": "Live family matter", "case_type": "Family", "description": "Real client instructions.", "tags": ["Child custody"], "lawyer_email": lawyer_email},
         headers=client_headers,
     )
     case_id = requested.json()["id"]
