@@ -56,12 +56,14 @@ class Case(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     owner_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True, index=True)
     client_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True, index=True)
+    requested_lawyer_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True, index=True)
     case_number: Mapped[str] = mapped_column(String(32))
     title: Mapped[str] = mapped_column(String(255))
     case_type: Mapped[str] = mapped_column(String(100))
     status: Mapped[str] = mapped_column(String(32), default="Active")
     priority: Mapped[str] = mapped_column(String(32), default="Medium")
     description: Mapped[str] = mapped_column(Text, default="")
+    tags: Mapped[list[str]] = mapped_column(JSON, default=list)
     deadline: Mapped[str | None] = mapped_column(String(32), nullable=True)  # ISO date
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
