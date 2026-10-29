@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor, fireEvent } from '@testing-library/react'
-import { MemoryRouter, Route, Routes } from 'react-router-dom'
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import ClientWorkspace from '../ClientWorkspace'
 import * as api from '../../lib/api'
 import type { Case } from '../../lib/api'
@@ -9,12 +9,17 @@ vi.mock('../../lib/api', () => ({
   getCase: vi.fn(),
   listCaseDocuments: vi.fn(),
   getCaseTimeline: vi.fn(),
-  askCaseQuestion: vi.fn(),
   updateCase: vi.fn(),
   deleteDocument: vi.fn(),
   errorMessage: (err: unknown) =>
     err instanceof Error ? err.message : 'Something went wrong.',
 }))
+
+function HandoffProbe() {
+  const location = useLocation()
+  const state = location.state as { caseId?: number; initialQuestion?: string } | null
+  return <div>AI handoff: {state?.caseId} · {state?.initialQuestion}</div>
+}
 
 const CASE: Case = {
   id: 7,
@@ -37,6 +42,7 @@ function renderWorkspace(caseId = '7') {
     <MemoryRouter initialEntries={[`/client/cases/${caseId}/workspace`]}>
       <Routes>
         <Route path="/client/cases/:caseId/workspace" element={<ClientWorkspace />} />
+        <Route path="/ai-chat" element={<HandoffProbe />} />
       </Routes>
     </MemoryRouter>,
   )
@@ -101,17 +107,10 @@ describe('ClientWorkspace', () => {
     expect(screen.queryByText(/Dr\. Morse/i)).not.toBeInTheDocument()
   })
 
-  it('sends a real, case-scoped AI question and shows the real answer', async () => {
+  it('hands the selected case and question to the full AI Assistant', async () => {
     vi.mocked(api.getCase).mockResolvedValue(CASE)
     vi.mocked(api.listCaseDocuments).mockResolvedValue({ items: [], total: 0 })
     vi.mocked(api.getCaseTimeline).mockResolvedValue({ events: [] })
-    vi.mocked(api.askCaseQuestion).mockResolvedValue({
-      answer: 'Your lease requires 30 days notice before deposit return.',
-      confidence: { level: 'medium', reason: 'Based on 1 document in this case.' },
-      sources: [],
-      model: 'extractive',
-    })
-
     renderWorkspace()
     await waitFor(() => expect(screen.getByText('Rent Dispute')).toBeInTheDocument())
 
@@ -120,11 +119,6 @@ describe('ClientWorkspace', () => {
     })
     fireEvent.click(screen.getByRole('button', { name: '' }))
 
-    await waitFor(() => {
-      expect(screen.getByText(/30 days notice/)).toBeInTheDocument()
-    })
-
-    // Confirms the case-scoped function was called with this case's real ID, not the general public endpoint.
-    expect(api.askCaseQuestion).toHaveBeenCalledWith('How long until my deposit is returned?', 7, [])
+    await waitFor(() => expect(screen.getByText('AI handoff: 7 · How long until my deposit is returned?')).toBeInTheDocument())
   })
 })
