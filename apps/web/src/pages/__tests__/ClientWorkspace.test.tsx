@@ -11,6 +11,8 @@ vi.mock('../../lib/api', () => ({
   getCaseTimeline: vi.fn(),
   updateCase: vi.fn(),
   deleteDocument: vi.fn(),
+  listEvidenceFiles: vi.fn(() => Promise.resolve({ items: [] })),
+  uploadDocument: vi.fn(), uploadEvidenceFile: vi.fn(), downloadEvidenceFile: vi.fn(), addCaseEvent: vi.fn(),
   errorMessage: (err: unknown) =>
     err instanceof Error ? err.message : 'Something went wrong.',
 }))

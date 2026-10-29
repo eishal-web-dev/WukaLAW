@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Cpu, FileText, AlertTriangle } from 'lucide-react'
-import { listCases, listCaseDocuments, getDocument, errorMessage } from '../lib/api'
+import { Cpu, FileText, AlertTriangle, RefreshCw, Sparkles } from 'lucide-react'
+import { listCases, listCaseDocuments, getDocument, summarizeDocument, errorMessage } from '../lib/api'
 import type { Case, DocumentMeta, Document } from '../lib/api'
 import { Card, Badge, G } from '../components/design'
 import ErrorAlert from '../components/ErrorAlert'
@@ -27,6 +27,7 @@ export default function ClientExplainableAI() {
   const [loadingCases, setLoadingCases] = useState(true)
   const [loadingDocs, setLoadingDocs] = useState(false)
   const [loadingDoc, setLoadingDoc] = useState(false)
+  const [summarizing, setSummarizing] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -58,8 +59,7 @@ export default function ClientExplainableAI() {
       .then((res) => {
         if (cancelled) return
         setDocs(res.items)
-        const withSummary = res.items.find((d) => d.has_summary)
-        if (withSummary) setSelectedDocId(withSummary.id)
+        if (res.items[0]) setSelectedDocId(res.items.find((d) => d.has_summary)?.id ?? res.items[0].id)
       })
       .catch((err) => {
         if (!cancelled) setError(errorMessage(err))
@@ -91,7 +91,20 @@ export default function ClientExplainableAI() {
     }
   }, [selectedDocId])
 
-  const summarizedDocs = docs.filter((d) => d.has_summary)
+  const generateSummary = async () => {
+    if (!selectedDocId) return
+    setSummarizing(true)
+    setError(null)
+    try {
+      await summarizeDocument(selectedDocId)
+      setDocument(await getDocument(selectedDocId))
+      setDocs((current) => current.map((item) => item.id === selectedDocId ? { ...item, has_summary: true } : item))
+    } catch (err) {
+      setError(errorMessage(err))
+    } finally {
+      setSummarizing(false)
+    }
+  }
 
   if (loadingCases) {
     return (
@@ -139,18 +152,8 @@ export default function ClientExplainableAI() {
 
       {loadingDocs ? (
         <div className="py-16 flex justify-center"><Spinner label="Loading documents…" /></div>
-      ) : summarizedDocs.length === 0 ? (
-        <Card className="p-10 text-center space-y-3">
-          <AlertTriangle size={28} className="mx-auto text-muted-foreground" />
-          <h2 className="text-base font-semibold text-foreground">No AI result to explain yet</h2>
-          <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-            None of this case's documents have an AI summary generated yet. Generate one from the{' '}
-            <Link to="/client/ai-summary" className="underline" style={{ color: G }}>
-              AI Summary
-            </Link>{' '}
-            page first.
-          </p>
-        </Card>
+      ) : docs.length === 0 ? (
+        <Card className="p-10 text-center space-y-3"><AlertTriangle size={28} className="mx-auto text-muted-foreground" /><h2 className="text-base font-semibold text-foreground">No documents to summarise yet</h2><p className="text-sm text-muted-foreground">Open this case from My Cases and upload a document first.</p></Card>
       ) : (
         <>
           <div>
@@ -163,13 +166,15 @@ export default function ClientExplainableAI() {
               onChange={(e) => setSelectedDocId(Number(e.target.value))}
               className="w-full px-3.5 py-2.5 text-sm bg-card border border-border rounded-xl text-foreground outline-none focus:border-primary/40"
             >
-              {summarizedDocs.map((d) => (
+              {docs.map((d) => (
                 <option key={d.id} value={d.id}>
-                  Summary of {d.title}
+                  {d.has_summary ? 'Summary of ' : 'Generate summary for '}{d.title}
                 </option>
               ))}
             </select>
           </div>
+
+          {!document?.summary && !loadingDoc && <button type="button" onClick={() => void generateSummary()} disabled={summarizing} className="w-full py-3 rounded-xl text-black font-semibold disabled:opacity-50 flex items-center justify-center gap-2" style={{ background: G }}>{summarizing ? <><RefreshCw size={14} className="animate-spin" /> Generating…</> : <><Sparkles size={14} /> Generate and explain summary</>}</button>}
 
           {loadingDoc ? (
             <div className="py-10 flex justify-center"><Spinner label="Loading result…" /></div>
@@ -227,7 +232,7 @@ export default function ClientExplainableAI() {
             </div>
           ) : (
             <Card className="p-8 text-center text-sm text-muted-foreground">
-              This document doesn't have a summary yet.
+              Select “Generate and explain summary” to create a summary from this document.
             </Card>
           )}
         </>

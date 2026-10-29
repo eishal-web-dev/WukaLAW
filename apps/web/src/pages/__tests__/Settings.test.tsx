@@ -4,6 +4,9 @@ import Settings from '../Settings'
 import * as api from '../../lib/api'
 
 vi.mock('../../lib/auth', () => ({ useAuth: () => ({ user: { name: 'Test Lawyer', email: 'test@example.com' } }) }))
+vi.mock('react-router-dom', () => ({ useNavigate: () => vi.fn() }))
+vi.mock('../../lib/theme', () => ({ useTheme: () => ({ dark: true, toggleDark: vi.fn() }) }))
+vi.mock('../../lib/i18n', () => ({ useI18n: () => ({ language: 'en', setLanguage: vi.fn() }) }))
 vi.mock('../../lib/api', () => ({
   getNotificationPreferences: vi.fn(),
   updateNotificationPreferences: vi.fn(),

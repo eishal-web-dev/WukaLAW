@@ -12,10 +12,6 @@ import Dashboard from './pages/Dashboard'
 import ClientDashboard from './pages/ClientDashboard'
 import ClientCases from './pages/ClientCases'
 import ClientWorkspace from './pages/ClientWorkspace'
-import ClientUpload from './pages/ClientUpload'
-import ClientEvidence from './pages/ClientEvidence'
-import ClientTimeline from './pages/ClientTimeline'
-import ClientAISummary from './pages/ClientAISummary'
 import ClientRequestCase from './pages/ClientRequestCase'
 import ClientCourtPrediction from './pages/ClientCourtPrediction'
 import ClientExplainableAI from './pages/ClientExplainableAI'
@@ -23,7 +19,6 @@ import ClientReportGenerator from './pages/ClientReportGenerator'
 import ClientDownloads from './pages/ClientDownloads'
 import ClientBilling from './pages/ClientBilling'
 import ClientSimilarCases from './pages/ClientSimilarCases'
-import ClientSearch from './pages/ClientSearch'
 import LawyerCases from './pages/LawyerCases'
 import CaseDetail from './pages/CaseDetail'
 import Documents from './pages/Documents'
@@ -129,12 +124,12 @@ export default function App() {
             <Route path="/client" element={<ClientDashboard />} />
             <Route path="/client/cases" element={<ClientCases />} />
             <Route path="/client/cases/:caseId/workspace" element={<ClientWorkspace />} />
-            <Route path="/client/search" element={<ClientSearch />} />
+            <Route path="/client/search" element={<Navigate to="/client/cases" replace />} />
             <Route path="/client/workspace" element={<Navigate to="/client/cases" replace />} />
-            <Route path="/client/upload" element={<ClientUpload />} />
-            <Route path="/client/evidence" element={<ClientEvidence />} />
-            <Route path="/client/timeline" element={<ClientTimeline />} />
-            <Route path="/client/ai-summary" element={<ClientAISummary />} />
+            <Route path="/client/upload" element={<Navigate to="/client/cases" replace />} />
+            <Route path="/client/evidence" element={<Navigate to="/client/cases" replace />} />
+            <Route path="/client/timeline" element={<Navigate to="/client/cases" replace />} />
+            <Route path="/client/ai-summary" element={<Navigate to="/client/explainable" replace />} />
             <Route path="/client/request-case" element={<ClientRequestCase />} />
             <Route path="/client/similar-cases" element={<ClientSimilarCases />} />
             <Route path="/client/predictions" element={<ClientCourtPrediction />} />
