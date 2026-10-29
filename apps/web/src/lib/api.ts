@@ -175,6 +175,10 @@ export interface Case {
   client_id: number | null
   client_name: string | null
   lawyer_name: string | null
+  requested_lawyer_id?: number | null
+  requested_lawyer_name?: string | null
+  tags?: string[]
+  assignment_status?: 'waiting' | 'accepted' | 'unassigned'
 }
 
 export interface CaseListResponse {
@@ -572,9 +576,12 @@ export interface CaseRequestPayload {
   title: string
   case_type: string
   description: string
+  tags: string[]
+  lawyer_id?: number
+  lawyer_email?: string
 }
 
-/** POST /cases/request -- client-only, creates an unassigned case for a lawyer to claim. */
+/** POST /cases/request -- client-only, invites one selected lawyer to accept access. */
 export function requestCase(payload: CaseRequestPayload): Promise<Case> {
   return postJson<Case>('/cases/request', payload)
 }
