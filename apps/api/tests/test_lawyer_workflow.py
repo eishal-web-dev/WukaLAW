@@ -102,7 +102,7 @@ def test_lawyer_clients_are_real_assigned_clients_only(client):
     client_headers = {"Authorization": f"Bearer {client_registration.json()['token']}"}
     requested = client.post(
         "/api/v1/cases/request",
-        json={"title": "Assigned family matter", "case_type": "Family", "description": "A real requested matter."},
+        json={"title": "Assigned family matter", "case_type": "Family", "description": "A real requested matter.", "tags": ["Family"], "lawyer_email": "assigned-lawyer@example.com"},
         headers=client_headers,
     )
     case_id = requested.json()["id"]
