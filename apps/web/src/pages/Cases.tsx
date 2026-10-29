@@ -368,7 +368,7 @@ export default function Cases({
                             className="px-1.5 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-wide"
                             style={{ background: `${G}22`, color: G }}
                           >
-                            New Request
+                            Client Invitation
                           </span>
                         )}
                       </div>
@@ -386,13 +386,13 @@ export default function Cases({
                       <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
                         {c.lawyer_name === null ? (
                           <button
-                            title="Claim this case"
+                            title="Accept this case"
                             onClick={() => void handleClaim(c.id)}
                             disabled={claimingId === c.id}
                             className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-semibold disabled:opacity-50"
                             style={{ background: G, color: '#0D1117' }}
                           >
-                            <UserCheck size={12} /> {claimingId === c.id ? 'Claiming…' : 'Claim'}
+                            <UserCheck size={12} /> {claimingId === c.id ? 'Accepting…' : 'Accept'}
                           </button>
                         ) : (
                           <>
