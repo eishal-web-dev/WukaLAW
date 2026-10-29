@@ -6,7 +6,7 @@ import {
   ChevronLeft, ChevronRight, Clock, CreditCard, Database, Download,
   FilePlus2, FileSearch, FileText, GitBranch, HardDrive, Key, Layers,
   LayoutDashboard, LogOut, MessageCircle, MessageSquare, Moon, Newspaper,
-  Menu, Search, Settings, Sparkles, Sun, Target, TrendingUp, Upload, X,
+  Menu, Search, Settings, Sun, Target, TrendingUp, X,
   User, UserCheck, Users, UsersRound,
 } from 'lucide-react'
 import { useAuth } from '../lib/auth'
@@ -64,17 +64,9 @@ const CLIENT_NAV: NavGroup[] = [
     { path: '/client', label: 'Dashboard', icon: LayoutDashboard },
     { path: '/client/cases', label: 'My Cases', icon: Briefcase },
     { path: '/client/request-case', label: 'Request a Case', icon: FilePlus2 },
-    { path: '/client/search', label: 'Search', icon: Search },
-  ] },
-  { label: 'Case', items: [
-    { path: '/client/upload', label: 'Upload Documents', icon: Upload },
-    { path: '/documents', label: 'My Documents', icon: FileText },
-    { path: '/client/evidence', label: 'Evidence', icon: FileSearch },
-    { path: '/client/timeline', label: 'Timeline', icon: Clock },
   ] },
   { label: 'AI Intelligence', items: [
     { path: '/ai-chat', label: 'AI Assistant', icon: MessageSquare },
-    { path: '/client/ai-summary', label: 'AI Summary', icon: Sparkles },
     { path: '/client/predictions', label: 'Court Prediction', icon: Brain },
     { path: '/client/similar-cases', label: 'Similar Cases', icon: GitBranch },
     { path: '/client/explainable', label: 'Explainable AI', icon: Activity },
