@@ -93,10 +93,13 @@ export default function ClientDashboard() {
       {hasNoCases ? (
         <Card className="p-10 text-center">
           <Briefcase size={28} className="mx-auto mb-3 text-muted-foreground" />
-          <h2 className="text-base font-semibold text-foreground mb-1">No cases assigned yet</h2>
+          <h2 className="text-base font-semibold text-foreground mb-1">Start your first case</h2>
           <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-            Once your lawyer assigns a case to your account, it will show up here along with its documents and updates.
+            Add the details of your legal matter, choose a lawyer, and send them a request to work with you.
           </p>
+          <button onClick={() => navigate('/client/request-case')} className="mt-5 inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-black" style={{ background: G }}>
+            <Briefcase size={15} /> Start a Case
+          </button>
         </Card>
       ) : (
         <>
@@ -128,11 +131,11 @@ export default function ClientDashboard() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-xs text-muted-foreground font-mono">{c.case_number}</span>
-                      <Badge label={c.status} />
+                      <Badge label={c.assignment_status === 'waiting' ? 'Waiting for lawyer' : c.status} />
                     </div>
                     <div className="font-semibold text-foreground text-sm truncate">{c.title}</div>
                     <div className="text-xs text-muted-foreground mt-0.5">
-                      {c.case_type}{c.lawyer_name ? ` · ${c.lawyer_name}` : ''}
+                      {c.case_type}{c.lawyer_name ? ` · ${c.lawyer_name}` : c.requested_lawyer_name ? ` · Sent to ${c.requested_lawyer_name}` : ''}
                     </div>
                   </div>
                   {c.deadline && (
