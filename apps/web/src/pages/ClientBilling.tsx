@@ -1,27 +1,14 @@
-import { CreditCard } from 'lucide-react'
-import { Card } from '../components/design'
+import { useEffect, useState } from 'react'
+import { Check, CreditCard, Sparkles } from 'lucide-react'
+import { errorMessage, getAiSubscription, type AiSubscription } from '../lib/api'
+import { Card, G } from '../components/design'
+import ErrorAlert from '../components/ErrorAlert'
+import Spinner from '../components/Spinner'
 
-/**
- * Client-facing Billing page. There is no billing model, no payment
- * integration, and no invoice storage anywhere in this backend
- * (confirmed: only User, Case, Document, Chunk, GeneratedReport exist).
- * Per the spec's explicit instruction for this page: "If billing is not
- * implemented, show a clean and truthful 'Billing is not available yet'
- * state." No fake plans, balances, invoices, or payment history --
- * this doesn't call any endpoint at all, since there's genuinely
- * nothing real to fetch yet.
- */
 export default function ClientBilling() {
-  return (
-    <div className="p-6 sm:p-8 max-w-md mx-auto flex items-center justify-center h-full">
-      <Card className="p-10 text-center space-y-3">
-        <CreditCard size={28} className="mx-auto text-muted-foreground" />
-        <h2 className="text-base font-semibold text-foreground">Billing is not available yet</h2>
-        <p className="text-sm text-muted-foreground">
-          Billing and payment features haven't been set up for this account. Contact your lawyer directly
-          for any questions about fees.
-        </p>
-      </Card>
-    </div>
-  )
+  const [plan, setPlan] = useState<AiSubscription | null>(null)
+  const [error, setError] = useState('')
+  useEffect(() => { getAiSubscription().then(setPlan).catch(err => setError(errorMessage(err))) }, [])
+  if (!plan && !error) return <div className="grid h-full place-items-center"><Spinner label="Loading subscription…"/></div>
+  return <div className="h-full overflow-auto p-6 sm:p-8"><div className="mx-auto max-w-2xl space-y-5"><header><h1 className="text-2xl font-bold">AI plan & billing</h1><p className="mt-1 text-sm text-muted-foreground">Your first 100 AI tokens are free. Subscribe for continued access.</p></header>{error&&<ErrorAlert message={error}/>} {plan&&<><Card className="p-5"><div className="flex items-center justify-between gap-4"><div><p className="text-xs font-semibold uppercase tracking-wide" style={{color:G}}>Free allowance</p><p className="mt-1 text-2xl font-bold">{plan.free_tokens_remaining} tokens left</p><p className="mt-1 text-xs text-muted-foreground">{plan.ai_tokens_used} of {plan.free_token_limit} tokens used</p></div><Sparkles size={28} style={{color:G}}/></div><div className="mt-4 h-2 overflow-hidden rounded-full bg-muted"><div className="h-full rounded-full" style={{background:G,width:`${Math.min(100,(plan.ai_tokens_used/plan.free_token_limit)*100)}%`}}/></div></Card><Card className="border-[#D4AF37]/35 p-6"><div className="flex flex-wrap items-start justify-between gap-4"><div><h2 className="text-lg font-bold">wukaLAW AI Monthly</h2><p className="mt-1 text-sm text-muted-foreground">Continue using the case-aware AI Assistant after the free allowance.</p></div><div className="text-right"><span className="text-3xl font-bold">PKR 1,500</span><span className="text-sm text-muted-foreground"> / month</span></div></div><ul className="mt-5 space-y-2 text-sm"><li className="flex gap-2"><Check size={17} style={{color:G}}/>Case-aware AI questions</li><li className="flex gap-2"><Check size={17} style={{color:G}}/>Documents, evidence and timeline context</li><li className="flex gap-2"><Check size={17} style={{color:G}}/>Secure Lemon Squeezy checkout</li></ul>{plan.status==='active'?<div className="mt-6 rounded-xl bg-emerald-500/10 p-3 text-center text-sm font-semibold text-emerald-400">Subscription active</div>:plan.checkout_url?<a href={plan.checkout_url} className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl py-3 font-semibold text-black" style={{background:G}}><CreditCard size={17}/>Subscribe with Lemon Squeezy</a>:<div className="mt-6 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-sm text-amber-300">Checkout is not configured yet. Add LEMON_SQUEEZY_CHECKOUT_URL to the backend deployment.</div>}</Card></>}</div></div>
 }
