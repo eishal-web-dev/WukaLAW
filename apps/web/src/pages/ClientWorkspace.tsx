@@ -1,24 +1,16 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import {
   ArrowLeft, Calendar, FileText, User, Send, AlertCircle, RefreshCw, Sparkles, Clock, Trash2,
 } from 'lucide-react'
 import {
-  getCase, listCaseDocuments, getCaseTimeline, askCaseQuestion, updateCase, deleteDocument, errorMessage,
+  getCase, listCaseDocuments, getCaseTimeline, updateCase, deleteDocument, errorMessage,
 } from '../lib/api'
-import type { Case, DocumentMeta, TimelineEvent, AskResponse } from '../lib/api'
+import type { Case, DocumentMeta, TimelineEvent } from '../lib/api'
 import { formatDate, excerpt } from '../lib/format'
 import { Card, Badge, G } from '../components/design'
 import Spinner from '../components/Spinner'
 import ErrorAlert from '../components/ErrorAlert'
-
-interface ChatMessage {
-  id: number
-  role: 'user' | 'ai'
-  text: string
-  sources?: AskResponse['sources']
-  confidenceReason?: string
-}
 
 export default function ClientWorkspace() {
   const { caseId } = useParams<{ caseId: string }>()
@@ -35,11 +27,7 @@ export default function ClientWorkspace() {
   const [savingDescription, setSavingDescription] = useState(false)
   const [deletingDocumentId, setDeletingDocumentId] = useState<number | null>(null)
 
-  const [messages, setMessages] = useState<ChatMessage[]>([])
   const [input, setInput] = useState('')
-  const [asking, setAsking] = useState(false)
-  const [askError, setAskError] = useState<string | null>(null)
-  const chatEndRef = useRef<HTMLDivElement>(null)
 
   const load = useCallback(async () => {
     if (!caseId) return
@@ -86,33 +74,11 @@ export default function ClientWorkspace() {
     void load()
   }, [load])
 
-  useEffect(() => {
-    chatEndRef.current?.scrollIntoView?.({ behavior: 'smooth' })
-  }, [messages])
-
-  const submitQuestion = async (e: React.FormEvent) => {
+  const submitQuestion = (e: React.FormEvent) => {
     e.preventDefault()
     const question = input.trim()
-    if (!question || asking || !caseId) return
-    setAskError(null)
-    setMessages((m) => [...m, { id: Date.now(), role: 'user', text: question }])
-    setInput('')
-    setAsking(true)
-    try {
-      const history = messages.map((message) => ({
-        role: message.role,
-        content: message.text,
-      }))
-      const res = await askCaseQuestion(question, Number(caseId), history)
-      setMessages((m) => [
-        ...m,
-        { id: Date.now() + 1, role: 'ai', text: res.answer, sources: res.sources, confidenceReason: res.confidence.reason },
-      ])
-    } catch (err) {
-      setAskError(errorMessage(err))
-    } finally {
-      setAsking(false)
-    }
+    if (!question || !caseId) return
+    navigate('/ai-chat', { state: { caseId: Number(caseId), initialQuestion: question } })
   }
 
   if (loading) {
@@ -305,43 +271,21 @@ export default function ClientWorkspace() {
           <span className="text-sm font-bold text-foreground">Ask AI about this case</span>
         </div>
         <div className="p-5 space-y-4">
-          <p className="text-xs text-muted-foreground">
-            Answers are generated only from documents in this case. This is not legal advice.
-          </p>
-          {messages.length > 0 && (
-            <div className="space-y-3 max-h-96 overflow-y-auto">
-              {messages.map((m) => (
-                <div key={m.id} className={m.role === 'user' ? 'text-right' : ''}>
-                  <div
-                    className={`inline-block max-w-[85%] text-left rounded-xl px-3.5 py-2.5 text-sm ${m.role === 'user' ? 'text-white' : 'text-foreground'}`}
-                    style={{ background: m.role === 'user' ? G : 'var(--sidebar-accent)' }}
-                  >
-                    {m.text}
-                    {m.confidenceReason && (
-                      <div className="text-[10px] mt-1.5 opacity-70">{m.confidenceReason}</div>
-                    )}
-                  </div>
-                </div>
-              ))}
-              <div ref={chatEndRef} />
-            </div>
-          )}
-          {askError && <ErrorAlert message={askError} />}
+          <p className="text-xs text-muted-foreground">Your question will open the full AI Assistant with this case already selected. The conversation will use the case description, documents, evidence, timeline and deadlines available to the assistant.</p>
           <form onSubmit={submitQuestion} className="flex gap-2">
             <input
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Ask a question about this case…"
-              disabled={asking}
               className="flex-1 px-3.5 py-2.5 text-sm bg-card border border-border rounded-xl text-foreground placeholder-muted-foreground outline-none focus:border-primary/40"
             />
             <button
               type="submit"
-              disabled={asking || !input.trim()}
+              disabled={!input.trim()}
               className="px-4 py-2.5 rounded-xl text-white disabled:opacity-40"
               style={{ background: G }}
             >
-              {asking ? <RefreshCw size={15} className="animate-spin" /> : <Send size={15} />}
+              <Send size={15} />
             </button>
           </form>
         </div>
