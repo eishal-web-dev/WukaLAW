@@ -37,8 +37,8 @@ function renderCases() {
   )
 }
 
-describe('Cases (Claim unassigned client requests)', () => {
-  it('shows a "New Request" badge and Claim button for an unassigned case, not Edit/Delete', async () => {
+describe('Cases (Accept targeted client invitations)', () => {
+  it('shows a Client Invitation badge and Accept button for a pending request, not Edit/Delete', async () => {
     vi.mocked(api.listCases).mockResolvedValue({
       items: [makeCase({ id: 2, title: 'Client Request', lawyer_name: null })],
       total: 1,
@@ -47,13 +47,13 @@ describe('Cases (Claim unassigned client requests)', () => {
     renderCases()
     await waitFor(() => expect(screen.getByText('Client Request')).toBeInTheDocument())
 
-    expect(screen.getByText('New Request')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /Claim/i })).toBeInTheDocument()
+    expect(screen.getByText('Client Invitation')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Accept/i })).toBeInTheDocument()
     expect(screen.queryByTitle('Edit')).not.toBeInTheDocument()
     expect(screen.queryByTitle('Delete')).not.toBeInTheDocument()
   })
 
-  it('an owned case shows the normal Edit/Delete actions, no Claim button', async () => {
+  it('an owned case shows the normal Edit/Delete actions, no Accept button', async () => {
     vi.mocked(api.listCases).mockResolvedValue({
       items: [makeCase({ id: 1, title: 'Owned Case', lawyer_name: 'Adv. Test Lawyer' })],
       total: 1,
@@ -62,12 +62,12 @@ describe('Cases (Claim unassigned client requests)', () => {
     renderCases()
     await waitFor(() => expect(screen.getByText('Owned Case')).toBeInTheDocument())
 
-    expect(screen.queryByText('New Request')).not.toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: /Claim/i })).not.toBeInTheDocument()
+    expect(screen.queryByText('Client Invitation')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Accept/i })).not.toBeInTheDocument()
     expect(screen.getByTitle('Edit')).toBeInTheDocument()
   })
 
-  it('clicking Claim calls the real claimCase() with the correct case ID and refreshes the list', async () => {
+  it('clicking Accept calls claimCase() with the correct case ID and refreshes the list', async () => {
     vi.mocked(api.listCases)
       .mockResolvedValueOnce({ items: [makeCase({ id: 3, title: 'Pending Request', lawyer_name: null })], total: 1 })
       .mockResolvedValueOnce({ items: [makeCase({ id: 3, title: 'Pending Request', lawyer_name: 'Adv. Test Lawyer' })], total: 1 })
@@ -76,13 +76,13 @@ describe('Cases (Claim unassigned client requests)', () => {
     renderCases()
     await waitFor(() => expect(screen.getByText('Pending Request')).toBeInTheDocument())
 
-    fireEvent.click(screen.getByRole('button', { name: /Claim/i }))
+    fireEvent.click(screen.getByRole('button', { name: /Accept/i }))
 
     await waitFor(() => {
       expect(api.claimCase).toHaveBeenCalledWith(3)
     })
     await waitFor(() => {
-      expect(screen.queryByText('New Request')).not.toBeInTheDocument()
+      expect(screen.queryByText('Client Invitation')).not.toBeInTheDocument()
     })
   })
 })
