@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../lib/auth'
+import { useNavigate } from 'react-router-dom'
+import { useTheme } from '../lib/theme'
+import { useI18n } from '../lib/i18n'
 import {
   errorMessage,
   getNotificationPreferences,
@@ -11,7 +14,7 @@ import ErrorAlert from '../components/ErrorAlert'
 const SECTIONS = [
   { id: 'general', label: 'General' },
   { id: 'notifications', label: 'Notifications' },
-  { id: 'ai', label: 'AI Preferences' },
+  { id: 'appearance', label: 'Language & appearance' },
   { id: 'security', label: 'Security' },
 ] as const
 
@@ -37,7 +40,10 @@ function Toggle({ label, on, toggle, disabled = false }: {
 }
 
 export default function Settings() {
-  const { user } = useAuth()
+  const { user, logout } = useAuth()
+  const navigate = useNavigate()
+  const { dark, toggleDark } = useTheme()
+  const { language, setLanguage } = useI18n()
   const [section, setSection] = useState<Section>('general')
   const [notifications, setNotifications] = useState(false)
   const [notificationLoading, setNotificationLoading] = useState(true)
@@ -77,7 +83,6 @@ export default function Settings() {
 
   return (
     <div className="p-8 space-y-7 overflow-y-auto h-full">
-      <p className="text-sm text-muted-foreground">In-app notifications are saved automatically. Other preferences are not yet available.</p>
       <div>
         <h1 className="text-2xl font-bold text-foreground">Settings</h1>
         <p className="text-muted-foreground text-sm mt-1">Manage your account and preferences</p>
@@ -111,7 +116,7 @@ export default function Settings() {
                   <span className="text-sm text-muted-foreground break-all">{item.value}</span>
                 </div>
               ))}
-              <p className="text-xs text-muted-foreground mt-4">Account editing is not yet available.</p>
+              <button type="button" onClick={() => navigate('/profile')} className="mt-4 rounded-lg px-4 py-2 text-sm font-semibold text-black" style={{ background: G }}>Edit profile</button>
             </Card>
           )}
 
@@ -127,30 +132,23 @@ export default function Settings() {
                 </div>
                 <Toggle label="In-app notifications" on={notifications} toggle={() => void toggleNotifications()} disabled={!notificationLoaded || notificationSaving} />
               </div>
-              <div className="flex items-center justify-between gap-4 py-3">
-                <div><div className="text-sm text-foreground">Email alerts for deadlines</div><p className="text-xs text-muted-foreground mt-1">Not yet available</p></div>
-                <Toggle label="Email alerts for deadlines" on={false} disabled />
-              </div>
             </Card>
           )}
 
-          {section === 'ai' && (
+          {section === 'appearance' && (
             <Card className="p-5">
-              <h2 className="text-sm font-semibold text-foreground mb-4">AI Preferences</h2>
-              <p className="text-xs text-muted-foreground mb-3">These preferences are not yet configurable.</p>
-              {['AI Memory (case context retention)', 'Auto-analyze new documents', 'Similar case alerts'].map((label) => (
-                <div key={label} className="text-sm text-foreground py-3 border-b border-border last:border-0">{label}</div>
-              ))}
+              <h2 className="text-sm font-semibold text-foreground mb-4">Language & appearance</h2>
+              <div className="flex items-center justify-between gap-4 py-3 border-b border-border"><div><div className="text-sm text-foreground">Interface language</div><p className="text-xs text-muted-foreground mt-1">Switch the whole portal between English and Urdu.</p></div><select aria-label="Interface language" value={language} onChange={(e) => setLanguage(e.target.value === 'ur' ? 'ur' : 'en')} className="rounded-lg border border-border bg-background px-3 py-2 text-sm"><option value="en">English</option><option value="ur">اردو</option></select></div>
+              <div className="flex items-center justify-between gap-4 py-3"><div><div className="text-sm text-foreground">Dark mode</div><p className="text-xs text-muted-foreground mt-1">Saved on this device.</p></div><Toggle label="Dark mode" on={dark} toggle={toggleDark}/></div>
             </Card>
           )}
 
           {section === 'security' && (
             <Card className="p-5">
               <h2 className="text-sm font-semibold text-foreground mb-4">Security</h2>
-              <div className="text-sm text-foreground">Two-factor authentication</div>
-              <p className="text-xs text-muted-foreground mt-1">Not yet available. Two-factor authentication is not enabled by this app.</p>
-              <div className="text-sm text-foreground mt-5">Session timeout</div>
-              <p className="text-xs text-muted-foreground mt-1">Managed by the server; not configurable here.</p>
+              <p className="text-xs text-muted-foreground">Two-factor authentication is not enabled by this app. Use a strong, unique password and sign out on shared devices.</p>
+              <div className="text-sm text-foreground">Signed-in account</div><p className="text-xs text-muted-foreground mt-1 break-all">{user?.email}</p>
+              <button type="button" onClick={logout} className="mt-5 rounded-lg border border-red-500/40 px-4 py-2 text-sm font-semibold text-red-400">Sign out on this device</button>
             </Card>
           )}
         </div>
