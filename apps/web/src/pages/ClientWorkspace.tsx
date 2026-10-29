@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import {
-  ArrowLeft, Calendar, FileText, User, Send, AlertCircle, RefreshCw, Sparkles, Clock, Trash2,
+  ArrowLeft, Calendar, FileText, User, Send, AlertCircle, RefreshCw, Sparkles, Clock, Trash2, Upload, Paperclip,
 } from 'lucide-react'
 import {
   getCase, listCaseDocuments, getCaseTimeline, updateCase, deleteDocument, errorMessage,
+  uploadDocument, listEvidenceFiles, uploadEvidenceFile, downloadEvidenceFile, addCaseEvent,
 } from '../lib/api'
-import type { Case, DocumentMeta, TimelineEvent } from '../lib/api'
+import type { Case, DocumentMeta, TimelineEvent, EvidenceFile } from '../lib/api'
 import { formatDate, excerpt } from '../lib/format'
 import { Card, Badge, G } from '../components/design'
 import Spinner from '../components/Spinner'
@@ -26,6 +27,10 @@ export default function ClientWorkspace() {
   const [descriptionError, setDescriptionError] = useState<string | null>(null)
   const [savingDescription, setSavingDescription] = useState(false)
   const [deletingDocumentId, setDeletingDocumentId] = useState<number | null>(null)
+  const [evidence, setEvidence] = useState<EvidenceFile[]>([])
+  const [uploading, setUploading] = useState(false)
+  const [eventDate, setEventDate] = useState('')
+  const [eventText, setEventText] = useState('')
 
   const [input, setInput] = useState('')
 
@@ -35,15 +40,17 @@ export default function ClientWorkspace() {
     setError(null)
     setNotFound(false)
     try {
-      const [c, docs, timeline] = await Promise.all([
+      const [c, docs, timeline, evidenceResult] = await Promise.all([
         getCase(caseId),
         listCaseDocuments(caseId).catch(() => ({ items: [], total: 0 })),
         getCaseTimeline(caseId).catch(() => ({ events: [] })),
+        listEvidenceFiles(Number(caseId)).catch(() => ({ items: [] })),
       ])
       setCaseData(c)
       setDescriptionDraft(c.description ?? '')
       setDocuments(docs.items)
       setEvents(timeline.events)
+      setEvidence(evidenceResult.items)
     } catch (err) {
       const message = errorMessage(err)
       if (message.toLowerCase().includes('not found')) {
@@ -79,6 +86,25 @@ export default function ClientWorkspace() {
     const question = input.trim()
     if (!question || !caseId) return
     navigate('/ai-chat', { state: { caseId: Number(caseId), initialQuestion: question } })
+  }
+
+  const uploadCaseFile = async (file: File, kind: 'document' | 'evidence') => {
+    if (!caseId) return
+    setUploading(true); setError(null)
+    try {
+      if (kind === 'document') await uploadDocument(file, undefined, Number(caseId))
+      else await uploadEvidenceFile(Number(caseId), file)
+      await load()
+    } catch (err) { setError(errorMessage(err)) } finally { setUploading(false) }
+  }
+
+  const saveEvent = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!caseId || !eventDate || !eventText.trim()) return
+    try {
+      await addCaseEvent(caseId, { date: eventDate, text: eventText.trim(), document_id: null })
+      setEventDate(''); setEventText(''); await load()
+    } catch (err) { setError(errorMessage(err)) }
   }
 
   if (loading) {
@@ -207,7 +233,11 @@ export default function ClientWorkspace() {
         <h2 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
           <Clock size={15} style={{ color: G }} /> Case Timeline
         </h2>
-        <button type="button" onClick={() => navigate(`/client/timeline?case=${caseId}`)} className="mb-3 text-xs underline" style={{ color: G }}>Add a dated update or link a document</button>
+        <form onSubmit={saveEvent} className="mb-5 grid gap-2 sm:grid-cols-[150px_1fr_auto]">
+          <input aria-label="Event date" type="date" value={eventDate} onChange={(e) => setEventDate(e.target.value)} className="rounded-lg border border-border bg-background px-3 py-2 text-sm" />
+          <input aria-label="Timeline update" value={eventText} onChange={(e) => setEventText(e.target.value)} placeholder="Add a dated case update…" className="rounded-lg border border-border bg-background px-3 py-2 text-sm" />
+          <button disabled={!eventDate || !eventText.trim()} className="rounded-lg px-4 py-2 text-sm font-semibold text-black disabled:opacity-50" style={{ background: G }}>Add</button>
+        </form>
         {events.length === 0 ? (
           <p className="text-sm text-muted-foreground">No dated events have been found in this case's documents yet.</p>
         ) : (
@@ -233,6 +263,7 @@ export default function ClientWorkspace() {
       <Card className="overflow-hidden">
         <div className="px-5 py-4 border-b border-border flex items-center justify-between">
           <span className="text-sm font-bold text-foreground">Documents ({documents.length})</span>
+          <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold text-black" style={{ background: G }}><Upload size={14}/>{uploading ? 'Uploading…' : 'Upload document'}<input aria-label="Upload case document" type="file" className="sr-only" disabled={uploading} accept=".pdf,.txt,.docx,.png,.jpg,.jpeg,.webp,.tif,.tiff" onChange={(e) => { const file=e.target.files?.[0]; if (file) void uploadCaseFile(file, 'document'); e.currentTarget.value='' }}/></label>
         </div>
         {documents.length === 0 ? (
           <p className="p-5 text-sm text-muted-foreground">No documents have been added to this case yet.</p>
@@ -262,6 +293,11 @@ export default function ClientWorkspace() {
             </div>
           ))
         )}
+      </Card>
+
+      <Card className="overflow-hidden">
+        <div className="px-5 py-4 border-b border-border flex items-center justify-between gap-3"><span className="text-sm font-bold text-foreground">Evidence ({evidence.length})</span><label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-border px-3 py-2 text-xs font-semibold"><Paperclip size={14}/>Add evidence<input aria-label="Upload case evidence" type="file" className="sr-only" disabled={uploading} onChange={(e) => { const file=e.target.files?.[0]; if (file) void uploadCaseFile(file, 'evidence'); e.currentTarget.value='' }}/></label></div>
+        {evidence.length === 0 ? <p className="p-5 text-sm text-muted-foreground">No evidence files have been added yet.</p> : evidence.map((item) => <button key={item.id} type="button" onClick={() => void downloadEvidenceFile(Number(caseId), item)} className="flex w-full items-center gap-3 border-b border-border px-5 py-3 text-left last:border-0 hover:bg-sidebar-accent"><Paperclip size={15} className="text-muted-foreground"/><span className="min-w-0 flex-1 truncate text-sm">{item.filename}</span><span className="text-xs text-muted-foreground">Download</span></button>)}
       </Card>
 
       {/* 8. Ask AI about this case */}

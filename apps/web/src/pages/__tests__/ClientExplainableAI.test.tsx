@@ -9,6 +9,7 @@ vi.mock('../../lib/api', () => ({
   listCases: vi.fn(),
   listCaseDocuments: vi.fn(),
   getDocument: vi.fn(),
+  summarizeDocument: vi.fn(),
   errorMessage: (err: unknown) =>
     err instanceof Error ? err.message : 'Something went wrong.',
 }))
@@ -73,10 +74,11 @@ describe('ClientExplainableAI', () => {
       items: [makeDocMeta({ has_summary: false })],
       total: 1,
     })
+    vi.mocked(api.getDocument).mockResolvedValue(makeFullDoc({ summary: null }))
 
     renderPage()
     await waitFor(() => {
-      expect(screen.getByText(/No AI result to explain yet/i)).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /Generate and explain summary/i })).toBeInTheDocument()
     })
   })
 
