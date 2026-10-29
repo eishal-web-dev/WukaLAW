@@ -549,6 +549,20 @@ export function askCaseQuestion(
   })
 }
 
+export interface AiSubscription {
+  status: string
+  ai_tokens_used: number
+  free_token_limit: number
+  free_tokens_remaining: number
+  monthly_price: number
+  currency: string
+  checkout_url: string | null
+}
+
+export function getAiSubscription(): Promise<AiSubscription> {
+  return request<AiSubscription>('/billing/subscription')
+}
+
 /** POST /similar-cases */
 export function findSimilarCases(
   query: string,
