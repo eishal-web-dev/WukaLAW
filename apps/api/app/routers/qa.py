@@ -271,8 +271,17 @@ def ask(
     something the user considers private) so the *fact* of a failure is
     diagnosable without exposing raw internals to the browser.
     """
+    if user.role == "client" and user.subscription_status not in {"active", "on_trial"} and user.ai_tokens_used >= settings.ai_free_token_limit:
+        raise HTTPException(status_code=402, detail="Your 100 free AI tokens have been used. Subscribe to continue.")
     try:
-        return _ask_impl(request, db, user)
+        result = _ask_impl(request, db, user)
+        if user.role == "client" and user.subscription_status not in {"active", "on_trial"}:
+            # Stable provider-independent approximation: roughly four
+            # characters per token. The server owns this counter so refreshing
+            # or changing browsers cannot restore the free allowance.
+            user.ai_tokens_used += max(1, (len(request.question) + len(result.get("answer", "")) + 3) // 4)
+            db.commit()
+        return result
     except HTTPException:
         raise
     except Exception as exc:
