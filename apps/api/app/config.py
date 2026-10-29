@@ -94,6 +94,12 @@ class Settings(BaseSettings):
     smtp_sender_email: str = ""
     smtp_use_tls: bool = True
 
+    # Lemon Squeezy subscription checkout. Create a PKR 1,500/month product
+    # in Lemon Squeezy and place its checkout URL and webhook secret here.
+    lemon_squeezy_checkout_url: str = ""
+    lemon_squeezy_webhook_secret: str = ""
+    ai_free_token_limit: int = 100
+
     # Explicit values are retained for backwards-compatible experiments; normal
     # uploads use the adaptive chunker without forcing these values.
     chunk_words: int = 300
