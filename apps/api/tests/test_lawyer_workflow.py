@@ -93,6 +93,21 @@ def test_event_rejects_end_before_start(client):
     assert response.status_code == 422
 
 
+def test_case_calendar_event_is_shared_with_client_and_notified(client):
+    lawyer = register_user(client, email="calendar-lawyer@example.com")
+    registered = client.post("/api/v1/auth/register", json={"email":"calendar-client@example.com","name":"Calendar Client","password":"secret123","role":"client"})
+    client_headers = {"Authorization": f"Bearer {registered.json()['token']}"}
+    requested = client.post("/api/v1/cases/request", json={"title":"Client meeting matter","case_type":"Family","description":"Calendar sharing","lawyer_email":"calendar-lawyer@example.com"}, headers=client_headers).json()
+    assert client.post(f"/api/v1/cases/{requested['id']}/claim", headers=lawyer).status_code == 200
+    created = client.post("/api/v1/lawyer-workflow/events", json={"case_id":requested["id"],"title":"Client conference","starts_at":"2026-11-05T10:00:00Z","event_type":"Meeting"}, headers=lawyer)
+    assert created.status_code == 201, created.text
+    events = client.get("/api/v1/lawyer-workflow/events", headers=client_headers)
+    assert events.status_code == 200
+    assert [item["title"] for item in events.json()] == ["Client conference"]
+    notifications = client.get("/api/v1/notifications", headers=client_headers).json()["items"]
+    assert any(item["title"] == "New calendar event" and item["action_url"] == "/client/calendar" for item in notifications)
+
+
 def test_lawyer_clients_are_real_assigned_clients_only(client):
     lawyer = register_user(client, email="assigned-lawyer@example.com")
     client_registration = client.post(
