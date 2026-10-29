@@ -31,11 +31,12 @@ function makeCase(overrides: Partial<Case>): Case {
 beforeEach(() => {
   vi.clearAllMocks()
   mockUser = { name: 'Test User', role: 'lawyer' }
+  vi.mocked(api.listCases).mockResolvedValue({ items: [], total: 0 })
 })
 
-function renderChat() {
+function renderChat(initialEntry: string | { pathname: string; state: unknown } = '/ai-chat') {
   return render(
-    <MemoryRouter>
+    <MemoryRouter initialEntries={[initialEntry]}>
       <AIChat />
     </MemoryRouter>,
   )
@@ -44,6 +45,7 @@ function renderChat() {
 describe('AIChat', () => {
   it('a lawyer sees no case selector and uses the general askQuestion()', async () => {
     renderChat()
+    await waitFor(() => expect(api.listCases).toHaveBeenCalled())
     expect(screen.queryByRole('combobox')).not.toBeInTheDocument()
 
     vi.mocked(api.askQuestion).mockResolvedValue({
@@ -55,6 +57,22 @@ describe('AIChat', () => {
     await waitFor(() => expect(screen.getByText('General answer.')).toBeInTheDocument())
     expect(api.askQuestion).toHaveBeenCalled()
     expect(api.askCaseQuestion).not.toHaveBeenCalled()
+  })
+
+  it('opens the selected case and automatically starts a handed-off case conversation', async () => {
+    vi.mocked(api.listCases).mockResolvedValue({
+      items: [makeCase({ id: 7, case_number: 'WK-2026-007', title: 'Rent Dispute' })], total: 1,
+    })
+    vi.mocked(api.askCaseQuestion).mockResolvedValue({
+      answer: 'Case handoff answer.', confidence: { level: 'high', reason: 'Case context used.' }, sources: [], model: 'ollama',
+    })
+
+    renderChat({ pathname: '/ai-chat', state: { caseId: 7, initialQuestion: 'What happens next?' } })
+
+    await waitFor(() => expect(screen.getByText('Case handoff answer.')).toBeInTheDocument())
+    expect(api.askCaseQuestion).toHaveBeenCalledWith('What happens next?', 7, [])
+    expect(api.askQuestion).not.toHaveBeenCalled()
+    expect(screen.getByRole('combobox')).toHaveValue('7')
   })
 
   it('a client sees a genuine empty state when they have no cases, input disabled', async () => {
