@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import {
   Sparkles, Brain, Send, RefreshCw, FileText, ChevronDown, ChevronRight,
 } from 'lucide-react'
-import { ApiError, askQuestion, askCaseQuestion, listCases, errorMessage } from '../lib/api'
+import { ApiError, askQuestion, askCaseQuestion, getAiSubscription, listCases, errorMessage } from '../lib/api'
 import type { AskResponse, Confidence, Source, Case } from '../lib/api'
 import { groupSources, passageSummary } from '../lib/sources'
 import { formatScore, excerpt } from '../lib/format'
@@ -166,6 +166,12 @@ export default function AIChat() {
           model: res.model,
         },
       ])
+      if (isClient) {
+        const usage = await getAiSubscription()
+        if (usage.status !== 'active' && usage.free_tokens_remaining === 0) {
+          navigate('/client/billing', { replace: true, state: { reason: 'ai-limit' } })
+        }
+      }
     } catch (err) {
       if (err instanceof ApiError && err.status === 402) {
         navigate(isClient ? '/client/billing' : '/billing', { replace: true, state: { reason: 'ai-limit' } })
