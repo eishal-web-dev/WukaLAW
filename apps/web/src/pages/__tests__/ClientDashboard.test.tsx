@@ -31,6 +31,10 @@ const CASE: Case = {
   client_id: 17,
   client_name: 'Test Client',
   lawyer_name: 'Adv. Fatima Khan',
+  requested_lawyer_id: 2,
+  requested_lawyer_name: 'Adv. Fatima Khan',
+  tags: ['Property'],
+  assignment_status: 'accepted',
 }
 
 const DOC: DocumentMeta = {
@@ -74,7 +78,7 @@ describe('ClientDashboard', () => {
     renderDashboard()
 
     await waitFor(() => {
-      expect(screen.getByText(/No cases assigned yet/i)).toBeInTheDocument()
+      expect(screen.getByText(/Start your first case/i)).toBeInTheDocument()
     })
     expect(screen.queryByText('Ahmed Hassan')).not.toBeInTheDocument()
     expect(screen.queryByText(/85%/)).not.toBeInTheDocument()

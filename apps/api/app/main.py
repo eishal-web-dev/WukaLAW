@@ -95,6 +95,11 @@ with engine.connect() as connection:
     case_columns = [row[1] for row in connection.execute(text("PRAGMA table_info(cases)"))]
     if case_columns and "client_id" not in case_columns:
         connection.execute(text("ALTER TABLE cases ADD COLUMN client_id INTEGER"))
+    if case_columns and "requested_lawyer_id" not in case_columns:
+        connection.execute(text("ALTER TABLE cases ADD COLUMN requested_lawyer_id INTEGER"))
+    if case_columns and "tags" not in case_columns:
+        connection.execute(text("ALTER TABLE cases ADD COLUMN tags JSON"))
+        connection.execute(text("UPDATE cases SET tags = '[]' WHERE tags IS NULL"))
     connection.commit()
 
     # SQLite can't ALTER COLUMN to drop a NOT NULL constraint directly --
@@ -111,26 +116,30 @@ with engine.connect() as connection:
                 id INTEGER PRIMARY KEY,
                 owner_id INTEGER,
                 client_id INTEGER,
+                requested_lawyer_id INTEGER,
                 case_number VARCHAR(32),
                 title VARCHAR(255),
                 case_type VARCHAR(100),
                 status VARCHAR(32),
                 priority VARCHAR(32),
                 description TEXT,
+                tags JSON,
                 deadline VARCHAR(32),
                 created_at DATETIME,
                 FOREIGN KEY(owner_id) REFERENCES users(id),
-                FOREIGN KEY(client_id) REFERENCES users(id)
+                FOREIGN KEY(client_id) REFERENCES users(id),
+                FOREIGN KEY(requested_lawyer_id) REFERENCES users(id)
             )
         """))
         connection.execute(text("""
-            INSERT INTO cases_new (id, owner_id, client_id, case_number, title, case_type, status, priority, description, deadline, created_at)
-            SELECT id, owner_id, client_id, case_number, title, case_type, status, priority, description, deadline, created_at FROM cases
+            INSERT INTO cases_new (id, owner_id, client_id, requested_lawyer_id, case_number, title, case_type, status, priority, description, tags, deadline, created_at)
+            SELECT id, owner_id, client_id, requested_lawyer_id, case_number, title, case_type, status, priority, description, tags, deadline, created_at FROM cases
         """))
         connection.execute(text("DROP TABLE cases"))
         connection.execute(text("ALTER TABLE cases_new RENAME TO cases"))
         connection.execute(text("CREATE INDEX IF NOT EXISTS ix_cases_owner_id ON cases (owner_id)"))
         connection.execute(text("CREATE INDEX IF NOT EXISTS ix_cases_client_id ON cases (client_id)"))
+        connection.execute(text("CREATE INDEX IF NOT EXISTS ix_cases_requested_lawyer_id ON cases (requested_lawyer_id)"))
     connection.commit()
 
 if settings.admin_bootstrap_password:

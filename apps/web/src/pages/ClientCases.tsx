@@ -84,17 +84,16 @@ export default function ClientCases() {
       {items.length === 0 ? (
         <Card className="p-10 text-center">
           <Briefcase size={28} className="mx-auto mb-3 text-muted-foreground" />
-          <h2 className="text-base font-semibold text-foreground mb-1">No cases assigned yet</h2>
+          <h2 className="text-base font-semibold text-foreground mb-1">Start your first case</h2>
           <p className="text-sm text-muted-foreground max-w-sm mx-auto mb-4">
-            Once your lawyer assigns a case to your account, it will appear here — or submit a request
-            yourself and a lawyer will take it on.
+            Add your case information, choose a lawyer, and invite them to work with you.
           </p>
           <button
             onClick={() => navigate('/client/request-case')}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white"
             style={{ background: G }}
           >
-            Request a Case
+            Start a Case
           </button>
         </Card>
       ) : (
@@ -129,13 +128,13 @@ export default function ClientCases() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-2 flex-wrap">
                         <span className="text-xs font-mono text-muted-foreground">{c.case_number}</span>
-                        <Badge label={c.status} />
+                        <Badge label={c.assignment_status === 'waiting' ? 'Waiting for lawyer' : c.status} />
                         <Badge label={c.priority} />
                       </div>
                       <h3 className="font-bold text-foreground text-base mb-2 truncate">{c.title}</h3>
                       <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
                         <span>{c.case_type}</span>
-                        {c.lawyer_name && <span>{c.lawyer_name}</span>}
+                        {c.lawyer_name ? <span>{c.lawyer_name}</span> : c.requested_lawyer_name ? <span>Sent to {c.requested_lawyer_name}</span> : null}
                         <span className="flex items-center gap-1">
                           <FileText size={11} />
                           {c.num_documents} doc{c.num_documents === 1 ? '' : 's'}

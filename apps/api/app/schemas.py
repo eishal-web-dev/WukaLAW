@@ -106,6 +106,9 @@ class CaseRequestCreate(BaseModel):
     title: str = Field(min_length=3, max_length=255)
     case_type: str = Field(min_length=2, max_length=100)
     description: str = Field(min_length=10, max_length=5000)
+    tags: list[str] = Field(default_factory=list, max_length=8)
+    lawyer_id: int | None = None
+    lawyer_email: str | None = Field(default=None, max_length=255)
 
 
 class CaseUpdate(BaseModel):
@@ -132,6 +135,10 @@ class CaseOut(BaseModel):
     client_id: int | None = None
     client_name: str | None = None
     lawyer_name: str | None = None
+    requested_lawyer_id: int | None = None
+    requested_lawyer_name: str | None = None
+    tags: list[str] = Field(default_factory=list)
+    assignment_status: Literal["waiting", "accepted", "unassigned"] = "unassigned"
 
 
 class CaseList(BaseModel):
