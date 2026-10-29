@@ -7,7 +7,7 @@ import LawyerCalendar from '../LawyerCalendar'
 import LawyerClients from '../LawyerClients'
 import * as api from '../../lib/api'
 
-vi.mock('../../lib/auth', () => ({ useAuth: () => ({ user: { name: 'Counsel' } }) }))
+vi.mock('../../lib/auth', () => ({ useAuth: () => ({ user: { name: 'Counsel', role: 'lawyer' } }) }))
 vi.mock('../../lib/notifications', () => ({ useNotifications: () => ({ unreadCount: 0 }) }))
 vi.mock('recharts', () => ({
   ResponsiveContainer: ({ children }: { children: ReactNode }) => <div>{children}</div>,
