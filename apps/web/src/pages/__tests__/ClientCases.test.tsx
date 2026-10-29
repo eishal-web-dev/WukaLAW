@@ -53,7 +53,7 @@ describe('ClientCases', () => {
     vi.mocked(api.listCases).mockResolvedValue({ items: [], total: 0 })
     renderCases()
     await waitFor(() => {
-      expect(screen.getByText(/No cases assigned yet/i)).toBeInTheDocument()
+      expect(screen.getByText(/Start your first case/i)).toBeInTheDocument()
     })
   })
 
