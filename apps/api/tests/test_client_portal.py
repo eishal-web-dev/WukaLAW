@@ -264,6 +264,7 @@ def test_client_ai_question_cannot_use_another_clients_case(client):
 def test_client_can_request_a_new_case(client):
     client_headers = register_user(client, email="requester@example.com")
     _make_client("requester@example.com")
+    register_user(client, email="selected-lawyer@example.com")
 
     response = client.post(
         "/api/v1/cases/request",
@@ -271,34 +272,42 @@ def test_client_can_request_a_new_case(client):
             "title": "Landlord won't return my deposit",
             "case_type": "Civil",
             "description": "My landlord has not returned my security deposit after I moved out three months ago.",
+            "tags": ["Money dispute", "Recovery claim"],
+            "lawyer_email": "selected-lawyer@example.com",
         },
         headers=client_headers,
     )
     assert response.status_code == 201, response.text
     data = response.json()
-    assert data["status"] == "Started"
-    assert data["lawyer_name"] is None  # unclaimed -- no lawyer assigned yet
+    assert data["status"] == "Review"
+    assert data["lawyer_name"] is None
+    assert data["requested_lawyer_name"] is not None
+    assert data["assignment_status"] == "waiting"
+    assert data["tags"] == ["Money dispute", "Recovery claim"]
 
     # It should belong to the requesting client.
     my_cases = client.get("/api/v1/cases", headers=client_headers).json()["items"]
     assert any(c["id"] == data["id"] for c in my_cases)
 
 
-def test_lawyer_can_see_and_claim_an_unassigned_case_request(client):
+def test_only_requested_lawyer_can_see_and_accept_case_request(client):
     client_headers = register_user(client, email="requester2@example.com")
     _make_client("requester2@example.com")
     lawyer_headers = register_user(client, email="claimer@example.com")
+    other_lawyer = register_user(client, email="not-invited@example.com")
 
     r = client.post(
         "/api/v1/cases/request",
-        json={"title": "Need help with a contract", "case_type": "Corporate", "description": "A supplier breached our contract and I need advice."},
+        json={"title": "Need help with a contract", "case_type": "Corporate", "description": "A supplier breached our contract and I need advice.", "tags": ["Commercial contract"], "lawyer_email": "claimer@example.com"},
         headers=client_headers,
     )
     case_id = r.json()["id"]
 
-    # Any lawyer should see it in their list before claiming it.
+    # The invited lawyer sees it; every other lawyer is excluded.
     lawyer_cases = client.get("/api/v1/cases", headers=lawyer_headers).json()["items"]
     assert any(c["id"] == case_id for c in lawyer_cases)
+    assert all(c["id"] != case_id for c in client.get("/api/v1/cases", headers=other_lawyer).json()["items"])
+    assert client.get(f"/api/v1/cases/{case_id}", headers=other_lawyer).status_code == 404
 
     response = client.post(f"/api/v1/cases/{case_id}/claim", headers=lawyer_headers)
     assert response.status_code == 200
@@ -313,7 +322,7 @@ def test_a_case_cannot_be_claimed_twice(client):
 
     r = client.post(
         "/api/v1/cases/request",
-        json={"title": "Employment dispute", "case_type": "Labour", "description": "I was terminated without notice or severance pay."},
+        json={"title": "Employment dispute", "case_type": "Labour", "description": "I was terminated without notice or severance pay.", "tags": ["Termination"], "lawyer_email": "firstclaimer@example.com"},
         headers=client_headers,
     )
     case_id = r.json()["id"]
@@ -322,7 +331,7 @@ def test_a_case_cannot_be_claimed_twice(client):
     assert first.status_code == 200
 
     second = client.post(f"/api/v1/cases/{case_id}/claim", headers=lawyer2)
-    assert second.status_code == 409
+    assert second.status_code == 404
 
 
 def test_client_cannot_claim_a_case(client):
