@@ -6,6 +6,7 @@ import * as api from '../../lib/api'
 import type { Case } from '../../lib/api'
 
 vi.mock('../../lib/api', () => ({
+  ApiError: class ApiError extends Error { status: number; constructor(message: string, status: number) { super(message); this.status = status } },
   askQuestion: vi.fn(),
   askCaseQuestion: vi.fn(),
   listCases: vi.fn(),
