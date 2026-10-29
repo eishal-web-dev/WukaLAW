@@ -264,8 +264,8 @@ def _case_preparation_score(profile: dict) -> dict:
 
 def _get_owned_case(db: Session, case_id: int, user: User) -> Case:
     """A case is accessible to the lawyer who owns it, the client it is
-    assigned to, or -- for a still-unclaimed client case request -- any
-    lawyer, so they can review it before deciding whether to claim it.
+    assigned to, or the specifically requested lawyer while the request
+    is awaiting acceptance.
     Any other caller (including a different client) gets a 404, not a
     403 -- this avoids leaking whether a given case ID even exists to
     someone who has no business knowing that."""
@@ -276,7 +276,7 @@ def _get_owned_case(db: Session, case_id: int, user: User) -> Case:
         return case
     if user.role == "client" and case.client_id == user.id:
         return case
-    if user.role != "client" and case.owner_id is None:
+    if user.role != "client" and case.owner_id is None and case.requested_lawyer_id == user.id:
         return case
     raise HTTPException(status_code=404, detail="Case not found.")
 
@@ -284,6 +284,7 @@ def _get_owned_case(db: Session, case_id: int, user: User) -> Case:
 def _case_out(db: Session, case: Case) -> dict:
     docs = db.scalar(select(func.count()).where(Document.case_id == case.id)) or 0
     owner = db.get(User, case.owner_id) if case.owner_id is not None else None
+    requested_lawyer = db.get(User, case.requested_lawyer_id) if case.requested_lawyer_id else None
     client = db.get(User, case.client_id) if case.client_id else None
     return {
         "id": case.id,
@@ -299,6 +300,10 @@ def _case_out(db: Session, case: Case) -> dict:
         "client_id": case.client_id,
         "client_name": client.name if client else None,
         "lawyer_name": owner.name if owner else None,
+        "requested_lawyer_id": case.requested_lawyer_id,
+        "requested_lawyer_name": requested_lawyer.name if requested_lawyer else None,
+        "tags": case.tags or [],
+        "assignment_status": "accepted" if owner else "waiting" if requested_lawyer else "unassigned",
     }
 
 
@@ -472,12 +477,11 @@ def list_cases(db: Session = Depends(get_db), user: User = Depends(get_current_u
     if user.role == "client":
         cases = db.scalars(select(Case).where(Case.client_id == user.id).order_by(Case.created_at.desc())).all()
     else:
-        # A lawyer sees cases they own, plus any still-unclaimed client case
-        # requests -- these show up so any lawyer can review and claim one,
-        # same idea as a shared intake queue.
+        # A lawyer sees only accepted cases they own and requests sent
+        # specifically to them. Other lawyers cannot discover the matter.
         cases = db.scalars(
             select(Case)
-            .where((Case.owner_id == user.id) | (Case.owner_id.is_(None)))
+            .where((Case.owner_id == user.id) | ((Case.owner_id.is_(None)) & (Case.requested_lawyer_id == user.id)))
             .order_by(Case.created_at.desc())
         ).all()
     return {"items": [_case_out(db, case) for case in cases], "total": len(cases)}
@@ -489,25 +493,44 @@ def request_case(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    """A client submits a request for a new case. It's created with no
-    lawyer assigned yet (owner_id=None) and status 'Review' -- any lawyer
-    can see it in their case list and claim it (POST /cases/{id}/claim),
-    at which point they become its owner and can edit it normally."""
+    """Create a client-owned case and send access to one chosen lawyer."""
     if user.role != "client":
         raise HTTPException(status_code=403, detail="Only clients can request a new case.")
     year = __import__("datetime").date.today().year
     count = db.scalar(select(func.count()).where(Case.client_id == user.id)) or 0
+    lawyer = None
+    if request.lawyer_id is not None:
+        lawyer = db.scalar(select(User).where(User.id == request.lawyer_id, User.role == "lawyer"))
+    elif request.lawyer_email:
+        lawyer = db.scalar(select(User).where(func.lower(User.email) == request.lawyer_email.strip().lower(), User.role == "lawyer"))
+    if (request.lawyer_id is not None or request.lawyer_email) and lawyer is None:
+        raise HTTPException(status_code=422, detail="Choose a registered lawyer before sending the case request.")
+    if lawyer is not None and not lawyer.accepting_consultations:
+        raise HTTPException(status_code=409, detail="This lawyer is not currently accepting new requests.")
+    clean_tags = list(dict.fromkeys(tag.strip() for tag in request.tags if tag.strip()))
     case = Case(
         owner_id=None,
         client_id=user.id,
+        requested_lawyer_id=lawyer.id if lawyer else None,
         case_number=f"WL-{year}-{count + 1:03d}",
         title=request.title.strip(),
         case_type=request.case_type.strip(),
-        status="Started",
+        status="Review",
         priority="Medium",
         description=request.description.strip(),
+        tags=clean_tags,
     )
     db.add(case)
+    db.flush()
+    if lawyer is not None:
+        create_notification(
+            db,
+            user_id=lawyer.id,
+            notification_type="case",
+            title="New case access request",
+            body=f"{user.name} invited you to review {case.case_number} · {case.title}.",
+            action_url=f"/cases/{case.id}",
+        )
     db.commit()
     db.refresh(case)
     return _case_out(db, case)
@@ -525,8 +548,13 @@ def claim_case(case_id: int, db: Session = Depends(get_db), user: User = Depends
     if case is None:
         raise HTTPException(status_code=404, detail="Case not found.")
     if case.owner_id is not None:
+        if case.owner_id != user.id:
+            raise HTTPException(status_code=404, detail="Case not found.")
         raise HTTPException(status_code=409, detail="This case has already been claimed by another lawyer.")
+    if case.requested_lawyer_id != user.id:
+        raise HTTPException(status_code=404, detail="Case not found.")
     case.owner_id = user.id
+    case.status = "Started"
     db.commit()
     db.refresh(case)
     if case.client_id:
