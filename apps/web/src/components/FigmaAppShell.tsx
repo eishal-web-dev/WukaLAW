@@ -64,6 +64,7 @@ const CLIENT_NAV: NavGroup[] = [
     { path: '/client', label: 'Dashboard', icon: LayoutDashboard },
     { path: '/client/cases', label: 'My Cases', icon: Briefcase },
     { path: '/client/request-case', label: 'Request a Case', icon: FilePlus2 },
+    { path: '/client/calendar', label: 'Calendar', icon: Calendar },
   ] },
   { label: 'AI Intelligence', items: [
     { path: '/ai-chat', label: 'AI Assistant', icon: MessageSquare },

@@ -138,6 +138,7 @@ export default function App() {
             <Route path="/client/downloads" element={<ClientDownloads />} />
             <Route path="/client/billing" element={<ClientBilling />} />
             <Route path="/client/messages" element={<LawyerMessages />} />
+            <Route path="/client/calendar" element={<LawyerCalendar />} />
           </Route>
           {/* Admin routes require the server-assigned role. */}
           <Route element={<AdminRoute />}>

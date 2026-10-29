@@ -19,7 +19,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.auth import ADMIN_EMAIL, sync_configured_admin
 from app.config import settings
 from app.db import Base, SessionLocal, engine
-from app.routers import lawyer_operations, lawyer_workflow, admin, auth_routes, case_pathway, cases, documents, evidence_files, legal_intelligence, notifications, precedent_briefs, public_portal, qa, rag, reports, search, similar_cases
+from app.routers import lawyer_operations, lawyer_workflow, admin, auth_routes, billing, case_pathway, cases, documents, evidence_files, legal_intelligence, notifications, precedent_briefs, public_portal, qa, rag, reports, search, similar_cases
 
 app = FastAPI(
     title="wukaLAW API",
@@ -78,6 +78,15 @@ with engine.connect() as connection:
     }
     user_column_names = {row[1] for row in connection.execute(text("PRAGMA table_info(users)"))}
     for column_name, column_type in lawyer_profile_columns.items():
+        if user_column_names and column_name not in user_column_names:
+            connection.execute(text(f"ALTER TABLE users ADD COLUMN {column_name} {column_type}"))
+    billing_columns = {
+        "ai_tokens_used": "INTEGER NOT NULL DEFAULT 0",
+        "subscription_status": "VARCHAR(32) NOT NULL DEFAULT 'free'",
+        "lemon_subscription_id": "VARCHAR(120)",
+    }
+    user_column_names = {row[1] for row in connection.execute(text("PRAGMA table_info(users)"))}
+    for column_name, column_type in billing_columns.items():
         if user_column_names and column_name not in user_column_names:
             connection.execute(text(f"ALTER TABLE users ADD COLUMN {column_name} {column_type}"))
     connection.commit()
@@ -158,6 +167,7 @@ api.include_router(auth_routes.router)
 api.include_router(public_portal.router)
 api.include_router(admin.router)
 api.include_router(notifications.router)
+api.include_router(billing.router)
 api.include_router(cases.router)
 api.include_router(lawyer_workflow.router)
 api.include_router(lawyer_operations.router)

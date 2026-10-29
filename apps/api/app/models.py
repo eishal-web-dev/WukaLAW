@@ -27,6 +27,9 @@ class User(Base):
     consultation_fee: Mapped[int] = mapped_column(Integer, default=0)
     lawyer_bio: Mapped[str] = mapped_column(Text, default="")
     accepting_consultations: Mapped[bool] = mapped_column(Boolean, default=True)
+    ai_tokens_used: Mapped[int] = mapped_column(Integer, default=0)
+    subscription_status: Mapped[str] = mapped_column(String(32), default="free")
+    lemon_subscription_id: Mapped[str | None] = mapped_column(String(120), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
     documents: Mapped[list["Document"]] = relationship(back_populates="owner")

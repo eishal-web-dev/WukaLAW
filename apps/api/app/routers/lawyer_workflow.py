@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from app.auth import get_current_user
 from app.db import get_db
 from app.models import CalendarEvent, Case, Document, Hearing, LawyerTask, ResearchLog, User
+from app.services.notification_service import create_notification
 from app.schemas import (
     CalendarEventCreate, CalendarEventOut, CalendarEventUpdate,
     HearingCreate, HearingOut, HearingUpdate,
@@ -119,8 +120,12 @@ def list_clients(db: Session = Depends(get_db), user: User = Depends(get_current
 
 @router.get("/events", response_model=list[CalendarEventOut])
 def list_events(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    _lawyer(user)
-    items = db.scalars(select(CalendarEvent).where(CalendarEvent.owner_id == user.id).order_by(CalendarEvent.starts_at)).all()
+    if user.role == "client":
+        client_case_ids = select(Case.id).where(Case.client_id == user.id, Case.owner_id.is_not(None))
+        items = db.scalars(select(CalendarEvent).where(CalendarEvent.case_id.in_(client_case_ids)).order_by(CalendarEvent.starts_at)).all()
+    else:
+        _lawyer(user)
+        items = db.scalars(select(CalendarEvent).where(CalendarEvent.owner_id == user.id).order_by(CalendarEvent.starts_at)).all()
     return [_event_out(x, db.get(Case, x.case_id) if x.case_id else None) for x in items]
 
 
@@ -130,7 +135,10 @@ def create_event(payload: CalendarEventCreate, db: Session = Depends(get_db), us
     if payload.ends_at and payload.ends_at < payload.starts_at:
         raise HTTPException(status_code=422, detail="End time must be after the start time.")
     item = CalendarEvent(owner_id=user.id, **payload.model_dump())
-    db.add(item); db.commit(); db.refresh(item)
+    db.add(item)
+    if case and case.client_id:
+        create_notification(db, user_id=case.client_id, notification_type="case", title="New calendar event", body=f"{user.name} scheduled {payload.title} for {payload.starts_at:%d %b %Y at %H:%M}.", action_url="/client/calendar")
+    db.commit(); db.refresh(item)
     return _event_out(item, case)
 
 
@@ -181,8 +189,12 @@ def delete_task(item_id: int, db: Session = Depends(get_db), user: User = Depend
 
 @router.get("/hearings", response_model=list[HearingOut])
 def list_hearings(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    _lawyer(user)
-    items = db.scalars(select(Hearing).where(Hearing.owner_id == user.id).order_by(Hearing.scheduled_at)).all()
+    if user.role == "client":
+        client_case_ids = select(Case.id).where(Case.client_id == user.id, Case.owner_id.is_not(None))
+        items = db.scalars(select(Hearing).where(Hearing.case_id.in_(client_case_ids)).order_by(Hearing.scheduled_at)).all()
+    else:
+        _lawyer(user)
+        items = db.scalars(select(Hearing).where(Hearing.owner_id == user.id).order_by(Hearing.scheduled_at)).all()
     return [_hearing_out(x, db.get(Case, x.case_id)) for x in items]
 
 
@@ -190,7 +202,10 @@ def list_hearings(db: Session = Depends(get_db), user: User = Depends(get_curren
 def create_hearing(payload: HearingCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     _lawyer(user); case = _case(db, payload.case_id, user, required=True)
     item = Hearing(owner_id=user.id, **payload.model_dump())
-    db.add(item); db.commit(); db.refresh(item)
+    db.add(item)
+    if case.client_id:
+        create_notification(db, user_id=case.client_id, notification_type="case", title="Hearing scheduled", body=f"{user.name} scheduled {payload.title} for {payload.scheduled_at:%d %b %Y at %H:%M}.", action_url="/client/calendar")
+    db.commit(); db.refresh(item)
     return _hearing_out(item, case)
 
 
