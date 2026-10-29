@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import {
   Sparkles, Brain, Send, RefreshCw, FileText, ChevronDown, ChevronRight,
 } from 'lucide-react'
@@ -89,6 +89,11 @@ export default function AIChat() {
   const { user } = useAuth()
   const isClient = user?.role === 'client'
   const navigate = useNavigate()
+  const location = useLocation()
+  const handoff = location.state as { caseId?: number; initialQuestion?: string } | null
+  const handoffCaseId = Number(handoff?.caseId) || null
+  const handoffQuestion = handoff?.initialQuestion?.trim() || ''
+  const handoffStarted = useRef(false)
   const [input, setInput] = useState('')
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [busy, setBusy] = useState(false)
@@ -97,17 +102,18 @@ export default function AIChat() {
   const nextId = useRef(1)
 
   const [cases, setCases] = useState<Case[]>([])
-  const [casesLoading, setCasesLoading] = useState(isClient)
+  const [casesLoading, setCasesLoading] = useState(true)
   const [selectedCaseId, setSelectedCaseId] = useState<number | null>(null)
 
   useEffect(() => {
-    if (!isClient) return
     let cancelled = false
     listCases()
       .then((res) => {
         if (cancelled) return
         setCases(res.items)
-        if (res.items.length > 0) setSelectedCaseId(res.items[0].id)
+        const requested = handoffCaseId ? res.items.find(item => item.id === handoffCaseId) : null
+        if (requested) setSelectedCaseId(requested.id)
+        else if (isClient && res.items.length > 0) setSelectedCaseId(res.items[0].id)
       })
       .catch((err) => {
         if (!cancelled) setError(errorMessage(err))
@@ -118,7 +124,7 @@ export default function AIChat() {
     return () => {
       cancelled = true
     }
-  }, [isClient])
+  }, [handoffCaseId, isClient])
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView?.({ behavior: 'smooth' })
@@ -145,8 +151,8 @@ export default function AIChat() {
       // only that case's documents (see api/routers/qa.py), never the
       // shared public legal-research corpus askQuestion() uses, and never
       // another client's case. Lawyers keep the existing broader search.
-      const res: AskResponse = isClient
-        ? await askCaseQuestion(question, selectedCaseId!, history)
+      const res: AskResponse = selectedCaseId
+        ? await askCaseQuestion(question, selectedCaseId, history)
         : await askQuestion(question, history)
       setMessages((prev) => [
         ...prev,
@@ -167,6 +173,13 @@ export default function AIChat() {
       setBusy(false)
     }
   }
+
+  useEffect(() => {
+    if (casesLoading || !handoffQuestion || !selectedCaseId || handoffStarted.current) return
+    handoffStarted.current = true
+    void send(handoffQuestion)
+    navigate(location.pathname, { replace: true, state: { caseId: selectedCaseId } })
+  }, [casesLoading, handoffQuestion, location.pathname, navigate, selectedCaseId])
 
   const quickPrompts = isClient
     ? [
@@ -194,20 +207,21 @@ export default function AIChat() {
             <div className="text-sm font-semibold text-foreground">wukaLAW AI Assistant</div>
             <div className="text-xs text-emerald-400 flex items-center gap-1">
               <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-              {isClient ? 'Answers from your case documents only' : 'Answers from your document library'}
+              {selectedCaseId ? 'Answers using the selected case record' : 'Answers from your document library'}
             </div>
           </div>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          {isClient && cases.length > 0 && (
+          {cases.length > 0 && (
             <select
               value={selectedCaseId ?? ''}
               onChange={(e) => {
-                setSelectedCaseId(Number(e.target.value))
+                setSelectedCaseId(e.target.value ? Number(e.target.value) : null)
                 setMessages([])
               }}
               className="w-full sm:w-auto text-xs px-3 py-2 rounded-xl border border-white/10 bg-white/[0.04] text-foreground outline-none focus:border-[#D4AF37]/50"
             >
+              {!isClient && <option value="">All my documents</option>}
               {cases.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.case_number} — {c.title}
