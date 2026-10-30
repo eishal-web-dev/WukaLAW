@@ -25,6 +25,7 @@ export default function ClientCourtPrediction({
   audience = 'client',
   requireCaseSelection = false,
 }: ClientCourtPredictionProps) {
+  const requestedCaseId = Number(new URLSearchParams(window.location.search).get('case')) || null
   const [cases, setCases] = useState<Case[]>([])
   const [selectedCaseId, setSelectedCaseId] = useState<number | null>(null)
   const [prediction, setPrediction] = useState<CasePrediction | null>(null)
@@ -41,7 +42,8 @@ export default function ClientCourtPrediction({
           ? res.items.filter((item) => Boolean(item.lawyer_name))
           : res.items
         setCases(accessibleCases)
-        if (!requireCaseSelection && accessibleCases.length > 0) setSelectedCaseId(accessibleCases[0].id)
+        if (requestedCaseId && accessibleCases.some((item) => item.id === requestedCaseId)) setSelectedCaseId(requestedCaseId)
+        else if (!requireCaseSelection && accessibleCases.length > 0) setSelectedCaseId(accessibleCases[0].id)
       })
       .catch((err) => {
         if (!cancelled) setError(errorMessage(err))
@@ -52,7 +54,7 @@ export default function ClientCourtPrediction({
     return () => {
       cancelled = true
     }
-  }, [audience, requireCaseSelection])
+  }, [audience, requireCaseSelection, requestedCaseId])
 
   useEffect(() => {
     if (selectedCaseId === null) {
