@@ -74,6 +74,10 @@ with engine.connect() as connection:
         "years_experience": "INTEGER NOT NULL DEFAULT 0",
         "consultation_fee": "INTEGER NOT NULL DEFAULT 0",
         "lawyer_bio": "TEXT NOT NULL DEFAULT ''",
+        "education": "TEXT NOT NULL DEFAULT ''",
+        "bar_council": "VARCHAR(160) NOT NULL DEFAULT ''",
+        "license_number": "VARCHAR(120) NOT NULL DEFAULT ''",
+        "languages": "VARCHAR(255) NOT NULL DEFAULT ''",
         "accepting_consultations": "BOOLEAN NOT NULL DEFAULT 1",
     }
     user_column_names = {row[1] for row in connection.execute(text("PRAGMA table_info(users)"))}

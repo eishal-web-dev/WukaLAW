@@ -16,7 +16,9 @@ beforeEach(() => {
   vi.mocked(api.listPublicLawyers).mockResolvedValue([{
     id: 4, name: 'Adv. Fatima Khan', email: 'fatima@example.com', profile_image: null,
     lawyer_title: 'Advocate', specialization: 'Civil and family law', city: 'Peshawar',
-    years_experience: 8, consultation_fee: 5000, lawyer_bio: '', accepting_consultations: true,
+    years_experience: 8, consultation_fee: 5000, lawyer_bio: 'Family-law advocate.',
+    education: 'LL.B', bar_council: 'KP Bar Council', license_number: 'KP-123',
+    languages: 'Urdu, English', profile_complete: true, rating: 4.8, review_count: 12, accepting_consultations: true,
   }])
 })
 

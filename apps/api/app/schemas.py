@@ -146,6 +146,20 @@ class CaseList(BaseModel):
     total: int
 
 
+class CaseRatingCreate(BaseModel):
+    rating: int = Field(ge=1, le=5)
+    review: str = Field(default="", max_length=2000)
+
+
+class CaseRatingOut(BaseModel):
+    id: int
+    case_id: int
+    lawyer_id: int
+    rating: int
+    review: str
+    created_at: datetime
+
+
 class SummarizeResponse(BaseModel):
     document_id: int
     summary: SummaryOut
@@ -567,6 +581,10 @@ class LawyerProfileUpdate(BaseModel):
     years_experience: int = Field(default=0, ge=0, le=80)
     consultation_fee: int = Field(default=0, ge=0, le=100000000)
     lawyer_bio: str = Field(default="", max_length=5000)
+    education: str = Field(default="", max_length=3000)
+    bar_council: str = Field(default="", max_length=160)
+    license_number: str = Field(default="", max_length=120)
+    languages: str = Field(default="", max_length=255)
     accepting_consultations: bool = True
 
 
@@ -581,6 +599,13 @@ class PublicLawyerOut(BaseModel):
     years_experience: int
     consultation_fee: int
     lawyer_bio: str
+    education: str
+    bar_council: str
+    license_number: str
+    languages: str
+    profile_complete: bool
+    rating: float
+    review_count: int
     accepting_consultations: bool
 
 

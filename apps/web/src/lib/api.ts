@@ -153,6 +153,7 @@ export interface SimilarCasesResponse {
 
 export type CaseStatus =
   | 'Started'
+  | 'In Progress'
   | 'Currently Going On'
   | 'Case Complete'
   | 'Active'
@@ -1226,6 +1227,13 @@ export interface PublicLawyer {
   years_experience: number
   consultation_fee: number
   lawyer_bio: string
+  education: string
+  bar_council: string
+  license_number: string
+  languages: string
+  profile_complete: boolean
+  rating: number
+  review_count: number
   accepting_consultations: boolean
 }
 
@@ -1237,6 +1245,10 @@ export interface LawyerProfilePayload {
   years_experience: number
   consultation_fee: number
   lawyer_bio: string
+  education: string
+  bar_council: string
+  license_number: string
+  languages: string
   accepting_consultations: boolean
 }
 
@@ -1255,6 +1267,10 @@ export function updateLawyerProfile(payload: LawyerProfilePayload): Promise<Publ
     body: JSON.stringify(payload),
   })
 }
+
+export interface CaseRating { id: number; case_id: number; lawyer_id: number; rating: number; review: string; created_at: string }
+export function getCaseRating(caseId: number | string): Promise<CaseRating | null> { return request<CaseRating | null>(`/cases/${caseId}/rating`) }
+export function rateCase(caseId: number | string, rating: number, review: string): Promise<CaseRating> { return postJson<CaseRating>(`/cases/${caseId}/rating`, { rating, review }) }
 
 export function submitPublicContact(payload: {
   name: string

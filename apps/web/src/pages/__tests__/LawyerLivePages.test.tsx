@@ -19,7 +19,7 @@ vi.mock('recharts', () => ({
 }))
 vi.mock('../../lib/api', async (importOriginal) => ({
   ...await importOriginal<typeof import('../../lib/api')>(),
-  listCases: vi.fn(), listDocuments: vi.fn(), listCalendarEvents: vi.fn(), listHearings: vi.fn(),
+  listCases: vi.fn(), listDocuments: vi.fn(), listCalendarEvents: vi.fn(), listHearings: vi.fn(), listLawyerTasks: vi.fn(),
   listLawyerClients: vi.fn(), createCalendarEvent: vi.fn(), deleteCalendarEvent: vi.fn(),
 }))
 
@@ -34,6 +34,7 @@ beforeEach(() => {
   vi.mocked(api.listDocuments).mockResolvedValue({ items: [], total: 0 })
   vi.mocked(api.listCalendarEvents).mockResolvedValue([{ id: 2, case_id: 1, case_number: 'WL-1', case_title: 'Real matter', title: 'Future client meeting', starts_at: future, ends_at: null, event_type: 'Meeting', location: 'Office', notes: '', created_at: past }])
   vi.mocked(api.listHearings).mockResolvedValue([])
+  vi.mocked(api.listLawyerTasks).mockResolvedValue([])
   vi.mocked(api.listLawyerClients).mockResolvedValue([{ id: 5, name: 'A Client', email: 'client@example.com', case_count: 1, active_case_count: 1, document_count: 2, last_case_at: '2026-09-01T00:00:00Z', cases: [baseCase] }])
 })
 
