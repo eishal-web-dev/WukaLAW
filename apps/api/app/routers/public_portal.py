@@ -5,13 +5,13 @@ from email.message import EmailMessage
 import smtplib
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.auth import get_current_user
 from app.config import settings
 from app.db import get_db
-from app.models import ContactSubmission, ConsultationRequest, User
+from app.models import CaseRating, ContactSubmission, ConsultationRequest, User
 from app.schemas import (
     ConsultationRequestCreate,
     ConsultationRequestOut,
@@ -25,7 +25,13 @@ from app.services.notification_service import create_notification
 router = APIRouter(prefix="/public", tags=["public"])
 
 
-def _lawyer_out(user: User) -> dict:
+def _lawyer_out(user: User, db: Session) -> dict:
+    complete = all([
+        user.profile_image, user.lawyer_title, user.specialization, user.city,
+        user.years_experience, user.lawyer_bio, user.education,
+        user.bar_council, user.license_number, user.languages,
+    ])
+    review_count, rating = db.execute(select(func.count(CaseRating.id), func.avg(CaseRating.rating)).where(CaseRating.lawyer_id == user.id)).one()
     return {
         "id": user.id,
         "name": user.name,
@@ -37,6 +43,13 @@ def _lawyer_out(user: User) -> dict:
         "years_experience": user.years_experience or 0,
         "consultation_fee": user.consultation_fee or 0,
         "lawyer_bio": user.lawyer_bio or "",
+        "education": user.education or "",
+        "bar_council": user.bar_council or "",
+        "license_number": user.license_number or "",
+        "languages": user.languages or "",
+        "profile_complete": complete,
+        "rating": round(float(rating or 0), 1),
+        "review_count": int(review_count or 0),
         "accepting_consultations": bool(user.accepting_consultations),
     }
 
@@ -66,7 +79,7 @@ def list_public_lawyers(db: Session = Depends(get_db)):
     lawyers = db.scalars(
         select(User).where(User.role == "lawyer").order_by(User.name)
     ).all()
-    return [_lawyer_out(user) for user in lawyers]
+    return [profile for user in lawyers if (profile := _lawyer_out(user, db))["profile_complete"]]
 
 
 @router.get("/lawyers/{lawyer_id}", response_model=PublicLawyerOut)
@@ -74,7 +87,7 @@ def get_public_lawyer(lawyer_id: int, db: Session = Depends(get_db)):
     lawyer = db.scalar(select(User).where(User.id == lawyer_id, User.role == "lawyer"))
     if lawyer is None:
         raise HTTPException(status_code=404, detail="Lawyer profile not found.")
-    return _lawyer_out(lawyer)
+    return _lawyer_out(lawyer, db)
 
 
 @router.put("/lawyer-profile", response_model=PublicLawyerOut)
@@ -92,7 +105,7 @@ def update_lawyer_profile(
         setattr(user, key, value)
     db.commit()
     db.refresh(user)
-    return _lawyer_out(user)
+    return _lawyer_out(user, db)
 
 
 @router.post("/contact", response_model=ContactSubmissionOut, status_code=201)

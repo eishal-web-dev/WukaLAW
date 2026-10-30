@@ -2,12 +2,14 @@ import { useCallback, useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import {
   ArrowLeft, Calendar, FileText, User, Send, AlertCircle, RefreshCw, Sparkles, Clock, Trash2, Upload, Paperclip,
+  Brain, GitBranch, Activity, FileBarChart,
 } from 'lucide-react'
 import {
   getCase, listCaseDocuments, getCaseTimeline, updateCase, deleteDocument, errorMessage,
   uploadDocument, listEvidenceFiles, uploadEvidenceFile, downloadEvidenceFile, addCaseEvent,
+  getCaseRating, rateCase,
 } from '../lib/api'
-import type { Case, DocumentMeta, TimelineEvent, EvidenceFile } from '../lib/api'
+import type { Case, DocumentMeta, TimelineEvent, EvidenceFile, CaseRating } from '../lib/api'
 import { formatDate, excerpt } from '../lib/format'
 import { Card, Badge, G } from '../components/design'
 import Spinner from '../components/Spinner'
@@ -31,6 +33,9 @@ export default function ClientWorkspace() {
   const [uploading, setUploading] = useState(false)
   const [eventDate, setEventDate] = useState('')
   const [eventText, setEventText] = useState('')
+  const [rating, setRating] = useState<CaseRating | null>(null)
+  const [ratingValue, setRatingValue] = useState(5)
+  const [review, setReview] = useState('')
 
   const [input, setInput] = useState('')
 
@@ -51,6 +56,7 @@ export default function ClientWorkspace() {
       setDocuments(docs.items)
       setEvents(timeline.events)
       setEvidence(evidenceResult.items)
+      if (['Case Complete', 'Closed'].includes(c.status)) setRating(await getCaseRating(caseId).catch(() => null))
     } catch (err) {
       const message = errorMessage(err)
       if (message.toLowerCase().includes('not found')) {
@@ -105,6 +111,13 @@ export default function ClientWorkspace() {
       await addCaseEvent(caseId, { date: eventDate, text: eventText.trim(), document_id: null })
       setEventDate(''); setEventText(''); await load()
     } catch (err) { setError(errorMessage(err)) }
+  }
+
+  const submitRating = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!caseId) return
+    try { setRating(await rateCase(caseId, ratingValue, review)); setReview('') }
+    catch (err) { setError(errorMessage(err)) }
   }
 
   if (loading) {
@@ -204,6 +217,13 @@ export default function ClientWorkspace() {
         )}
       </Card>
 
+      {['Case Complete', 'Closed'].includes(caseData.status) && caseData.lawyer_name && (
+        <Card className="p-5">
+          <h2 className="text-base font-semibold text-foreground">Rate your lawyer</h2>
+          {rating ? <p className="mt-3 text-sm text-muted-foreground"><span className="text-amber-400">{'★'.repeat(rating.rating)}{'☆'.repeat(5-rating.rating)}</span> Your feedback has been recorded.</p> : <form onSubmit={submitRating} className="mt-4 space-y-3"><div className="flex gap-2">{[1,2,3,4,5].map(value=><button type="button" key={value} onClick={()=>setRatingValue(value)} className={`text-2xl ${value<=ratingValue?'text-amber-400':'text-muted-foreground/30'}`}>★</button>)}</div><textarea value={review} onChange={e=>setReview(e.target.value)} rows={3} placeholder="Share your experience (optional)" className="w-full rounded-xl border border-border bg-background p-3 text-sm"/><button className="rounded-xl px-4 py-2 text-sm font-semibold text-black" style={{background:G}}>Submit rating</button></form>}
+        </Card>
+      )}
+
       <div className="grid sm:grid-cols-2 gap-4">
         {/* 3. Next important date */}
         <Card className="p-5">
@@ -298,6 +318,31 @@ export default function ClientWorkspace() {
       <Card className="overflow-hidden">
         <div className="px-5 py-4 border-b border-border flex items-center justify-between gap-3"><span className="text-sm font-bold text-foreground">Evidence ({evidence.length})</span><label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-border px-3 py-2 text-xs font-semibold"><Paperclip size={14}/>Add evidence<input aria-label="Upload case evidence" type="file" className="sr-only" disabled={uploading} onChange={(e) => { const file=e.target.files?.[0]; if (file) void uploadCaseFile(file, 'evidence'); e.currentTarget.value='' }}/></label></div>
         {evidence.length === 0 ? <p className="p-5 text-sm text-muted-foreground">No evidence files have been added yet.</p> : evidence.map((item) => <button key={item.id} type="button" onClick={() => void downloadEvidenceFile(Number(caseId), item)} className="flex w-full items-center gap-3 border-b border-border px-5 py-3 text-left last:border-0 hover:bg-sidebar-accent"><Paperclip size={15} className="text-muted-foreground"/><span className="min-w-0 flex-1 truncate text-sm">{item.filename}</span><span className="text-xs text-muted-foreground">Download</span></button>)}
+      </Card>
+
+      {/* Case-scoped intelligence: these tools must always open for this case. */}
+      <Card className="p-5">
+        <div className="mb-4">
+          <h2 className="text-sm font-bold text-foreground">Case intelligence</h2>
+          <p className="mt-1 text-xs text-muted-foreground">Open an AI tool with {caseData.case_number} already selected.</p>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {[
+            { label: 'Court assessment', detail: 'Review evidence readiness and likely next steps.', icon: Brain, path: '/client/predictions' },
+            { label: 'Similar Pakistani cases', detail: 'Find relevant judgments for this matter.', icon: GitBranch, path: '/client/similar-cases' },
+            { label: 'Explainable AI & summaries', detail: 'Generate summaries and see their source documents.', icon: Activity, path: '/client/explainable' },
+            { label: 'Case report', detail: 'Generate and download a report for this case.', icon: FileBarChart, path: '/client/report-generator' },
+          ].map((tool) => {
+            const Icon = tool.icon
+            return (
+              <button key={tool.path} type="button" onClick={() => navigate(`${tool.path}?case=${caseId}`)} className="rounded-xl border border-border bg-muted/20 p-4 text-left transition hover:border-primary/40 hover:bg-sidebar-accent">
+                <Icon size={18} style={{ color: G }} />
+                <div className="mt-3 text-sm font-semibold text-foreground">{tool.label}</div>
+                <div className="mt-1 text-xs leading-relaxed text-muted-foreground">{tool.detail}</div>
+              </button>
+            )
+          })}
+        </div>
       </Card>
 
       {/* 8. Ask AI about this case */}

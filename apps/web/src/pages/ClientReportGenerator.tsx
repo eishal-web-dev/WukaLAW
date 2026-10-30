@@ -18,6 +18,7 @@ function downloadTextFile(filename: string, content: string) {
 }
 
 export default function ClientReportGenerator() {
+  const requestedCaseId = Number(new URLSearchParams(window.location.search).get('case')) || null
   const [cases, setCases] = useState<Case[]>([])
   const [selectedCaseId, setSelectedCaseId] = useState<number | null>(null)
   const [loadingCases, setLoadingCases] = useState(true)
@@ -34,7 +35,8 @@ export default function ClientReportGenerator() {
       .then((res) => {
         if (cancelled) return
         setCases(res.items)
-        if (res.items.length > 0) setSelectedCaseId(res.items[0].id)
+        if (requestedCaseId && res.items.some((item) => item.id === requestedCaseId)) setSelectedCaseId(requestedCaseId)
+        else if (res.items.length > 0) setSelectedCaseId(res.items[0].id)
       })
       .catch((err) => {
         if (!cancelled) setError(errorMessage(err))
@@ -45,7 +47,7 @@ export default function ClientReportGenerator() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [requestedCaseId])
 
   const loadPrevious = (caseId: number) => {
     setLoadingPrevious(true)

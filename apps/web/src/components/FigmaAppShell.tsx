@@ -3,10 +3,10 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import type { LucideIcon } from 'lucide-react'
 import {
   Activity, BarChart2, Bell, BookOpen, Brain, Briefcase, Calendar,
-  ChevronLeft, ChevronRight, Clock, CreditCard, Database, Download,
-  FilePlus2, FileSearch, FileText, GitBranch, HardDrive, Key, Layers,
+  ChevronLeft, ChevronRight, CreditCard, Database, Download,
+  FilePlus2, FileSearch, HardDrive, Key, Layers,
   LayoutDashboard, LogOut, MessageCircle, MessageSquare, Moon, Newspaper,
-  Menu, Search, Settings, Sun, Target, TrendingUp, X,
+  Menu, Search, Settings, Sun, TrendingUp, X,
   User, UserCheck, Users, UsersRound,
 } from 'lucide-react'
 import { useAuth } from '../lib/auth'
@@ -25,27 +25,9 @@ type NavGroup = { label: string; items: NavItem[] }
 const LAWYER_NAV: NavGroup[] = [
   { label: 'Main', items: [
     { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { path: '/clients', label: 'Clients', icon: Users },
+    { path: '/cases', label: 'Cases & Clients', icon: Briefcase },
     { path: '/calendar', label: 'Calendar', icon: Calendar },
-    { path: '/tasks', label: 'Task Board', icon: Layers },
-  ] },
-  { label: 'Case Work', items: [
-    { path: '/cases', label: 'Cases', icon: Briefcase },
-    { path: '/documents', label: 'Documents', icon: FileText },
-    { path: '/evidence', label: 'Evidence', icon: Search },
-  ] },
-  { label: 'AI Intelligence', items: [
-    { path: '/research', label: 'Legal Research', icon: BookOpen },
-    { path: '/prediction', label: 'Court Prediction', icon: Brain },
-    { path: '/similar-cases', label: 'Similar Cases', icon: GitBranch },
-    { path: '/ai-chat', label: 'AI Assistant', icon: MessageSquare },
-    { path: '/strategy', label: 'Strategy Builder', icon: Target },
-  ] },
-  { label: 'Insights', items: [
-    { path: '/timeline', label: 'Timeline', icon: Clock },
-    { path: '/reports', label: 'Reports', icon: BarChart2 },
-    { path: '/report-generator', label: 'Report Generator', icon: FileText },
-    { path: '/analytics', label: 'Analytics', icon: TrendingUp },
+    { path: '/tasks', label: 'Tasks & Hearings', icon: Layers },
   ] },
   { label: 'Team & Comms', items: [
     { path: '/messages', label: 'Messages', icon: MessageCircle },
@@ -64,15 +46,9 @@ const CLIENT_NAV: NavGroup[] = [
     { path: '/client', label: 'Dashboard', icon: LayoutDashboard },
     { path: '/client/cases', label: 'My Cases', icon: Briefcase },
     { path: '/client/request-case', label: 'Request a Case', icon: FilePlus2 },
-  ] },
-  { label: 'AI Intelligence', items: [
-    { path: '/ai-chat', label: 'AI Assistant', icon: MessageSquare },
-    { path: '/client/predictions', label: 'Court Prediction', icon: Brain },
-    { path: '/client/similar-cases', label: 'Similar Cases', icon: GitBranch },
-    { path: '/client/explainable', label: 'Explainable AI', icon: Activity },
+    { path: '/client/calendar', label: 'Calendar', icon: Calendar },
   ] },
   { label: 'Reports', items: [
-    { path: '/client/report-generator', label: 'Report Generator', icon: BarChart2 },
     { path: '/client/downloads', label: 'Downloads', icon: Download },
   ] },
   { label: 'Communication', items: [

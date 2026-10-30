@@ -35,7 +35,24 @@ def register_user(client, email="tester@example.com", name="Test User", password
         "/api/v1/auth/register", json={"email": email, "name": name, "password": password}
     )
     assert response.status_code == 201, response.text
-    return {"Authorization": f"Bearer {response.json()['token']}"}
+    headers = {"Authorization": f"Bearer {response.json()['token']}"}
+    profile = {
+        "profile_image": "data:image/png;base64,dGVzdA==",
+        "lawyer_title": "Advocate",
+        "specialization": "General Practice",
+        "city": "Islamabad",
+        "years_experience": 1,
+        "consultation_fee": 1000,
+        "lawyer_bio": "Test lawyer profile used by the automated suite.",
+        "education": "LL.B",
+        "bar_council": "Islamabad Bar Council",
+        "license_number": f"TEST-{email}",
+        "languages": "Urdu, English",
+        "accepting_consultations": True,
+    }
+    profile_response = client.put("/api/v1/public/lawyer-profile", json=profile, headers=headers)
+    assert profile_response.status_code == 200, profile_response.text
+    return headers
 
 
 SAMPLE_JUDGMENT = """
