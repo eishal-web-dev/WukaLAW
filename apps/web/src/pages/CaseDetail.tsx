@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Calendar, FileText, BookOpen, Sparkles, CalendarClock, GitCompareArrows, Trash2 } from 'lucide-react'
-import { getCase, listCaseDocuments, analyzeCaseContradictions, deleteDocument, errorMessage } from '../lib/api'
-import type { Case, DocumentMeta, ContradictionsResponse } from '../lib/api'
+import { ArrowLeft, Calendar, FileText, BookOpen, CalendarClock, GitCompareArrows, Trash2, Bot, Scale, Search, ShieldCheck, ScrollText, ListTodo, Sparkles } from 'lucide-react'
+import { getCase, listCaseDocuments, analyzeCaseContradictions, deleteDocument, errorMessage, updateCase } from '../lib/api'
+import type { Case, CaseStatus, DocumentMeta, ContradictionsResponse } from '../lib/api'
 import { formatBytes, formatDate } from '../lib/format'
 import { Btn, Card, Badge, G } from '../components/design'
 import UploadZone from '../components/UploadZone'
@@ -22,6 +22,21 @@ export default function CaseDetail() {
   const [contradictions, setContradictions] = useState<ContradictionsResponse | null>(null)
   const [analysisError, setAnalysisError] = useState<string | null>(null)
   const [deletingDocumentId, setDeletingDocumentId] = useState<number | null>(null)
+  const [savingStatus, setSavingStatus] = useState(false)
+
+  const changeStatus = async (status: string) => {
+    if (!id || !caseData || status === caseData.status) return
+    setSavingStatus(true)
+    setError(null)
+    try {
+      const updated = await updateCase(id, { status: status as CaseStatus })
+      setCaseData(updated)
+    } catch (err) {
+      setError(errorMessage(err))
+    } finally {
+      setSavingStatus(false)
+    }
+  }
 
   const detectContradictions = async () => {
     if (!id) return
@@ -101,7 +116,7 @@ export default function CaseDetail() {
 
       {/* Case header */}
       <Card className="p-6">
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex flex-col items-start justify-between gap-4 sm:flex-row">
           <div>
             <div className="flex items-center gap-2 mb-2">
               <span className="text-xs font-mono" style={{ color: G }}>{caseData.case_number}</span>
@@ -119,6 +134,17 @@ export default function CaseDetail() {
               </span>
             </div>
           </div>
+          <label className="w-full text-xs text-muted-foreground sm:w-56">
+            Case status
+            <select
+              value={caseData.status}
+              disabled={savingStatus}
+              onChange={(event) => void changeStatus(event.target.value)}
+              className="mt-1.5 w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-foreground"
+            >
+              {['Review', 'Started', 'In Progress', 'Currently Going On', 'On Hold', 'Case Complete', 'Closed'].map((status) => <option key={status}>{status}</option>)}
+            </select>
+          </label>
         </div>
         {caseData.description && (
           <p className="text-sm text-muted-foreground leading-relaxed mt-4 pt-4 border-t border-white/[0.06]">
@@ -126,6 +152,26 @@ export default function CaseDetail() {
           </p>
         )}
       </Card>
+
+      <div>
+        <h3 className="mb-4 text-base font-semibold text-foreground">Case workspace</h3>
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+          {[
+            ['Timeline', CalendarClock, `/timeline?case=${caseData.id}`],
+            ['Evidence', ShieldCheck, `/evidence?case=${caseData.id}`],
+            ['AI assistant', Bot, `/ai-chat?case=${caseData.id}`],
+            ['Research', Search, `/research?case=${caseData.id}`],
+            ['Assessment', Scale, `/prediction?case=${caseData.id}`],
+            ['Reports', ScrollText, `/reports?case=${caseData.id}`],
+          ].map(([label, Icon, path]) => (
+            <button key={String(label)} type="button" onClick={() => navigate(String(path))} className="rounded-xl border border-border bg-card p-4 text-left transition hover:border-primary/40 hover:bg-muted/40">
+              <Icon size={18} style={{ color: G }} />
+              <span className="mt-3 block text-xs font-semibold text-foreground">{String(label)}</span>
+            </button>
+          ))}
+        </div>
+        <button type="button" onClick={() => navigate(`/tasks?case=${caseData.id}`)} className="mt-3 inline-flex items-center gap-2 text-xs font-medium text-muted-foreground hover:text-foreground"><ListTodo size={14} /> Open tasks and hearings for this case</button>
+      </div>
 
       {/* Meta cards */}
       <div className="grid grid-cols-3 gap-4">

@@ -18,6 +18,7 @@ import Spinner from '../components/Spinner'
  * generation date, or reasoning that isn't actually stored.
  */
 export default function ClientExplainableAI() {
+  const requestedCaseId = Number(new URLSearchParams(window.location.search).get('case')) || null
   const [cases, setCases] = useState<Case[]>([])
   const [selectedCaseId, setSelectedCaseId] = useState<number | null>(null)
   const [docs, setDocs] = useState<DocumentMeta[]>([])
@@ -36,7 +37,8 @@ export default function ClientExplainableAI() {
       .then((res) => {
         if (cancelled) return
         setCases(res.items)
-        if (res.items.length > 0) setSelectedCaseId(res.items[0].id)
+        if (requestedCaseId && res.items.some((item) => item.id === requestedCaseId)) setSelectedCaseId(requestedCaseId)
+        else if (res.items.length > 0) setSelectedCaseId(res.items[0].id)
       })
       .catch((err) => {
         if (!cancelled) setError(errorMessage(err))
@@ -47,7 +49,7 @@ export default function ClientExplainableAI() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [requestedCaseId])
 
   useEffect(() => {
     if (selectedCaseId === null) return

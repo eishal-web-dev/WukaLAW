@@ -191,12 +191,17 @@ export function LiveLawyerProfilePage(props: PublicProps) {
               <LawyerAvatar lawyer={lawyer} large />
               <h1 className="mt-5 text-3xl font-black">{lawyer.name}</h1>
               <p className="text-[#D4AF37]">{lawyer.lawyer_title || 'Lawyer'}</p>
+              <p className="mt-2 text-sm text-amber-400">★ {lawyer.rating ? lawyer.rating.toFixed(1) : 'New'} <span className="opacity-60">({lawyer.review_count} completed-case review{lawyer.review_count === 1 ? '' : 's'})</span></p>
               <p className="mt-4 opacity-75">{lawyer.lawyer_bio || 'This lawyer has not added a professional biography yet.'}</p>
               <dl className="mt-6 grid grid-cols-2 gap-4 text-sm">
                 <div><dt className="opacity-55">Specialization</dt><dd className="font-bold">{lawyer.specialization || 'General Practice'}</dd></div>
                 <div><dt className="opacity-55">Experience</dt><dd className="font-bold">{lawyer.years_experience} years</dd></div>
                 <div><dt className="opacity-55">City</dt><dd className="font-bold">{lawyer.city || 'Not provided'}</dd></div>
                 <div><dt className="opacity-55">Consultation</dt><dd className="font-bold">{lawyer.consultation_fee ? `PKR ${lawyer.consultation_fee.toLocaleString()}` : 'Ask lawyer'}</dd></div>
+                <div><dt className="opacity-55">Education</dt><dd className="font-bold">{lawyer.education}</dd></div>
+                <div><dt className="opacity-55">Bar council</dt><dd className="font-bold">{lawyer.bar_council}</dd></div>
+                <div><dt className="opacity-55">Enrolment</dt><dd className="font-bold">{lawyer.license_number}</dd></div>
+                <div><dt className="opacity-55">Languages</dt><dd className="font-bold">{lawyer.languages}</dd></div>
               </dl>
             </section>
             <section className="rounded-3xl border border-white/10 bg-white/[0.04] p-6">

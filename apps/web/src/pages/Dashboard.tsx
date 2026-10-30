@@ -1,15 +1,15 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
-  Plus, Briefcase, FileText, Bell, Activity, Lightbulb, AlertCircle,
+  Plus, Bell, Activity, Lightbulb, AlertCircle, ListTodo, Inbox,
   Sparkles, ArrowRight, CalendarDays, Gavel,
 } from 'lucide-react'
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell,
 } from 'recharts'
-import { listCalendarEvents, listCases, listDocuments, listHearings, errorMessage } from '../lib/api'
-import type { CalendarEvent, Case, DocumentMeta, Hearing } from '../lib/api'
+import { listCalendarEvents, listCases, listDocuments, listHearings, listLawyerTasks, errorMessage } from '../lib/api'
+import type { CalendarEvent, Case, DocumentMeta, Hearing, LawyerTask } from '../lib/api'
 import { useAuth } from '../lib/auth'
 import { useNotifications } from '../lib/notifications'
 import { formatDate } from '../lib/format'
@@ -35,22 +35,22 @@ export default function Dashboard() {
   const [documents, setDocuments] = useState<DocumentMeta[]>([])
   const [events, setEvents] = useState<CalendarEvent[]>([])
   const [hearings, setHearings] = useState<Hearing[]>([])
+  const [tasks, setTasks] = useState<LawyerTask[]>([])
   const [caseTotal, setCaseTotal] = useState(0)
-  const [docTotal, setDocTotal] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
-    Promise.all([listCases(), listDocuments(), listCalendarEvents(), listHearings()])
-      .then(([cs, docs, calendarEvents, hearingItems]) => {
+    Promise.all([listCases(), listDocuments(), listCalendarEvents(), listHearings(), Promise.resolve(listLawyerTasks?.()).catch(() => [])])
+      .then(([cs, docs, calendarEvents, hearingItems, taskItems]) => {
         if (cancelled) return
         setCases(cs.items)
         setDocuments(docs.items)
         setCaseTotal(cs.total)
-        setDocTotal(docs.total)
         setEvents(calendarEvents)
         setHearings(hearingItems)
+        setTasks(taskItems ?? [])
       })
       .catch((err) => {
         if (!cancelled) setError(errorMessage(err))
@@ -64,6 +64,8 @@ export default function Dashboard() {
   }, [])
 
   const activeCases = cases.filter((c) => !['Case Complete', 'Closed'].includes(c.status)).length
+  const requestedCases = cases.filter((c) => c.assignment_status === 'waiting').length
+  const openTasks = tasks.filter((task) => task.status !== 'Done').length
   const firstName = (user?.name || 'Counsel').split(' ')[0]
   const today = new Date().toLocaleDateString(undefined, {
     weekday: 'long', month: 'long', day: 'numeric', year: 'numeric',
@@ -142,9 +144,9 @@ export default function Dashboard() {
 
       {/* KPI Cards — every value is live; colors and layout follow the Figma design. */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
-        <KPICard icon={<Briefcase size={18} />} label="Total Cases" value={loading ? '…' : String(caseTotal)} sub={`${activeCases} active`} color={G} />
-        <KPICard icon={<Activity size={18} />} label="Active Cases" value={loading ? '…' : String(activeCases)} sub="Currently in progress" color="#34D399" />
-        <KPICard icon={<FileText size={18} />} label="Documents" value={loading ? '…' : String(docTotal)} sub="Across all cases" color="#7C3AED" />
+        <KPICard icon={<Activity size={18} />} label="Active Cases" value={loading ? '…' : String(activeCases)} sub={`${caseTotal} total cases`} color={G} onClick={() => navigate('/cases')} />
+        <KPICard icon={<Inbox size={18} />} label="Requested Cases" value={loading ? '…' : String(requestedCases)} sub="Waiting for your response" color="#60A5FA" onClick={() => navigate('/cases')} />
+        <KPICard icon={<ListTodo size={18} />} label="Open Tasks" value={loading ? '…' : String(openTasks)} sub="Tasks requiring attention" color="#7C3AED" onClick={() => navigate('/tasks')} />
         <KPICard icon={<Bell size={18} />} label="Unread Notifications" value={String(unreadCount)} sub={unreadCount === 0 ? 'All caught up' : 'Open notification center'} color={B} onClick={() => navigate('/notifications')} />
       </div>
 
