@@ -21,6 +21,7 @@ import CaseSimilarJudgments from '../components/CaseSimilarJudgments'
  * case-scoped endpoint uses.
  */
 export default function ClientSimilarCases() {
+  const requestedCaseId = Number(new URLSearchParams(window.location.search).get('case')) || null
   const [cases, setCases] = useState<Case[]>([])
   const [selectedCaseId, setSelectedCaseId] = useState<number | null>(null)
   const [loadingCases, setLoadingCases] = useState(true)
@@ -32,6 +33,7 @@ export default function ClientSimilarCases() {
       .then((res) => {
         if (cancelled) return
         setCases(res.items)
+        if (requestedCaseId && res.items.some((item) => item.id === requestedCaseId)) setSelectedCaseId(requestedCaseId)
       })
       .catch((err) => {
         if (!cancelled) setError(errorMessage(err))
@@ -42,7 +44,7 @@ export default function ClientSimilarCases() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [requestedCaseId])
 
   const selectedCase = cases.find((item) => item.id === selectedCaseId) ?? null
 

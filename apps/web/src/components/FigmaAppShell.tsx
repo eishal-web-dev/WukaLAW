@@ -66,14 +66,7 @@ const CLIENT_NAV: NavGroup[] = [
     { path: '/client/request-case', label: 'Request a Case', icon: FilePlus2 },
     { path: '/client/calendar', label: 'Calendar', icon: Calendar },
   ] },
-  { label: 'AI Intelligence', items: [
-    { path: '/ai-chat', label: 'AI Assistant', icon: MessageSquare },
-    { path: '/client/predictions', label: 'Court Prediction', icon: Brain },
-    { path: '/client/similar-cases', label: 'Similar Cases', icon: GitBranch },
-    { path: '/client/explainable', label: 'Explainable AI', icon: Activity },
-  ] },
   { label: 'Reports', items: [
-    { path: '/client/report-generator', label: 'Report Generator', icon: BarChart2 },
     { path: '/client/downloads', label: 'Downloads', icon: Download },
   ] },
   { label: 'Communication', items: [
