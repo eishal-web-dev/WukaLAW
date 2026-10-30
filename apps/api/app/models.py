@@ -26,6 +26,10 @@ class User(Base):
     years_experience: Mapped[int] = mapped_column(Integer, default=0)
     consultation_fee: Mapped[int] = mapped_column(Integer, default=0)
     lawyer_bio: Mapped[str] = mapped_column(Text, default="")
+    education: Mapped[str] = mapped_column(Text, default="")
+    bar_council: Mapped[str] = mapped_column(String(160), default="")
+    license_number: Mapped[str] = mapped_column(String(120), default="")
+    languages: Mapped[str] = mapped_column(String(255), default="")
     accepting_consultations: Mapped[bool] = mapped_column(Boolean, default=True)
     ai_tokens_used: Mapped[int] = mapped_column(Integer, default=0)
     subscription_status: Mapped[str] = mapped_column(String(32), default="free")
@@ -80,6 +84,18 @@ class CaseEvent(Base):
     event_date: Mapped[str] = mapped_column(String(10), index=True)
     text: Mapped[str] = mapped_column(Text)
     document_id: Mapped[int | None] = mapped_column(ForeignKey("documents.id"), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class CaseRating(Base):
+    __tablename__ = "case_ratings"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    case_id: Mapped[int] = mapped_column(ForeignKey("cases.id"), unique=True, index=True)
+    client_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    lawyer_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    rating: Mapped[int] = mapped_column(Integer)
+    review: Mapped[str] = mapped_column(Text, default="")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 

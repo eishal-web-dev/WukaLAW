@@ -19,6 +19,10 @@ const emptyProfile: LawyerProfilePayload = {
   years_experience: 0,
   consultation_fee: 0,
   lawyer_bio: '',
+  education: '',
+  bar_council: '',
+  license_number: '',
+  languages: '',
   accepting_consultations: true,
 }
 
@@ -51,6 +55,10 @@ export default function Profile() {
           years_experience: publicProfile.years_experience,
           consultation_fee: publicProfile.consultation_fee,
           lawyer_bio: publicProfile.lawyer_bio,
+          education: publicProfile.education,
+          bar_council: publicProfile.bar_council,
+          license_number: publicProfile.license_number,
+          languages: publicProfile.languages,
           accepting_consultations: publicProfile.accepting_consultations,
         })
       }
@@ -126,14 +134,21 @@ export default function Profile() {
       {user?.role === 'lawyer' && (
         <Card className="p-4 sm:p-6">
           <SectionHeader title="Public lawyer profile" />
-          <p className="mb-5 text-xs leading-relaxed text-muted-foreground">These details and your uploaded photo appear on the public Find a Lawyer page. Only information you save here is published.</p>
+          <div className="mb-5 rounded-xl border border-border bg-muted/30 p-4">
+            <div className="flex items-center justify-between gap-3 text-sm"><span className="font-semibold text-foreground">Profile completion</span><span style={{color:G}}>{lawyer?.profile_complete ? '100%' : 'Incomplete'}</span></div>
+            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">A complete, verified-looking profile is required before you can accept case requests or appear in Find a Lawyer.</p>
+          </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="text-xs text-muted-foreground">Professional title<input value={profile.lawyer_title} onChange={e => setProfile({...profile, lawyer_title:e.target.value})} className={inputClass + ' mt-2'} placeholder="Advocate, Barrister, Partner…"/></label>
             <label className="text-xs text-muted-foreground">Specialization<input value={profile.specialization} onChange={e => setProfile({...profile, specialization:e.target.value})} className={inputClass + ' mt-2'} placeholder="Family law, corporate law…"/></label>
             <label className="text-xs text-muted-foreground">City<input value={profile.city} onChange={e => setProfile({...profile, city:e.target.value})} className={inputClass + ' mt-2'} placeholder="Peshawar"/></label>
             <label className="text-xs text-muted-foreground">Years of experience<input type="number" min={0} max={80} value={profile.years_experience} onChange={e => setProfile({...profile, years_experience:Number(e.target.value)})} className={inputClass + ' mt-2'}/></label>
             <label className="text-xs text-muted-foreground">Consultation fee (PKR)<input type="number" min={0} value={profile.consultation_fee} onChange={e => setProfile({...profile, consultation_fee:Number(e.target.value)})} className={inputClass + ' mt-2'}/></label>
+            <label className="text-xs text-muted-foreground">Bar council<input value={profile.bar_council} onChange={e => setProfile({...profile, bar_council:e.target.value})} className={inputClass + ' mt-2'} placeholder="Khyber Pakhtunkhwa Bar Council"/></label>
+            <label className="text-xs text-muted-foreground">Licence / enrolment number<input value={profile.license_number} onChange={e => setProfile({...profile, license_number:e.target.value})} className={inputClass + ' mt-2'} placeholder="Enrolment number"/></label>
+            <label className="text-xs text-muted-foreground">Languages<input value={profile.languages} onChange={e => setProfile({...profile, languages:e.target.value})} className={inputClass + ' mt-2'} placeholder="Urdu, English, Pashto"/></label>
             <label className="flex items-center gap-3 self-end rounded-xl border border-border px-3 py-3 text-sm text-foreground"><input type="checkbox" checked={profile.accepting_consultations} onChange={e => setProfile({...profile, accepting_consultations:e.target.checked})}/>Accept consultation requests</label>
+            <label className="text-xs text-muted-foreground sm:col-span-2">Education and qualifications<textarea rows={3} value={profile.education} onChange={e => setProfile({...profile, education:e.target.value})} className={inputClass + ' mt-2 resize-y'} placeholder="LL.B, university, certifications and relevant training"/></label>
             <label className="text-xs text-muted-foreground sm:col-span-2">Professional biography<textarea rows={5} value={profile.lawyer_bio} onChange={e => setProfile({...profile, lawyer_bio:e.target.value})} className={inputClass + ' mt-2 resize-y'} placeholder="Describe your practice, qualifications and experience."/></label>
           </div>
           <div className="mt-5 flex flex-wrap items-center gap-3">

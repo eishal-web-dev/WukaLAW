@@ -7,8 +7,9 @@ import {
 import {
   getCase, listCaseDocuments, getCaseTimeline, updateCase, deleteDocument, errorMessage,
   uploadDocument, listEvidenceFiles, uploadEvidenceFile, downloadEvidenceFile, addCaseEvent,
+  getCaseRating, rateCase,
 } from '../lib/api'
-import type { Case, DocumentMeta, TimelineEvent, EvidenceFile } from '../lib/api'
+import type { Case, DocumentMeta, TimelineEvent, EvidenceFile, CaseRating } from '../lib/api'
 import { formatDate, excerpt } from '../lib/format'
 import { Card, Badge, G } from '../components/design'
 import Spinner from '../components/Spinner'
@@ -32,6 +33,9 @@ export default function ClientWorkspace() {
   const [uploading, setUploading] = useState(false)
   const [eventDate, setEventDate] = useState('')
   const [eventText, setEventText] = useState('')
+  const [rating, setRating] = useState<CaseRating | null>(null)
+  const [ratingValue, setRatingValue] = useState(5)
+  const [review, setReview] = useState('')
 
   const [input, setInput] = useState('')
 
@@ -52,6 +56,7 @@ export default function ClientWorkspace() {
       setDocuments(docs.items)
       setEvents(timeline.events)
       setEvidence(evidenceResult.items)
+      if (['Case Complete', 'Closed'].includes(c.status)) setRating(await getCaseRating(caseId).catch(() => null))
     } catch (err) {
       const message = errorMessage(err)
       if (message.toLowerCase().includes('not found')) {
@@ -106,6 +111,13 @@ export default function ClientWorkspace() {
       await addCaseEvent(caseId, { date: eventDate, text: eventText.trim(), document_id: null })
       setEventDate(''); setEventText(''); await load()
     } catch (err) { setError(errorMessage(err)) }
+  }
+
+  const submitRating = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!caseId) return
+    try { setRating(await rateCase(caseId, ratingValue, review)); setReview('') }
+    catch (err) { setError(errorMessage(err)) }
   }
 
   if (loading) {
@@ -204,6 +216,13 @@ export default function ClientWorkspace() {
           </p>
         )}
       </Card>
+
+      {['Case Complete', 'Closed'].includes(caseData.status) && caseData.lawyer_name && (
+        <Card className="p-5">
+          <h2 className="text-base font-semibold text-foreground">Rate your lawyer</h2>
+          {rating ? <p className="mt-3 text-sm text-muted-foreground"><span className="text-amber-400">{'★'.repeat(rating.rating)}{'☆'.repeat(5-rating.rating)}</span> Your feedback has been recorded.</p> : <form onSubmit={submitRating} className="mt-4 space-y-3"><div className="flex gap-2">{[1,2,3,4,5].map(value=><button type="button" key={value} onClick={()=>setRatingValue(value)} className={`text-2xl ${value<=ratingValue?'text-amber-400':'text-muted-foreground/30'}`}>★</button>)}</div><textarea value={review} onChange={e=>setReview(e.target.value)} rows={3} placeholder="Share your experience (optional)" className="w-full rounded-xl border border-border bg-background p-3 text-sm"/><button className="rounded-xl px-4 py-2 text-sm font-semibold text-black" style={{background:G}}>Submit rating</button></form>}
+        </Card>
+      )}
 
       <div className="grid sm:grid-cols-2 gap-4">
         {/* 3. Next important date */}

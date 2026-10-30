@@ -11,7 +11,7 @@ from ai.similar_cases import SimilarCaseRequest
 from ai.timeline.extract import extract_events
 from app.auth import get_current_user
 from app.db import get_db
-from app.models import Case, CaseEvent, Chunk, Document, User
+from app.models import Case, CaseEvent, CaseRating, Chunk, Document, User
 from app.schemas import (
     CaseCreate,
     CaseList,
@@ -20,6 +20,8 @@ from app.schemas import (
     CaseUpdate,
     CaseEventCreate,
     CaseEventUpdate,
+    CaseRatingCreate,
+    CaseRatingOut,
     ContradictionsResponse,
     DocumentList,
     TimelineResponse,
@@ -34,9 +36,25 @@ from app.services.notification_service import create_notification
 router = APIRouter(prefix="/cases", tags=["cases"])
 logger = logging.getLogger(__name__)
 
+
+def _case_for_user(db: Session, case_id: int, user: User) -> Case:
+    case = db.get(Case, case_id)
+    if case is None or (user.role != "admin" and user.id not in {case.owner_id, case.client_id}):
+        raise HTTPException(status_code=404, detail="Case not found.")
+    return case
+
+
+def _lawyer_profile_complete(user: User) -> bool:
+    return bool(all([
+        user.profile_image, user.lawyer_title, user.specialization, user.city,
+        user.years_experience, user.lawyer_bio, user.education,
+        user.bar_council, user.license_number, user.languages,
+    ]))
+
 ALLOWED_STATUS = {
     # Current, user-friendly case stages.
     "Started",
+    "In Progress",
     "Currently Going On",
     "Case Complete",
     # Legacy values remain valid so existing case records can still be edited.
@@ -507,6 +525,8 @@ def request_case(
         raise HTTPException(status_code=422, detail="Choose a registered lawyer before sending the case request.")
     if lawyer is not None and not lawyer.accepting_consultations:
         raise HTTPException(status_code=409, detail="This lawyer is not currently accepting new requests.")
+    if lawyer is not None and not _lawyer_profile_complete(lawyer):
+        raise HTTPException(status_code=409, detail="This lawyer must complete their profile before receiving case requests.")
     clean_tags = list(dict.fromkeys(tag.strip() for tag in request.tags if tag.strip()))
     case = Case(
         owner_id=None,
@@ -544,6 +564,8 @@ def claim_case(case_id: int, db: Session = Depends(get_db), user: User = Depends
     request."""
     if user.role == "client":
         raise HTTPException(status_code=403, detail="Clients cannot claim cases.")
+    if user.role == "lawyer" and not _lawyer_profile_complete(user):
+        raise HTTPException(status_code=409, detail="Complete your lawyer profile before accepting a case.")
     case = db.get(Case, case_id)
     if case is None:
         raise HTTPException(status_code=404, detail="Case not found.")
@@ -877,3 +899,33 @@ def case_intelligence_profile(
     """
     case = _get_owned_case(db, case_id, user)
     return build_case_intelligence_profile(db, case)
+
+
+@router.get("/{case_id}/rating", response_model=CaseRatingOut | None)
+def get_case_rating(case_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    _case_for_user(db, case_id, user)
+    return db.scalar(select(CaseRating).where(CaseRating.case_id == case_id))
+
+
+@router.post("/{case_id}/rating", response_model=CaseRatingOut, status_code=201)
+def rate_completed_case(
+    case_id: int,
+    payload: CaseRatingCreate,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    case = _case_for_user(db, case_id, user)
+    if user.role != "client" or case.client_id != user.id:
+        raise HTTPException(status_code=403, detail="Only this case's client can rate the lawyer.")
+    if case.status not in {"Case Complete", "Closed"}:
+        raise HTTPException(status_code=409, detail="The case must be completed before rating the lawyer.")
+    if case.owner_id is None:
+        raise HTTPException(status_code=409, detail="This case has no assigned lawyer.")
+    if db.scalar(select(CaseRating).where(CaseRating.case_id == case.id)) is not None:
+        raise HTTPException(status_code=409, detail="This case has already been rated.")
+    item = CaseRating(case_id=case.id, client_id=user.id, lawyer_id=case.owner_id, rating=payload.rating, review=payload.review.strip())
+    db.add(item)
+    create_notification(db, user_id=case.owner_id, notification_type="case", title="New client rating", body=f"{case.case_number} received a {payload.rating}-star rating.", action_url="/profile")
+    db.commit()
+    db.refresh(item)
+    return item
