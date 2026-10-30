@@ -29,7 +29,7 @@ describe('merged lawyer cases page', () => {
   it('opens a case from the management view in the same workspace', () => {
     open()
 
-    expect(screen.getByRole('heading', { name: 'Cases' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Cases & Clients' })).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Open case 42' }))
 
     expect(screen.getByRole('heading', { name: 'Selected case workspace' })).toBeInTheDocument()

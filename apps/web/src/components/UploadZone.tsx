@@ -68,14 +68,14 @@ export default function UploadZone({
         </div>
         <div className="text-foreground font-medium mb-1">Drop files here to upload</div>
         <div className="text-sm text-muted-foreground">
-          PDF and TXT supported{caseId !== undefined ? ' · Files attach to this case' : ''}
+          PDF, Word and images supported{caseId !== undefined ? ' · Files attach to this case' : ''}
         </div>
         <Btn variant="secondary" className="mt-4 mx-auto">Browse Files</Btn>
         <input
           ref={fileInput}
           type="file"
           multiple
-          accept=".pdf,.txt,application/pdf,text/plain"
+          accept=".pdf,.txt,.doc,.docx,.png,.jpg,.jpeg,.webp,.tif,.tiff,application/pdf,text/plain,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/*"
           className="hidden"
           onChange={(e) => {
             if (e.target.files?.length) void uploadFiles(e.target.files)

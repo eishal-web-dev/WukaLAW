@@ -7,7 +7,13 @@ import { Badge, Card, G } from '../components/design'
 
 const inputClass = 'w-full rounded-xl border border-border bg-card py-2.5 pl-10 pr-3 text-sm text-foreground outline-none focus:border-[#D4AF37]/60'
 
-export default function LawyerClients() {
+export default function LawyerClients({
+  embedded = false,
+  onOpenWorkspace,
+}: {
+  embedded?: boolean
+  onOpenWorkspace?: (caseId: number) => void
+} = {}) {
   const navigate = useNavigate()
   const { clientId } = useParams()
   const [clients, setClients] = useState<LawyerClient[]>([])
@@ -31,25 +37,26 @@ export default function LawyerClients() {
   }, [clients, query])
   const activeCases = clients.reduce((total, client) => total + client.active_case_count, 0)
   const documents = clients.reduce((total, client) => total + client.document_count, 0)
+  const openCase = (caseId: number) => onOpenWorkspace ? onOpenWorkspace(caseId) : navigate(`/cases/${caseId}`)
 
   if (clientId && !loading && !selected) {
     return <div className="grid h-full place-items-center p-6"><Card className="max-w-md p-8 text-center"><h1 className="text-xl font-bold">Client not found</h1><p className="mt-2 text-sm text-muted-foreground">This client is not connected to one of your assigned cases.</p><button className="mt-5 text-sm font-semibold" style={{ color: G }} onClick={() => navigate('/clients')}>Back to clients</button></Card></div>
   }
 
   if (selected) {
-    return <div className="h-full overflow-auto p-6 space-y-5">
-      <button className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground" onClick={() => navigate('/clients')}><ArrowLeft size={16}/>All clients</button>
+    return <div className={`h-full overflow-auto space-y-5 ${embedded ? 'p-4 sm:p-6' : 'p-6'}`}>
+      <button className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground" onClick={() => embedded ? navigate('/cases?view=clients') : navigate('/clients')}><ArrowLeft size={16}/>All clients</button>
       <header className="flex flex-wrap items-center gap-4 rounded-2xl border border-border bg-card p-5">
         <div className="grid h-14 w-14 place-items-center rounded-2xl bg-[#D4AF37]/15 text-lg font-bold text-[#D4AF37]">{selected.name.split(/\s+/).map(part => part[0]).join('').slice(0, 2).toUpperCase()}</div>
         <div className="min-w-0 flex-1"><h1 className="text-2xl font-bold text-foreground">{selected.name}</h1><p className="text-sm text-muted-foreground">{selected.email}</p></div>
         <div className="flex gap-5 text-center"><div><p className="text-xl font-bold">{selected.case_count}</p><p className="text-xs text-muted-foreground">Cases</p></div><div><p className="text-xl font-bold">{selected.document_count}</p><p className="text-xs text-muted-foreground">Documents</p></div></div>
       </header>
-      <section><h2 className="mb-3 text-lg font-bold">Client cases</h2><div className="grid gap-3 lg:grid-cols-2">{selected.cases.map((item) => <button key={item.id} onClick={() => navigate(`/cases/${item.id}`)} className="rounded-xl border border-border bg-card p-4 text-left transition hover:border-[#D4AF37]/40"><div className="flex items-start justify-between gap-3"><div><p className="font-semibold text-foreground">{item.title}</p><p className="mt-0.5 text-xs text-[#D4AF37]">{item.case_number}</p></div><Badge label={item.status}/></div><div className="mt-4 flex gap-4 text-xs text-muted-foreground"><span>{item.case_type}</span><span>{item.num_documents} document{item.num_documents === 1 ? '' : 's'}</span>{item.deadline ? <span>Due {new Date(item.deadline).toLocaleDateString()}</span> : null}</div></button>)}</div></section>
+      <section><h2 className="mb-3 text-lg font-bold">Client cases</h2><div className="grid gap-3 lg:grid-cols-2">{selected.cases.map((item) => <button key={item.id} onClick={() => openCase(item.id)} className="rounded-xl border border-border bg-card p-4 text-left transition hover:border-[#D4AF37]/40"><div className="flex items-start justify-between gap-3"><div><p className="font-semibold text-foreground">{item.title}</p><p className="mt-0.5 text-xs text-[#D4AF37]">{item.case_number}</p></div><Badge label={item.status}/></div><div className="mt-4 flex flex-wrap gap-4 text-xs text-muted-foreground"><span>{item.case_type}</span><span>{item.num_documents} document{item.num_documents === 1 ? '' : 's'}</span>{item.deadline ? <span>Due {new Date(item.deadline).toLocaleDateString()}</span> : null}</div><p className="mt-3 text-xs font-semibold text-[#D4AF37]">Open case workspace →</p></button>)}</div></section>
     </div>
   }
 
-  return <div className="h-full overflow-auto p-6 space-y-5">
-    <header><h1 className="text-2xl font-bold text-foreground">Client Management</h1><p className="mt-1 text-sm text-muted-foreground">Clients connected to cases assigned to you. Unclaimed requests stay in the intake queue.</p></header>
+  return <div className={`h-full overflow-auto space-y-5 ${embedded ? 'p-4 sm:p-6' : 'p-6'}`}>
+    <header><h2 className={`${embedded ? 'text-xl' : 'text-2xl'} font-bold text-foreground`}>Your Clients</h2><p className="mt-1 text-sm text-muted-foreground">Every client shown here is connected to one of your assigned cases. Select a client to open their matters and documents.</p></header>
     {error ? <ErrorAlert message={error}/> : null}
     <div className="grid gap-4 sm:grid-cols-3">
       <Card className="p-4"><Users size={18} className="text-[#D4AF37]"/><p className="mt-3 text-3xl font-bold">{loading ? '…' : clients.length}</p><p className="text-xs text-muted-foreground">Assigned clients</p></Card>
