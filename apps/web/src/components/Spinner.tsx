@@ -1,10 +1,14 @@
 export default function Spinner({ label }: { label?: string }) {
   return (
-    <div className="flex items-center gap-3 text-sm text-muted-foreground">
-      <div
-        className="h-4 w-4 animate-spin rounded-full border-2 border-[#D4AF37]/30 border-t-[#D4AF37]"
-        aria-hidden
-      />
+    <div className="wk-book-loader" role="status" aria-live="polite" aria-label={label || 'Loading'}>
+      <div className="wk-book" aria-hidden="true">
+        <div className="wk-book__pg-shadow" />
+        <div className="wk-book__pg" />
+        <div className="wk-book__pg wk-book__pg--2" />
+        <div className="wk-book__pg wk-book__pg--3" />
+        <div className="wk-book__pg wk-book__pg--4" />
+        <div className="wk-book__pg wk-book__pg--5" />
+      </div>
       {label && <span>{label}</span>}
     </div>
   )
