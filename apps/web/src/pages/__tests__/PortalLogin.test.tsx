@@ -94,10 +94,22 @@ describe('Portal sign-in', () => {
     open(`/register?portal=${role}`)
     fireEvent.change(screen.getByLabelText('Full name'), { target: { value: 'Portal User' } })
     fillLogin()
+    fireEvent.click(screen.getByRole('checkbox', { name: /I agree to the Terms of Service/i }))
     fireEvent.click(screen.getByRole('button', { name: 'Create Account' }))
     const label = role[0].toUpperCase() + role.slice(1)
     expect(await screen.findByRole('heading', { name: `${label} home` })).toBeInTheDocument()
-    expect(JSON.parse(fetch.mock.calls[0][1]?.body as string).role).toBe(role)
+    expect(JSON.parse(fetch.mock.calls[0][1]?.body as string)).toMatchObject({
+      role,
+      terms_accepted: true,
+      model_training_consent: true,
+    })
+  })
+
+  it('requires policy consent before registration', () => {
+    open('/register?portal=client')
+    expect(screen.getByRole('button', { name: 'Create Account' })).toBeDisabled()
+    fireEvent.click(screen.getByRole('checkbox', { name: /I agree to the Terms of Service/i }))
+    expect(screen.getByRole('button', { name: 'Create Account' })).not.toBeDisabled()
   })
 
   it('ignores an admin signup query and offers only public account types', () => {
