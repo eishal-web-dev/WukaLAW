@@ -32,7 +32,8 @@ def client():
 def register_user(client, email="tester@example.com", name="Test User", password="secret123"):
     """Register a user and return auth headers for protected endpoints."""
     response = client.post(
-        "/api/v1/auth/register", json={"email": email, "name": name, "password": password}
+        "/api/v1/auth/register",
+        json={"email": email, "name": name, "password": password, "terms_accepted": True, "model_training_consent": True},
     )
     assert response.status_code == 201, response.text
     headers = {"Authorization": f"Bearer {response.json()['token']}"}
