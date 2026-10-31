@@ -21,14 +21,19 @@ import {
 type Page = string;
 interface PubProps { navigate: (p: Page) => void; dark: boolean; toggleDark: () => void; current?: string; }
 
-function BrowserWindow({ children, url = "app.wukalaw.ai", className = "", style = {} }: {
-  children: React.ReactNode; url?: string; className?: string; style?: React.CSSProperties;
+function BrowserWindow({ children, url = "app.wukalaw.ai", className = "", style = {}, dark = true }: {
+  children: React.ReactNode; url?: string; className?: string; style?: React.CSSProperties; dark?: boolean;
 }) {
+  const frame = dark ? C : "#FFFFFF";
+  const chrome = dark ? S : "#F7F2E9";
+  const border = dark ? "rgba(255,255,255,0.09)" : "rgba(83,57,15,0.16)";
+  const address = dark ? "rgba(255,255,255,0.05)" : "rgba(91,63,18,0.07)";
+  const addressText = dark ? "#B3B3B3" : "#6B5533";
   return (
     <div className={`wk-browser-window rounded-2xl overflow-hidden shadow-2xl ${className}`}
-      style={{ border: "1px solid rgba(255,255,255,0.09)", backgroundColor: C, ...style }}>
+      style={{ border: `1px solid ${border}`, backgroundColor: frame, ...style }}>
       <div className="h-10 flex items-center px-4 gap-3 flex-shrink-0"
-        style={{ backgroundColor: S, borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+        style={{ backgroundColor: chrome, borderBottom: `1px solid ${border}` }}>
         <div className="flex gap-1.5">
           <div className="w-3 h-3 rounded-full" style={{ backgroundColor: "#FF5F57" }} />
           <div className="w-3 h-3 rounded-full" style={{ backgroundColor: "#FEBC2E" }} />
@@ -36,7 +41,7 @@ function BrowserWindow({ children, url = "app.wukalaw.ai", className = "", style
         </div>
         <div className="flex-1 flex justify-center">
           <div className="flex items-center gap-2 px-3 py-1 rounded-md text-[11px]"
-            style={{ backgroundColor: "rgba(255,255,255,0.05)", color: "#B3B3B3", maxWidth: 240 }}>
+            style={{ backgroundColor: address, color: addressText, maxWidth: 240 }}>
             <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: "#34D399" }} />
             {url}
           </div>
@@ -537,7 +542,7 @@ export function LandingPage({ navigate, dark, toggleDark }: { navigate: (p: Page
           {/* Mockup */}
           <div className="wkf" style={{ position: "relative" }}>
             <div style={{ position: "absolute", inset: -40, background: `radial-gradient(ellipse at 60% 40%, ${GA}18 0%, transparent 65%)`, filter: "blur(50px)" }} />
-            <BrowserWindow url="app.wukalaw.ai/prediction" style={{ position: "relative", boxShadow: dark ? `0 40px 100px rgba(0,0,0,0.7), 0 0 60px ${GA}15` : `0 40px 80px rgba(100,70,0,0.15)` }}>
+            <BrowserWindow dark={dark} url="app.wukalaw.ai/prediction" style={{ position: "relative", boxShadow: dark ? `0 40px 100px rgba(0,0,0,0.7), 0 0 60px ${GA}15` : `0 40px 80px rgba(100,70,0,0.15)` }}>
               <div style={{ padding: 28, backgroundColor: dark ? undefined : "#FAFAF6" }}>
                 <div style={{ display: "flex", gap: 24, marginBottom: 28 }}>
                   <div style={{ textAlign: "center" }}>
@@ -644,7 +649,7 @@ export function LandingPage({ navigate, dark, toggleDark }: { navigate: (p: Page
 
           <div style={{ position: "relative" }}>
             <div style={{ position: "absolute", inset: 0, background: dark ? `radial-gradient(ellipse at 50% 0%, rgba(79,142,247,0.15) 0%, transparent 60%)` : `radial-gradient(ellipse at 50% 0%, ${GA}10 0%, transparent 60%)`, filter: "blur(60px)", zIndex: 0 }} />
-            <BrowserWindow url="app.wukalaw.ai/workspace/WL-2024-003" style={{ position: "relative", zIndex: 1, boxShadow: dark ? `0 40px 100px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.08)` : `0 40px 80px rgba(100,70,0,0.18)` }}>
+            <BrowserWindow dark={dark} url="app.wukalaw.ai/workspace/WL-2024-003" style={{ position: "relative", zIndex: 1, boxShadow: dark ? `0 40px 100px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.08)` : `0 40px 80px rgba(100,70,0,0.18)` }}>
               <div style={{ display: "grid", gridTemplateColumns: "200px 1fr 240px", height: 420, backgroundColor: dark ? undefined : "#FAFAF6" }}>
                 {/* Left */}
                 <div style={{ borderRight: `1px solid ${BD}`, padding: "14px 10px" }}>
@@ -1070,10 +1075,8 @@ export function LandingAIFeaturesGrid({ dark }: { dark: boolean }) {
         </div>
         <div className="wk-responsive-grid-3" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20 }}>
           {features.map(f => (
-            <div key={f.title}
-              style={{ padding: 28, borderRadius: 18, border: `1px solid ${BD}`, backgroundColor: CARDBG, cursor: "default", transition: "transform 0.2s, box-shadow 0.2s" }}
-              onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.transform = "translateY(-4px)"; (e.currentTarget as HTMLDivElement).style.boxShadow = `0 20px 60px ${f.color}20`; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.transform = "translateY(0)"; (e.currentTarget as HTMLDivElement).style.boxShadow = "none"; }}>
+            <div key={f.title} className="wk-feature-glow-card"
+              style={{ "--card-accent": f.color, "--card-accent-soft": `${f.color}24`, "--card-surface": CARDBG, "--card-border": BD, padding: 28, borderRadius: 18, cursor: "default" }}>
               <div style={{ width: 48, height: 48, borderRadius: 14, backgroundColor: f.bg, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 18, color: f.color }}>{f.icon}</div>
               <div style={{ fontSize: 16, fontWeight: 700, color: TX, marginBottom: 8 }}>{f.title}</div>
               <div style={{ fontSize: 14, color: TX2, lineHeight: 1.6 }}>{f.desc}</div>
@@ -2286,7 +2289,7 @@ function CaseWorkspaceFeature({ dark }: { dark: boolean }) {
         </div>
         <div style={{ position: "relative" }}>
           <div style={{ position: "absolute", inset: "-10% 5%", background: `radial-gradient(ellipse, ${GA}25, transparent 65%)`, filter: "blur(55px)" }}/>
-          <BrowserWindow url="app.wukalaw.ai/cases/WL-2026-001" style={{ position: "relative", boxShadow: dark ? "0 40px 100px rgba(0,0,0,.75)" : "0 35px 75px rgba(90,60,0,.18)" }}>
+          <BrowserWindow dark={dark} url="app.wukalaw.ai/cases/WL-2026-001" style={{ position: "relative", boxShadow: dark ? "0 40px 100px rgba(0,0,0,.75)" : "0 35px 75px rgba(90,60,0,.18)" }}>
             <div className="wk-feature-workspace" style={{ display: "grid", gridTemplateColumns: "210px 1fr 245px", minHeight: 430, background: panel }}>
               <aside className="wk-feature-workspace-sidebar" style={{ padding: 16, borderRight: `1px solid ${BD}` }}>
                 <p style={{ color: TX2, fontSize: 10, fontWeight: 800, letterSpacing: ".1em", marginBottom: 14 }}>CASES</p>
@@ -2313,18 +2316,53 @@ export function FeaturesPage({ navigate, dark, toggleDark }: { navigate: (p: Pag
   const BD = dark ? "rgba(255,255,255,0.06)" : "rgba(60,30,0,0.08)";
   const CARD = dark ? "#0F1521" : "#FFFFFF";
   const features = [
-    { icon: "🧠", title: "AI Court Outcome Prediction", desc: "94.2% accuracy on Pakistani court outcomes. Trained on 200,000+ Supreme Court, High Court and district court judgments since 2010.", tag: "Core AI" },
-    { icon: "🔍", title: "Semantic Case Search", desc: "Find precedents instantly across 15 million+ cases using natural language queries. No legal keyword memorization required.", tag: "Search" },
-    { icon: "📋", title: "Automated Document Drafting", desc: "Generate petitions, affidavits, legal memos and briefs in seconds. AI-powered templates built on Pakistani legal standards.", tag: "Documents" },
-    { icon: "⚖️", title: "Timeline Intelligence", desc: "Visual case timeline with AI-generated milestone predictions, deadline alerts and procedural guidance at every step.", tag: "Case Management" },
-    { icon: "🎯", title: "Evidence Analysis Engine", desc: "Upload exhibits, photos, contracts and witness statements. AI extracts key arguments, contradiction flags and strength scoring.", tag: "Evidence" },
-    { icon: "📊", title: "AI Strategy Assistant", desc: "Real-time strategic guidance based on judge preferences, opposing counsel history, court precedent and case-specific risk factors.", tag: "Strategy" },
-    { icon: "🔗", title: "Similar Case Matching", desc: "Instant identification of analogous cases with outcome data, argument similarity scores and key distinguishing factors.", tag: "Research" },
-    { icon: "🛡️", title: "Explainable AI Decisions", desc: "Every prediction comes with a full breakdown of contributing factors, precedent citations, and confidence intervals.", tag: "Transparency" },
-    { icon: "👥", title: "Team Collaboration", desc: "Multi-user workspaces with role-based access, real-time comments, task assignments and audit trails for entire legal teams.", tag: "Collaboration" },
+    { icon: "🧠", color: "#C89211", title: "AI Court Outcome Prediction", desc: "94.2% accuracy on Pakistani court outcomes. Trained on 200,000+ Supreme Court, High Court and district court judgments since 2010.", tag: "Core AI" },
+    { icon: "🔍", color: "#4F8EF7", title: "Semantic Case Search", desc: "Find precedents instantly across 15 million+ cases using natural language queries. No legal keyword memorization required.", tag: "Search" },
+    { icon: "📋", color: "#E8792E", title: "Automated Document Drafting", desc: "Generate petitions, affidavits, legal memos and briefs in seconds. AI-powered templates built on Pakistani legal standards.", tag: "Documents" },
+    { icon: "⚖️", color: "#C89211", title: "Timeline Intelligence", desc: "Visual case timeline with AI-generated milestone predictions, deadline alerts and procedural guidance at every step.", tag: "Case Management" },
+    { icon: "🎯", color: "#E14D72", title: "Evidence Analysis Engine", desc: "Upload exhibits, photos, contracts and witness statements. AI extracts key arguments, contradiction flags and strength scoring.", tag: "Evidence" },
+    { icon: "📊", color: "#34A98B", title: "AI Strategy Assistant", desc: "Real-time strategic guidance based on judge preferences, opposing counsel history, court precedent and case-specific risk factors.", tag: "Strategy" },
+    { icon: "🔗", color: "#8B6FD1", title: "Similar Case Matching", desc: "Instant identification of analogous cases with outcome data, argument similarity scores and key distinguishing factors.", tag: "Research" },
+    { icon: "🛡️", color: "#4F8EF7", title: "Explainable AI Decisions", desc: "Every prediction comes with a full breakdown of contributing factors, precedent citations, and confidence intervals.", tag: "Transparency" },
+    { icon: "👥", color: "#7C3AED", title: "Team Collaboration", desc: "Multi-user workspaces with role-based access, real-time comments, task assignments and audit trails for entire legal teams.", tag: "Collaboration" },
   ];
   return (
     <div style={{ backgroundColor: BG, fontFamily: "Inter, sans-serif", minHeight: "100vh" }}>
+      <style>{`
+        .wk-feature-glow-card {
+          position: relative;
+          isolation: isolate;
+          overflow: hidden;
+          border: 1px solid transparent;
+          background:
+            linear-gradient(var(--card-surface), var(--card-surface)) padding-box,
+            linear-gradient(135deg, var(--card-accent), var(--card-border) 42%, var(--card-accent-soft)) border-box;
+          box-shadow: 0 12px 32px rgba(47, 35, 12, 0.08);
+          transition: transform .28s ease, box-shadow .28s ease, border-color .28s ease;
+        }
+        .wk-feature-glow-card::before {
+          content: "";
+          position: absolute;
+          width: 150px;
+          height: 150px;
+          right: -65px;
+          top: -75px;
+          z-index: -1;
+          border-radius: 50%;
+          background: radial-gradient(circle, var(--card-accent-soft), transparent 68%);
+          opacity: .4;
+          transition: opacity .28s ease, transform .28s ease;
+        }
+        .wk-feature-glow-card:hover {
+          transform: translateY(-7px);
+          box-shadow: 0 22px 56px var(--card-accent-soft), 0 10px 28px rgba(30, 20, 5, .12);
+        }
+        .wk-feature-glow-card:hover::before { opacity: .95; transform: scale(1.2); }
+        @media (prefers-reduced-motion: reduce) {
+          .wk-feature-glow-card, .wk-feature-glow-card::before { transition: none; }
+          .wk-feature-glow-card:hover { transform: none; }
+        }
+      `}</style>
       <PublicNav navigate={navigate} dark={dark} toggleDark={toggleDark} current="features" />
       {/* Hero */}
       <div style={{ maxWidth: 1200, margin: "0 auto", padding: "96px 24px 64px", textAlign: "center" }}>
@@ -2343,13 +2381,11 @@ export function FeaturesPage({ navigate, dark, toggleDark }: { navigate: (p: Pag
       <LandingAIFeaturesGrid dark={dark} />
       {/* Feature grid */}
       <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 24px 96px" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 20 }}>
+        <div className="wk-responsive-grid-3" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 20 }}>
           {features.map((f, i) => (
-            <div key={i} style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 16, padding: 28, transition: "transform 0.2s, box-shadow 0.2s", cursor: "default" }}
-              onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.transform = "translateY(-4px)"; (e.currentTarget as HTMLDivElement).style.boxShadow = `0 24px 60px rgba(0,0,0,0.25)`; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.transform = ""; (e.currentTarget as HTMLDivElement).style.boxShadow = ""; }}>
-              <div style={{ fontSize: 28, marginBottom: 12 }}>{f.icon}</div>
-              <div style={{ fontSize: 10, fontWeight: 700, color: GA, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>{f.tag}</div>
+            <div key={i} className="wk-feature-glow-card" style={{ "--card-accent": f.color, "--card-accent-soft": `${f.color}24`, "--card-surface": CARD, "--card-border": BD, borderRadius: 16, padding: 28, cursor: "default" }}>
+              <div style={{ width: 46, height: 46, borderRadius: 14, display: "grid", placeItems: "center", fontSize: 24, marginBottom: 16, background: `${f.color}14`, boxShadow: `inset 0 0 0 1px ${f.color}28` }}>{f.icon}</div>
+              <div style={{ fontSize: 10, fontWeight: 700, color: f.color, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>{f.tag}</div>
               <div style={{ fontSize: 16, fontWeight: 700, color: TX, marginBottom: 10, letterSpacing: "-0.01em" }}>{f.title}</div>
               <p style={{ fontSize: 13.5, color: TX2, lineHeight: 1.7, margin: 0 }}>{f.desc}</p>
             </div>
