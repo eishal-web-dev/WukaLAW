@@ -162,7 +162,7 @@ def request_consultation(payload: ConsultationRequestCreate, db: Session = Depen
         notification_type="case",
         title="New consultation request",
         body=f"{item.client_name} requested a consultation for {requested_at.isoformat()}.",
-        action_url="/notifications",
+        action_url="/cases?view=requests",
     )
     body = (
         f"New WukaLAW consultation request\n\n"

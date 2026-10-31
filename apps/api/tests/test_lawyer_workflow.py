@@ -139,3 +139,33 @@ def test_lawyer_clients_are_real_assigned_clients_only(client):
         "cases": [response.json()[0]["cases"][0]],
     }]
     assert response.json()[0]["cases"][0]["id"] == case_id
+
+
+def test_consultation_is_added_to_only_the_requested_lawyers_queue(client):
+    lawyer = register_user(client, email="consult-lawyer@example.com")
+    other_lawyer = register_user(client, email="other-lawyer@example.com")
+    lawyers = client.get("/api/v1/public/lawyers").json()
+    lawyer_id = next(item["id"] for item in lawyers if item["email"] == "consult-lawyer@example.com")
+
+    sent = client.post("/api/v1/public/consultations", json={
+        "lawyer_id": lawyer_id,
+        "client_name": "Public Client",
+        "client_email": "public-client@example.com",
+        "client_phone": "+92 300 1234567",
+        "requested_at": "2030-11-05T10:00:00Z",
+        "notes": "I need advice about unpaid dower.",
+    })
+    assert sent.status_code == 201, sent.text
+
+    queue = client.get("/api/v1/lawyer-workflow/consultations", headers=lawyer)
+    assert queue.status_code == 200, queue.text
+    assert queue.json()[0]["client_email"] == "public-client@example.com"
+    assert queue.json()[0]["status"] == "Requested"
+    assert client.get("/api/v1/lawyer-workflow/consultations", headers=other_lawyer).json() == []
+
+    updated = client.patch(
+        f"/api/v1/lawyer-workflow/consultations/{queue.json()[0]['id']}",
+        json={"status": "Contacted"}, headers=lawyer,
+    )
+    assert updated.status_code == 200
+    assert updated.json()["status"] == "Contacted"

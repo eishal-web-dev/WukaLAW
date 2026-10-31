@@ -1291,3 +1291,22 @@ export function requestConsultation(payload: {
 }): Promise<{ id: number; status: string; created_at: string }> {
   return postJson('/public/consultations', payload)
 }
+
+export interface LawyerConsultationRequest {
+  id: number
+  client_name: string
+  client_email: string
+  client_phone: string
+  requested_at: string
+  notes: string
+  status: 'Requested' | 'Contacted' | 'Accepted' | 'Declined'
+  created_at: string
+}
+
+export function listConsultationRequests(): Promise<LawyerConsultationRequest[]> {
+  return request<LawyerConsultationRequest[]>('/lawyer-workflow/consultations')
+}
+
+export function updateConsultationRequest(id: number, status: LawyerConsultationRequest['status']): Promise<LawyerConsultationRequest> {
+  return patchJson<LawyerConsultationRequest>(`/lawyer-workflow/consultations/${id}`, { status })
+}

@@ -4,12 +4,13 @@ from sqlalchemy.orm import Session
 
 from app.auth import get_current_user
 from app.db import get_db
-from app.models import CalendarEvent, Case, Document, Hearing, LawyerTask, ResearchLog, User
+from app.models import CalendarEvent, Case, ConsultationRequest, Document, Hearing, LawyerTask, ResearchLog, User
 from app.services.notification_service import create_notification
 from app.schemas import (
     CalendarEventCreate, CalendarEventOut, CalendarEventUpdate,
     HearingCreate, HearingOut, HearingUpdate,
     LawyerTaskCreate, LawyerTaskOut, LawyerTaskUpdate,
+    ConsultationRequestUpdate, LawyerConsultationRequestOut,
     LawyerClientOut, ResearchLogCreate, ResearchLogOut,
 )
 from app.routers.cases import _case_out
@@ -116,6 +117,37 @@ def list_clients(db: Session = Depends(get_db), user: User = Depends(get_current
             "cases": [_case_out(db, case) for case in client_cases],
         })
     return sorted(result, key=lambda item: item["last_case_at"], reverse=True)
+
+
+@router.get("/consultations", response_model=list[LawyerConsultationRequestOut])
+def list_consultations(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    """Real public consultation requests sent specifically to this lawyer."""
+    _lawyer(user)
+    return db.scalars(
+        select(ConsultationRequest)
+        .where(ConsultationRequest.lawyer_id == user.id)
+        .order_by(ConsultationRequest.created_at.desc())
+    ).all()
+
+
+@router.patch("/consultations/{request_id}", response_model=LawyerConsultationRequestOut)
+def update_consultation(
+    request_id: int,
+    payload: ConsultationRequestUpdate,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    _lawyer(user)
+    item = db.scalar(select(ConsultationRequest).where(
+        ConsultationRequest.id == request_id,
+        ConsultationRequest.lawyer_id == user.id,
+    ))
+    if item is None:
+        raise HTTPException(status_code=404, detail="Consultation request not found.")
+    item.status = payload.status
+    db.commit()
+    db.refresh(item)
+    return item
 
 
 @router.get("/events", response_model=list[CalendarEventOut])

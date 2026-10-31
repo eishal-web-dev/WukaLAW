@@ -1,13 +1,16 @@
-import { Briefcase, FolderOpen } from 'lucide-react'
+import { Briefcase, FolderOpen, Inbox, Users } from 'lucide-react'
 import { useSearchParams } from 'react-router-dom'
 import Cases from './Cases'
 import LawyerWorkspace from './LawyerWorkspace'
+import LawyerClients from './LawyerClients'
+import LawyerRequests from './LawyerRequests'
 
-type CasesView = 'management' | 'workspace'
+type CasesView = 'management' | 'requests' | 'clients' | 'workspace'
 
 export default function LawyerCases() {
   const [searchParams, setSearchParams] = useSearchParams()
-  const view: CasesView = searchParams.get('view') === 'workspace' ? 'workspace' : 'management'
+  const requestedView = searchParams.get('view')
+  const view: CasesView = requestedView === 'workspace' || requestedView === 'clients' || requestedView === 'requests' ? requestedView : 'management'
 
   const showManagement = () => {
     const next = new URLSearchParams(searchParams)
@@ -23,15 +26,38 @@ export default function LawyerCases() {
     setSearchParams(next)
   }
 
+  const showClients = () => {
+    const next = new URLSearchParams(searchParams)
+    next.set('view', 'clients')
+    next.delete('caseId')
+    setSearchParams(next, { replace: true })
+  }
+
+  const showRequests = () => {
+    const next = new URLSearchParams(searchParams)
+    next.set('view', 'requests')
+    next.delete('caseId')
+    setSearchParams(next, { replace: true })
+  }
+
   return (
     <div className="h-full min-h-0 flex flex-col overflow-hidden">
       <header className="shrink-0 border-b border-border bg-card/40 px-4 py-4 sm:px-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Cases</h1>
-            <p className="mt-1 text-sm text-muted-foreground">Manage a case, then continue its documents, timeline and work in one place.</p>
+            <h1 className="text-2xl font-bold text-foreground">Cases &amp; Clients</h1>
+            <p className="mt-1 text-sm text-muted-foreground">Open a client matter and keep its documents, timeline, tasks and hearings together.</p>
           </div>
           <div className="flex w-full rounded-xl border border-border bg-muted/30 p-1 sm:w-auto" role="tablist" aria-label="Case views">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={view === 'requests'}
+              onClick={showRequests}
+              className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors sm:flex-none ${view === 'requests' ? 'bg-[#D4AF37] text-[#0D1117]' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              <Inbox size={15} /> Requests
+            </button>
             <button
               type="button"
               role="tab"
@@ -40,6 +66,15 @@ export default function LawyerCases() {
               className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors sm:flex-none ${view === 'management' ? 'bg-[#D4AF37] text-[#0D1117]' : 'text-muted-foreground hover:text-foreground'}`}
             >
               <Briefcase size={15} /> All Cases
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={view === 'clients'}
+              onClick={showClients}
+              className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors sm:flex-none ${view === 'clients' ? 'bg-[#D4AF37] text-[#0D1117]' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              <Users size={15} /> Clients
             </button>
             <button
               type="button"
@@ -54,7 +89,7 @@ export default function LawyerCases() {
         </div>
       </header>
       <div className="min-h-0 flex-1 overflow-hidden">
-        {view === 'management' ? <Cases embedded onOpenWorkspace={showWorkspace} /> : <LawyerWorkspace embedded />}
+        {view === 'management' ? <Cases embedded onOpenWorkspace={showWorkspace} /> : view === 'requests' ? <LawyerRequests embedded /> : view === 'clients' ? <LawyerClients embedded onOpenWorkspace={showWorkspace} /> : <LawyerWorkspace embedded />}
       </div>
     </div>
   )

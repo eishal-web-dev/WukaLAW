@@ -622,3 +622,15 @@ class ConsultationRequestOut(BaseModel):
     id: int
     status: str
     created_at: datetime
+
+
+class LawyerConsultationRequestOut(ConsultationRequestOut):
+    client_name: str
+    client_email: str
+    client_phone: str
+    requested_at: datetime
+    notes: str
+
+
+class ConsultationRequestUpdate(BaseModel):
+    status: Literal["Requested", "Contacted", "Accepted", "Declined"]
