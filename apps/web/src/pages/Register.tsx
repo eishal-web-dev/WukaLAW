@@ -119,7 +119,7 @@ export default function Register() {
                 <button type="button" onClick={(event) => { event.preventDefault(); navigate('/terms') }} style={{ color: GA, background: 'none', border: 0, padding: 0, cursor: 'pointer', textDecoration: 'underline' }}>Terms of Service</button>
                 {' '}and{' '}
                 <button type="button" onClick={(event) => { event.preventDefault(); navigate('/privacy') }} style={{ color: GA, background: 'none', border: 0, padding: 0, cursor: 'pointer', textDecoration: 'underline' }}>Privacy Policy</button>
-                , including the disclosed use of information I submit to improve, evaluate, and train future wukaLAW models.
+                .
               </span>
             </label>
           </div>
