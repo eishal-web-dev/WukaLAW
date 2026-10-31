@@ -93,6 +93,16 @@ with engine.connect() as connection:
     for column_name, column_type in billing_columns.items():
         if user_column_names and column_name not in user_column_names:
             connection.execute(text(f"ALTER TABLE users ADD COLUMN {column_name} {column_type}"))
+    consent_columns = {
+        "terms_accepted_at": "DATETIME",
+        "terms_version": "VARCHAR(32)",
+        "privacy_version": "VARCHAR(32)",
+        "model_training_consent": "BOOLEAN NOT NULL DEFAULT 0",
+    }
+    user_column_names = {row[1] for row in connection.execute(text("PRAGMA table_info(users)"))}
+    for column_name, column_type in consent_columns.items():
+        if user_column_names and column_name not in user_column_names:
+            connection.execute(text(f"ALTER TABLE users ADD COLUMN {column_name} {column_type}"))
     connection.commit()
 
     user_columns = [row[1] for row in connection.execute(text("PRAGMA table_info(users)"))]
