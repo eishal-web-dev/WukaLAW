@@ -77,7 +77,7 @@ def test_lawyer_workflow_isolation_and_client_denial(client):
 
     client_register = client.post(
         "/api/v1/auth/register",
-        json={"email": "client@example.com", "name": "Client", "password": "secret123", "role": "client"},
+        json={"email": "client@example.com", "name": "Client", "password": "secret123", "role": "client", "terms_accepted": True, "model_training_consent": True},
     )
     client_headers = {"Authorization": f"Bearer {client_register.json()['token']}"}
     assert client.get("/api/v1/lawyer-workflow/tasks", headers=client_headers).status_code == 403
@@ -95,7 +95,7 @@ def test_event_rejects_end_before_start(client):
 
 def test_case_calendar_event_is_shared_with_client_and_notified(client):
     lawyer = register_user(client, email="calendar-lawyer@example.com")
-    registered = client.post("/api/v1/auth/register", json={"email":"calendar-client@example.com","name":"Calendar Client","password":"secret123","role":"client"})
+    registered = client.post("/api/v1/auth/register", json={"email":"calendar-client@example.com","name":"Calendar Client","password":"secret123","role":"client","terms_accepted":True,"model_training_consent":True})
     client_headers = {"Authorization": f"Bearer {registered.json()['token']}"}
     requested = client.post("/api/v1/cases/request", json={"title":"Client meeting matter","case_type":"Family","description":"Calendar sharing","lawyer_email":"calendar-lawyer@example.com"}, headers=client_headers).json()
     assert client.post(f"/api/v1/cases/{requested['id']}/claim", headers=lawyer).status_code == 200
@@ -112,7 +112,7 @@ def test_lawyer_clients_are_real_assigned_clients_only(client):
     lawyer = register_user(client, email="assigned-lawyer@example.com")
     client_registration = client.post(
         "/api/v1/auth/register",
-        json={"email": "real-client@example.com", "name": "Real Client", "password": "secret123", "role": "client"},
+        json={"email": "real-client@example.com", "name": "Real Client", "password": "secret123", "role": "client", "terms_accepted": True, "model_training_consent": True},
     )
     client_headers = {"Authorization": f"Bearer {client_registration.json()['token']}"}
     requested = client.post(
