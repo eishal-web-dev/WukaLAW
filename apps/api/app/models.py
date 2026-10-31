@@ -34,6 +34,10 @@ class User(Base):
     ai_tokens_used: Mapped[int] = mapped_column(Integer, default=0)
     subscription_status: Mapped[str] = mapped_column(String(32), default="free")
     lemon_subscription_id: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    terms_accepted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    terms_version: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    privacy_version: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    model_training_consent: Mapped[bool] = mapped_column(Boolean, default=False, server_default="0")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
     documents: Mapped[list["Document"]] = relationship(back_populates="owner")
