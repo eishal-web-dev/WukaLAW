@@ -4,11 +4,12 @@ from sqlalchemy.orm import Session
 
 from app.auth import ADMIN_EMAIL, create_token, get_current_user, hash_password, verify_password
 from app.db import get_db
-from app.models import User
+from app.models import User, utcnow
 from app.schemas import AuthResponse, LoginRequest, RegisterRequest, UserOut
 from app.services.notification_service import create_notification
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+POLICY_VERSION = "2026-10-31"
 
 
 def _auth_response(user: User) -> dict:
@@ -20,10 +21,24 @@ def _auth_response(user: User) -> dict:
 
 @router.post("/register", response_model=AuthResponse, status_code=201)
 def register(request: RegisterRequest, db: Session = Depends(get_db)):
+    if not request.terms_accepted or not request.model_training_consent:
+        raise HTTPException(
+            status_code=422,
+            detail="You must accept the Terms of Service, Privacy Policy, and disclosed model-training use to create an account.",
+        )
     email = request.email.lower().strip()
     if db.scalar(select(User).where(User.email == email)):
         raise HTTPException(status_code=409, detail="An account with this email already exists.")
-    user = User(email=email, name=request.name.strip(), password_hash=hash_password(request.password), role=request.role)
+    user = User(
+        email=email,
+        name=request.name.strip(),
+        password_hash=hash_password(request.password),
+        role=request.role,
+        terms_accepted_at=utcnow(),
+        terms_version=POLICY_VERSION,
+        privacy_version=POLICY_VERSION,
+        model_training_consent=True,
+    )
     db.add(user)
     db.flush()
     create_notification(
