@@ -2338,28 +2338,54 @@ export function FeaturesPage({ navigate, dark, toggleDark }: { navigate: (p: Pag
             linear-gradient(var(--card-surface), var(--card-surface)) padding-box,
             linear-gradient(135deg, var(--card-accent), var(--card-border) 42%, var(--card-accent-soft)) border-box;
           box-shadow: 0 12px 32px rgba(47, 35, 12, 0.08);
-          transition: transform .28s ease, box-shadow .28s ease, border-color .28s ease;
+          transform: translateY(0) perspective(900px) rotateX(0deg);
+          transition: transform .42s cubic-bezier(.2,.8,.2,1), box-shadow .42s ease, border-color .42s ease;
         }
         .wk-feature-glow-card::before {
           content: "";
           position: absolute;
-          width: 150px;
-          height: 150px;
-          right: -65px;
-          top: -75px;
+          width: 190px;
+          height: 190px;
+          right: -85px;
+          top: -95px;
           z-index: -1;
           border-radius: 50%;
           background: radial-gradient(circle, var(--card-accent-soft), transparent 68%);
-          opacity: .4;
-          transition: opacity .28s ease, transform .28s ease;
+          opacity: .42;
+          filter: blur(4px);
+          animation: wk-feature-breathe 5.5s ease-in-out infinite;
+          animation-delay: var(--card-delay);
+          transition: opacity .42s ease, transform .42s ease;
         }
+        .wk-feature-glow-card::after {
+          content: "";
+          position: absolute;
+          inset: -70% -45%;
+          z-index: 0;
+          pointer-events: none;
+          background: linear-gradient(110deg, transparent 42%, var(--card-accent-soft) 49%, rgba(255,255,255,.24) 51%, transparent 58%);
+          transform: translateX(-55%) rotate(8deg);
+          opacity: 0;
+          transition: transform .7s cubic-bezier(.2,.8,.2,1), opacity .3s ease;
+        }
+        .wk-feature-card-content { position: relative; z-index: 1; transition: transform .42s cubic-bezier(.2,.8,.2,1); }
+        .wk-feature-card-icon { transition: transform .42s cubic-bezier(.2,.8,.2,1), box-shadow .42s ease; }
+        .wk-feature-card-tag { transition: letter-spacing .42s ease, color .42s ease; }
         .wk-feature-glow-card:hover {
-          transform: translateY(-7px);
-          box-shadow: 0 22px 56px var(--card-accent-soft), 0 10px 28px rgba(30, 20, 5, .12);
+          transform: translateY(-10px) perspective(900px) rotateX(1.5deg);
+          box-shadow: 0 28px 68px var(--card-accent-soft), 0 14px 32px rgba(30, 20, 5, .14);
         }
-        .wk-feature-glow-card:hover::before { opacity: .95; transform: scale(1.2); }
+        .wk-feature-glow-card:hover::before { opacity: 1; transform: scale(1.32) translate(-8px, 8px); }
+        .wk-feature-glow-card:hover::after { opacity: .9; transform: translateX(55%) rotate(8deg); }
+        .wk-feature-glow-card:hover .wk-feature-card-content { transform: translateY(-3px); }
+        .wk-feature-glow-card:hover .wk-feature-card-icon { transform: translateY(-5px) scale(1.1) rotate(-3deg); box-shadow: 0 12px 28px var(--card-accent-soft)!important; }
+        .wk-feature-glow-card:hover .wk-feature-card-tag { letter-spacing: .14em!important; }
+        @keyframes wk-feature-breathe {
+          0%,100% { transform: scale(.92); opacity: .3; }
+          50% { transform: scale(1.08); opacity: .56; }
+        }
         @media (prefers-reduced-motion: reduce) {
-          .wk-feature-glow-card, .wk-feature-glow-card::before { transition: none; }
+          .wk-feature-glow-card, .wk-feature-glow-card::before, .wk-feature-glow-card::after, .wk-feature-card-content, .wk-feature-card-icon { transition: none; animation: none; }
           .wk-feature-glow-card:hover { transform: none; }
         }
       `}</style>
@@ -2378,16 +2404,24 @@ export function FeaturesPage({ navigate, dark, toggleDark }: { navigate: (p: Pag
         </p>
       </div>
       <LandingProductDemo dark={dark} navigate={navigate} />
-      <LandingAIFeaturesGrid dark={dark} />
-      {/* Feature grid */}
+      {/* Consolidated feature grid */}
       <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 24px 96px" }}>
+        <div style={{ textAlign: "center", marginBottom: 48 }}>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 7, padding: "6px 14px", borderRadius: 999, border: `1px solid ${GA}35`, background: `${GA}0D`, marginBottom: 17 }}>
+            <Sparkles size={12} color={GA}/><span style={{ color: GA, fontSize: 10, fontWeight: 800, letterSpacing: ".1em" }}>COMPLETE TOOLKIT</span>
+          </div>
+          <h2 style={{ color: TX, fontSize: "clamp(28px,4vw,44px)", fontWeight: 900, letterSpacing: "-.035em", marginBottom: 12 }}>Everything your firm needs</h2>
+          <p style={{ color: TX2, fontSize: 15, lineHeight: 1.7, maxWidth: 620, margin: "0 auto" }}>One connected set of tools for case preparation, research, evidence, collaboration and explainable AI.</p>
+        </div>
         <div className="wk-responsive-grid-3" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 20 }}>
           {features.map((f, i) => (
-            <div key={i} className="wk-feature-glow-card" style={{ "--card-accent": f.color, "--card-accent-soft": `${f.color}24`, "--card-surface": CARD, "--card-border": BD, borderRadius: 16, padding: 28, cursor: "default" }}>
-              <div style={{ width: 46, height: 46, borderRadius: 14, display: "grid", placeItems: "center", fontSize: 24, marginBottom: 16, background: `${f.color}14`, boxShadow: `inset 0 0 0 1px ${f.color}28` }}>{f.icon}</div>
-              <div style={{ fontSize: 10, fontWeight: 700, color: f.color, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>{f.tag}</div>
-              <div style={{ fontSize: 16, fontWeight: 700, color: TX, marginBottom: 10, letterSpacing: "-0.01em" }}>{f.title}</div>
-              <p style={{ fontSize: 13.5, color: TX2, lineHeight: 1.7, margin: 0 }}>{f.desc}</p>
+            <div key={i} className="wk-feature-glow-card" style={{ "--card-accent": f.color, "--card-accent-soft": `${f.color}24`, "--card-surface": CARD, "--card-border": BD, "--card-delay": `${i * -0.45}s`, borderRadius: 18, padding: 1, cursor: "default" }}>
+              <div className="wk-feature-card-content" style={{ minHeight: 210, padding: 27, borderRadius: 17 }}>
+                <div className="wk-feature-card-icon" style={{ width: 48, height: 48, borderRadius: 14, display: "grid", placeItems: "center", fontSize: 24, marginBottom: 18, background: `${f.color}14`, boxShadow: `inset 0 0 0 1px ${f.color}30` }}>{f.icon}</div>
+                <div className="wk-feature-card-tag" style={{ fontSize: 10, fontWeight: 800, color: f.color, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>{f.tag}</div>
+                <div style={{ fontSize: 17, fontWeight: 800, color: TX, marginBottom: 10, letterSpacing: "-0.015em" }}>{f.title}</div>
+                <p style={{ fontSize: 13.5, color: TX2, lineHeight: 1.7, margin: 0 }}>{f.desc}</p>
+              </div>
             </div>
           ))}
         </div>
