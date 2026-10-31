@@ -17,9 +17,41 @@ def test_register_duplicate_email_rejected(client):
     register_user(client, email="dup@x.com")
     response = client.post(
         "/api/v1/auth/register",
-        json={"email": "dup@x.com", "name": "Other", "password": "password1"},
+        json={"email": "dup@x.com", "name": "Other", "password": "password1", "terms_accepted": True, "model_training_consent": True},
     )
     assert response.status_code == 409
+
+
+def test_register_requires_policy_and_training_consent(client):
+    response = client.post(
+        "/api/v1/auth/register",
+        json={"email": "no-consent@example.com", "name": "No Consent", "password": "password1"},
+    )
+    assert response.status_code == 422
+    assert "must accept" in response.json()["detail"].lower()
+
+
+def test_register_records_policy_versions_and_consent(client):
+    response = client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": "consent@example.com",
+            "name": "Consent User",
+            "password": "password1",
+            "terms_accepted": True,
+            "model_training_consent": True,
+        },
+    )
+    assert response.status_code == 201
+    from app.db import SessionLocal
+    from app.models import User
+
+    with SessionLocal() as db:
+        user = db.query(User).filter(User.email == "consent@example.com").one()
+        assert user.terms_accepted_at is not None
+        assert user.terms_version == "2026-10-31"
+        assert user.privacy_version == "2026-10-31"
+        assert user.model_training_consent is True
 
 
 def test_login_wrong_password(client):

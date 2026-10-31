@@ -4,7 +4,7 @@ from tests.conftest import register_user
 def _client_headers(client, email="operations-client@example.com"):
     response = client.post(
         "/api/v1/auth/register",
-        json={"email": email, "name": "Operations Client", "password": "secret123", "role": "client"},
+        json={"email": email, "name": "Operations Client", "password": "secret123", "role": "client", "terms_accepted": True, "model_training_consent": True},
     )
     return {"Authorization": f"Bearer {response.json()['token']}"}
 

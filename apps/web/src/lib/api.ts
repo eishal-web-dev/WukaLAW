@@ -396,8 +396,17 @@ export function registerAccount(
   name: string,
   password: string,
   role: SignupRole = 'lawyer',
+  termsAccepted = false,
+  modelTrainingConsent = false,
 ): Promise<AuthResponse> {
-  return postJson<AuthResponse>('/auth/register', { email, name, password, role })
+  return postJson<AuthResponse>('/auth/register', {
+    email,
+    name,
+    password,
+    role,
+    terms_accepted: termsAccepted,
+    model_training_consent: modelTrainingConsent,
+  })
 }
 
 /** POST /auth/login */

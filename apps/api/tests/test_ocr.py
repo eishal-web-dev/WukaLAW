@@ -288,7 +288,7 @@ def test_upload_normal_text_reports_ocr_used_false(client):
 def _register(client, email="ocr-tester@example.com"):
     response = client.post(
         "/api/v1/auth/register",
-        json={"email": email, "name": "OCR Tester", "password": "secret123"},
+        json={"email": email, "name": "OCR Tester", "password": "secret123", "terms_accepted": True, "model_training_consent": True},
     )
     assert response.status_code == 201, response.text
     return {"Authorization": f"Bearer {response.json()['token']}"}

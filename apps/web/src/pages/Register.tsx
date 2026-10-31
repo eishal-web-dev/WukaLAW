@@ -22,6 +22,7 @@ export default function Register() {
   const { t } = useI18n()
   const [form, setForm] = useState({ name: '', email: '', password: '' })
   const [showPassword, setShowPassword] = useState(false)
+  const [acceptedPolicies, setAcceptedPolicies] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const set = (k: keyof typeof form) => (v: string) => setForm((p) => ({ ...p, [k]: v }))
@@ -37,9 +38,13 @@ export default function Register() {
       setError('Password must be at least 8 characters.')
       return
     }
+    if (!acceptedPolicies) {
+      setError('You must agree to the Terms of Service and Privacy Policy to create an account.')
+      return
+    }
     setSubmitting(true)
     try {
-      const user = await register(form.email.trim(), form.name.trim(), form.password, role)
+      const user = await register(form.email.trim(), form.name.trim(), form.password, role, acceptedPolicies)
       navigate(portalHome(user.role), { replace: true })
     } catch (err) {
       setError(errorMessage(err))
@@ -100,8 +105,25 @@ export default function Register() {
                 )}
               />
             </div>
+            <label htmlFor="register-policy-consent" className="flex cursor-pointer items-start gap-3 rounded-xl border p-3.5" style={{ borderColor: acceptedPolicies ? `${GA}70` : BD, backgroundColor: acceptedPolicies ? `${GA}0D` : 'transparent' }}>
+              <input
+                id="register-policy-consent"
+                type="checkbox"
+                checked={acceptedPolicies}
+                onChange={(event) => setAcceptedPolicies(event.target.checked)}
+                required
+                className="mt-0.5 h-4 w-4 shrink-0 accent-[#D4AF37]"
+              />
+              <span style={{ color: TX2, fontSize: 12, lineHeight: 1.55 }}>
+                I agree to the{' '}
+                <button type="button" onClick={(event) => { event.preventDefault(); navigate('/terms') }} style={{ color: GA, background: 'none', border: 0, padding: 0, cursor: 'pointer', textDecoration: 'underline' }}>Terms of Service</button>
+                {' '}and{' '}
+                <button type="button" onClick={(event) => { event.preventDefault(); navigate('/privacy') }} style={{ color: GA, background: 'none', border: 0, padding: 0, cursor: 'pointer', textDecoration: 'underline' }}>Privacy Policy</button>
+                , including the disclosed use of information I submit to improve, evaluate, and train future wukaLAW models.
+              </span>
+            </label>
           </div>
-          <Btn type="submit" className="w-full justify-center mt-6" size="lg" disabled={submitting}>
+          <Btn type="submit" className="w-full justify-center mt-6" size="lg" disabled={submitting || !acceptedPolicies}>
             {submitting ? t('Creating account…') : t('Create Account')}
           </Btn>
           <p style={{ textAlign: 'center', fontSize: 14, color: TX2, marginTop: 20 }}>

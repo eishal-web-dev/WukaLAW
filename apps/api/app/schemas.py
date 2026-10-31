@@ -9,6 +9,8 @@ class RegisterRequest(BaseModel):
     name: str = Field(min_length=2, max_length=100)
     password: str = Field(min_length=8, max_length=128)
     role: Literal["client", "lawyer"] = "lawyer"
+    terms_accepted: bool = False
+    model_training_consent: bool = False
 
 
 class LoginRequest(BaseModel):

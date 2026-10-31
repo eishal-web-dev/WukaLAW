@@ -13,6 +13,7 @@ from tests.conftest import SAMPLE_JUDGMENT, register_user
 def test_signup_persists_the_selected_account_role(client, role):
     response = client.post('/api/v1/auth/register', json={
         'email': f'{role}@example.com', 'name': 'Portal User', 'password': 'secret123', 'role': role,
+        'terms_accepted': True, 'model_training_consent': True,
     })
     assert response.status_code == 201, response.text
     assert response.json()['user']['role'] == role
@@ -98,6 +99,7 @@ def test_noncanonical_admin_email_is_denied_even_with_admin_role(client):
 def test_client_documents_remain_private_from_lawyer_accounts(client):
     response = client.post('/api/v1/auth/register', json={
         'email': 'client@example.com', 'name': 'Client User', 'password': 'secret123', 'role': 'client',
+        'terms_accepted': True, 'model_training_consent': True,
     })
     client_headers = {'Authorization': f"Bearer {response.json()['token']}"}
     lawyer_headers = register_user(client, email='lawyer@example.com')
