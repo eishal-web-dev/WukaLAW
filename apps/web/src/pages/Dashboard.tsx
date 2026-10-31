@@ -8,7 +8,7 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell,
 } from 'recharts'
-import { listCalendarEvents, listCases, listDocuments, listHearings, listLawyerTasks, errorMessage } from '../lib/api'
+import { listCalendarEvents, listCases, listConsultationRequests, listDocuments, listHearings, listLawyerTasks, errorMessage } from '../lib/api'
 import type { CalendarEvent, Case, DocumentMeta, Hearing, LawyerTask } from '../lib/api'
 import { useAuth } from '../lib/auth'
 import { useNotifications } from '../lib/notifications'
@@ -37,13 +37,14 @@ export default function Dashboard() {
   const [hearings, setHearings] = useState<Hearing[]>([])
   const [tasks, setTasks] = useState<LawyerTask[]>([])
   const [caseTotal, setCaseTotal] = useState(0)
+  const [consultationRequests, setConsultationRequests] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
-    Promise.all([listCases(), listDocuments(), listCalendarEvents(), listHearings(), Promise.resolve(listLawyerTasks?.()).catch(() => [])])
-      .then(([cs, docs, calendarEvents, hearingItems, taskItems]) => {
+    Promise.all([listCases(), listDocuments(), listCalendarEvents(), listHearings(), Promise.resolve(listLawyerTasks?.()).catch(() => []), listConsultationRequests().catch(() => [])])
+      .then(([cs, docs, calendarEvents, hearingItems, taskItems, consultations]) => {
         if (cancelled) return
         setCases(cs.items)
         setDocuments(docs.items)
@@ -51,6 +52,7 @@ export default function Dashboard() {
         setEvents(calendarEvents)
         setHearings(hearingItems)
         setTasks(taskItems ?? [])
+        setConsultationRequests(consultations.filter((item) => item.status === 'Requested').length)
       })
       .catch((err) => {
         if (!cancelled) setError(errorMessage(err))
@@ -64,7 +66,7 @@ export default function Dashboard() {
   }, [])
 
   const activeCases = cases.filter((c) => !['Case Complete', 'Closed'].includes(c.status)).length
-  const requestedCases = cases.filter((c) => c.assignment_status === 'waiting').length
+  const requestedCases = cases.filter((c) => c.assignment_status === 'waiting').length + consultationRequests
   const openTasks = tasks.filter((task) => task.status !== 'Done').length
   const firstName = (user?.name || 'Counsel').split(' ')[0]
   const today = new Date().toLocaleDateString(undefined, {
@@ -145,7 +147,7 @@ export default function Dashboard() {
       {/* KPI Cards — every value is live; colors and layout follow the Figma design. */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
         <KPICard icon={<Activity size={18} />} label="Active Cases" value={loading ? '…' : String(activeCases)} sub={`${caseTotal} total cases`} color={G} onClick={() => navigate('/cases')} />
-        <KPICard icon={<Inbox size={18} />} label="Requested Cases" value={loading ? '…' : String(requestedCases)} sub="Waiting for your response" color="#60A5FA" onClick={() => navigate('/cases')} />
+        <KPICard icon={<Inbox size={18} />} label="Requests" value={loading ? '…' : String(requestedCases)} sub="Cases and consultations waiting" color="#60A5FA" onClick={() => navigate('/cases?view=requests')} />
         <KPICard icon={<ListTodo size={18} />} label="Open Tasks" value={loading ? '…' : String(openTasks)} sub="Tasks requiring attention" color="#7C3AED" onClick={() => navigate('/tasks')} />
         <KPICard icon={<Bell size={18} />} label="Unread Notifications" value={String(unreadCount)} sub={unreadCount === 0 ? 'All caught up' : 'Open notification center'} color={B} onClick={() => navigate('/notifications')} />
       </div>
