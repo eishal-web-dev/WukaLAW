@@ -140,6 +140,23 @@ html[dir='rtl'] select {
   .wk-book-loader { flex-direction: column; text-align: center; }
 }
 
+@media (max-width: 900px) {
+  .wk-feature-workspace {
+    grid-template-columns: 150px minmax(520px, 1fr) !important;
+    overflow-x: auto;
+  }
+  .wk-feature-workspace-ai { display: none !important; }
+}
+
+@media (max-width: 640px) {
+  .wk-feature-workspace {
+    display: block !important;
+    min-width: 0;
+  }
+  .wk-feature-workspace-sidebar { display: none; }
+  .wk-feature-workspace main { border-right: 0 !important; padding: 16px !important; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .wk-book, .wk-book__pg-shadow, .wk-book__pg { animation: none; }
 }

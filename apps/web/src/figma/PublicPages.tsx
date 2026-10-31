@@ -15,7 +15,7 @@ import {
   UserCheck, Database, Key, ShieldCheck, MessageCircle, UsersRound, FileSearch,
   BarChart, PieChart, Wallet, MapPin, AtSign, HelpCircle, BookMarked, ChevronUp,
   AlertTriangle, Sliders, Layers3, Grid3x3, Percent, ArrowLeft, PlayCircle,
-  Pause, RotateCcw, Maximize2
+  Pause, RotateCcw, Maximize2, ListTodo
 } from "lucide-react";
 
 type Page = string;
@@ -629,6 +629,7 @@ export function LandingPage({ navigate, dark, toggleDark }: { navigate: (p: Page
       </section>
 
       {/* ══ SECTION: Full workspace mockup ════════════════════════════════════ */}
+      {false && (
       <section className="wk-landing-section" style={{ position: "relative", zIndex: 1, padding: "0 24px 120px" }}>
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
           <div style={{ textAlign: "center", marginBottom: 60 }}>
@@ -713,6 +714,7 @@ export function LandingPage({ navigate, dark, toggleDark }: { navigate: (p: Page
           </div>
         </div>
       </section>
+      )}
 
       {/* ══ TEAM SECTION ═══════════════════════════════════════════════════════ */}
       <section className="wk-landing-section" style={{ position: "relative", zIndex: 1, padding: "0 24px 120px" }}>
@@ -848,60 +850,6 @@ export function LandingPage({ navigate, dark, toggleDark }: { navigate: (p: Page
           </div>
         </div>
       </section>
-
-      {/* ══ CTA with image background ════════════════════════════════════════ */}
-      <section className="wk-landing-section" style={{ position: "relative", zIndex: 1, padding: "0 24px 120px" }}>
-        <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-          <div style={{ position: "relative", borderRadius: 32, overflow: "hidden", minHeight: 420, display: "flex", alignItems: "center" }}>
-            <img src="https://images.unsplash.com/photo-1521587760476-6c12a4b040da?w=1100&h=600&fit=crop&auto=format" alt="Legal library" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", filter: "brightness(0.3) saturate(0.7)" }} />
-            <div style={{ position: "absolute", inset: 0, background: dark ? `linear-gradient(135deg, rgba(13,17,23,0.92), rgba(13,17,23,0.6))` : `linear-gradient(135deg, rgba(26,16,5,0.9), rgba(26,16,5,0.6))` }} />
-            {/* Gold vignette */}
-            <div style={{ position: "absolute", inset: 0, background: `radial-gradient(ellipse at 80% 50%, ${GA}20 0%, transparent 60%)` }} />
-            {/* Ring decorations */}
-            <div style={{ position: "absolute", right: -100, top: "50%", transform: "translateY(-50%)", width: 500, height: 500, borderRadius: "50%", border: `1px solid ${GA}20`, pointerEvents: "none" }} />
-            <div style={{ position: "absolute", right: -60, top: "50%", transform: "translateY(-50%)", width: 350, height: 350, borderRadius: "50%", border: `1px solid ${GA}30`, pointerEvents: "none" }} />
-
-            <div style={{ position: "relative", zIndex: 1, padding: "64px 72px", maxWidth: 600 }}>
-              <div style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "5px 14px", borderRadius: 999, backgroundColor: `${GA}20`, marginBottom: 28 }}>
-                <div style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: "#34D399" }} />
-                <span style={{ fontSize: 11, color: "#34D399", fontWeight: 700 }}>Free consultation — No obligation</span>
-              </div>
-              <h2 style={{ fontSize: "clamp(28px, 4vw, 52px)", fontWeight: 900, color: "#FFFFFF", letterSpacing: "-0.04em", lineHeight: 1.08, marginBottom: 20 }}>
-                Your legal partner<br />in every situation.
-              </h2>
-              <p style={{ fontSize: 16, color: "rgba(255,255,255,0.65)", marginBottom: 44, lineHeight: 1.7 }}>
-                From Karachi to Islamabad — let Pakistan's most advanced AI legal platform work for you.
-              </p>
-              <div style={{ display: "flex", gap: 16 }}>
-                <button onClick={() => navigate("find-lawyer")} style={{ ...btnPrimary, boxShadow: `0 0 60px ${GA}60` }}>
-                  Book Free Consultation <ArrowRight size={15} />
-                </button>
-                <button onClick={() => navigate("login")} style={{ ...btnSecondary, color: "rgba(255,255,255,0.7)", border: "1px solid rgba(255,255,255,0.2)" }}>
-                  Access Platform
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ══ Interactive Product Demo ══════════════════════════════════════════ */}
-      <LandingProductDemo dark={dark} navigate={navigate} />
-
-      {/* ══ AI Features Grid ══════════════════════════════════════════════════ */}
-      <LandingAIFeaturesGrid dark={dark} />
-
-      {/* ══ Security & Privacy ════════════════════════════════════════════════ */}
-      <LandingSecuritySection dark={dark} />
-
-      {/* ══ Integrations ══════════════════════════════════════════════════════ */}
-      <LandingIntegrations dark={dark} />
-
-      {/* ══ Pricing ═══════════════════════════════════════════════════════════ */}
-      <LandingPricingSection dark={dark} navigate={navigate} />
-
-      {/* ══ FAQ ═══════════════════════════════════════════════════════════════ */}
-      <LandingFAQ dark={dark} />
 
       <PublicFooter navigate={navigate} dark={dark} />
     </div>
@@ -2320,6 +2268,45 @@ export function LawyerProfilePage({ navigate, dark, toggleDark }: { navigate: (p
 
 // ─── New Public Pages ─────────────────────────────────────────────────────────
 
+function CaseWorkspaceFeature({ dark }: { dark: boolean }) {
+  const TX = dark ? "#F0F0F5" : "#0E0A03"
+  const TX2 = dark ? "#8892A4" : "#5C4A28"
+  const GA = dark ? G : "#8B5E0A"
+  const BD = dark ? "rgba(255,255,255,0.08)" : "rgba(60,30,0,0.1)"
+  const panel = dark ? "#121927" : "#FAFAF6"
+  return (
+    <section style={{ position: "relative", padding: "16px 24px 104px" }}>
+      <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+        <div style={{ textAlign: "center", marginBottom: 44 }}>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "6px 14px", borderRadius: 999, border: `1px solid ${GA}40`, background: `${GA}10`, marginBottom: 18 }}>
+            <Layers size={13} color={GA}/><span style={{ color: GA, fontSize: 11, fontWeight: 800, letterSpacing: ".08em" }}>CASE WORKSPACE</span>
+          </div>
+          <h2 style={{ color: TX, fontSize: "clamp(30px,4vw,50px)", fontWeight: 900, lineHeight: 1.08, letterSpacing: "-.035em", marginBottom: 14 }}>Every dimension of a case,<br/>in one command center.</h2>
+          <p style={{ color: TX2, fontSize: 15, lineHeight: 1.7, maxWidth: 650, margin: "0 auto" }}>Documents, evidence, timeline, tasks, hearings and case-aware AI stay connected to the matter you are working on.</p>
+        </div>
+        <div style={{ position: "relative" }}>
+          <div style={{ position: "absolute", inset: "-10% 5%", background: `radial-gradient(ellipse, ${GA}25, transparent 65%)`, filter: "blur(55px)" }}/>
+          <BrowserWindow url="app.wukalaw.ai/cases/WL-2026-001" style={{ position: "relative", boxShadow: dark ? "0 40px 100px rgba(0,0,0,.75)" : "0 35px 75px rgba(90,60,0,.18)" }}>
+            <div className="wk-feature-workspace" style={{ display: "grid", gridTemplateColumns: "210px 1fr 245px", minHeight: 430, background: panel }}>
+              <aside className="wk-feature-workspace-sidebar" style={{ padding: 16, borderRight: `1px solid ${BD}` }}>
+                <p style={{ color: TX2, fontSize: 10, fontWeight: 800, letterSpacing: ".1em", marginBottom: 14 }}>CASES</p>
+                {CASES.map((item, index) => <div key={item.id} style={{ padding: "11px 10px", marginBottom: 6, borderRadius: 10, border: `1px solid ${index === 2 ? `${GA}55` : "transparent"}`, background: index === 2 ? `${GA}13` : "transparent" }}><div style={{ color: index === 2 ? TX : TX2, fontSize: 11, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{item.title}</div><div style={{ color: index === 2 ? GA : TX2, fontSize: 9, marginTop: 4 }}>{item.id}</div></div>)}
+              </aside>
+              <main style={{ padding: 24, borderRight: `1px solid ${BD}` }}>
+                <div style={{ display: "flex", justifyContent: "space-between", gap: 16, marginBottom: 18 }}><div><h3 style={{ color: TX, fontSize: 16, fontWeight: 800 }}>Haq Mehr &amp; Custody Matter</h3><p style={{ color: TX2, fontSize: 11, marginTop: 4 }}>WL-2026-001 · Family Court · Currently Going On</p></div><div style={{ color: GA, fontWeight: 900, fontSize: 24 }}>4 <span style={{ color: TX2, fontSize: 10, fontWeight: 500 }}>docs</span></div></div>
+                <div style={{ display: "flex", gap: 6, marginBottom: 18 }}>{["Overview","Documents","Timeline","Work"].map((item,index)=><span key={item} style={{ padding: "6px 10px", borderRadius: 7, color: index===1?"#0D1117":TX2, background:index===1?G:`${TX2}12`, fontSize: 10, fontWeight: 700 }}>{item}</span>)}</div>
+                <div className="wk-responsive-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>{[["Documents",4,FileText],["Dated events",3,Calendar],["Open tasks",2,ListTodo],["Hearings",1,Gavel]].map(([label,value,Icon])=>{const I=Icon as typeof FileText;return <div key={String(label)} style={{ padding: 15, border: `1px solid ${BD}`, borderRadius: 12, background: dark?"rgba(255,255,255,.025)":"rgba(0,0,0,.025)" }}><I size={15} color={GA}/><div style={{ color:TX,fontSize:22,fontWeight:900,marginTop:8 }}>{String(value)}</div><div style={{ color:TX2,fontSize:10 }}>{String(label)}</div></div>})}</div>
+                <div style={{ marginTop: 14, padding: 13, border: `1px solid ${GA}40`, borderRadius: 11, background: `${GA}0D`, color: TX2, fontSize: 11 }}><strong style={{ color:GA }}>Next:</strong> Review the latest order, link timeline events to supporting documents, and confirm the next hearing.</div>
+              </main>
+              <aside className="wk-feature-workspace-ai" style={{ padding: 18, display: "flex", flexDirection: "column" }}><div style={{ color:GA,fontSize:11,fontWeight:800,display:"flex",gap:6,alignItems:"center" }}><Sparkles size={12}/>CASE AI</div><div style={{ marginTop:14,padding:12,borderRadius:11,border:`1px solid ${BD}`,color:TX2,fontSize:11,lineHeight:1.55 }}>What should I prepare before the next custody hearing?</div><div style={{ marginTop:10,padding:12,borderRadius:11,background:`${GA}12`,border:`1px solid ${GA}35`,color:TX,fontSize:11,lineHeight:1.55 }}>Prepare the B-Form, existing orders, school and medical records, a care plan, and a dated visitation log.</div><div style={{ marginTop:"auto",display:"flex",gap:7 }}><div style={{ flex:1,height:34,borderRadius:9,border:`1px solid ${BD}` }}/><div style={{ width:34,height:34,borderRadius:9,display:"grid",placeItems:"center",background:G }}><Send size={12} color="#0D1117"/></div></div></aside>
+            </div>
+          </BrowserWindow>
+        </div>
+      </div>
+    </section>
+  )
+}
+
 export function FeaturesPage({ navigate, dark, toggleDark }: { navigate: (p: Page) => void; dark: boolean; toggleDark: () => void }) {
   const BG = dark ? "#07090F" : "#F4F1EC"; const TX = dark ? "#F0F0F5" : "#0E0A03";
   const TX2 = dark ? "#8892A4" : "#5C4A28"; const GA = dark ? G : "#8B5E0A";
@@ -2352,6 +2339,8 @@ export function FeaturesPage({ navigate, dark, toggleDark }: { navigate: (p: Pag
           wukaLAW brings the full power of artificial intelligence to every stage of the legal process — from research to courtroom strategy.
         </p>
       </div>
+      <LandingProductDemo dark={dark} navigate={navigate} />
+      <LandingAIFeaturesGrid dark={dark} />
       {/* Feature grid */}
       <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 24px 96px" }}>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 20 }}>
@@ -2367,6 +2356,7 @@ export function FeaturesPage({ navigate, dark, toggleDark }: { navigate: (p: Pag
           ))}
         </div>
       </div>
+      <CaseWorkspaceFeature dark={dark} />
       {/* CTA */}
       <div style={{ background: dark ? "#0F1521" : "#EDE8DF", borderTop: `1px solid ${BD}`, borderBottom: `1px solid ${BD}`, padding: "80px 24px", textAlign: "center" }}>
         <h2 style={{ fontSize: "clamp(28px,4vw,48px)", fontWeight: 800, color: TX, letterSpacing: "-0.03em", marginBottom: 16 }}>Ready to transform your practice?</h2>
@@ -2429,6 +2419,8 @@ export function SolutionsPage({ navigate, dark, toggleDark }: { navigate: (p: Pa
           </div>
         ))}
       </div>
+      <LandingSecuritySection dark={dark} />
+      <LandingIntegrations dark={dark} />
       <PublicFooter navigate={navigate} dark={dark} />
     </div>
   );
