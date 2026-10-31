@@ -1,6 +1,3 @@
-Warning: truncated output (original token count: 53592)
-Total output lines: 2715
-
 // @ts-nocheck -- faithfully imported Figma Make presentation components
 /* oxlint-disable -- preserve generated Figma Make source without semantic rewrites */
 import React, { useState, useRef, useEffect } from "react";
@@ -854,60 +851,6 @@ export function LandingPage({ navigate, dark, toggleDark }: { navigate: (p: Page
         </div>
       </section>
 
-      {/* ══ CTA with image background ════════════════════════════════════════ */}
-      <section className="wk-landing-section" style={{ position: "relative", zIndex: 1, padding: "0 24px 120px" }}>
-        <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-          <div style={{ position: "relative", borderRadius: 32, overflow: "hidden", minHeight: 420, display: "flex", alignItems: "center" }}>
-            <img src="https://images.unsplash.com/photo-1521587760476-6c12a4b040da?w=1100&h=600&fit=crop&auto=format" alt="Legal library" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", filter: "brightness(0.3) saturate(0.7)" }} />
-            <div style={{ position: "absolute", inset: 0, background: dark ? `linear-gradient(135deg, rgba(13,17,23,0.92), rgba(13,17,23,0.6))` : `linear-gradient(135deg, rgba(26,16,5,0.9), rgba(26,16,5,0.6))` }} />
-            {/* Gold vignette */}
-            <div style={{ position: "absolute", inset: 0, background: `radial-gradient(ellipse at 80% 50%, ${GA}20 0%, transparent 60%)` }} />
-            {/* Ring decorations */}
-            <div style={{ position: "absolute", right: -100, top: "50%", transform: "translateY(-50%)", width: 500, height: 500, borderRadius: "50%", border: `1px solid ${GA}20`, pointerEvents: "none" }} />
-            <div style={{ position: "absolute", right: -60, top: "50%", transform: "translateY(-50%)", width: 350, height: 350, borderRadius: "50%", border: `1px solid ${GA}30`, pointerEvents: "none" }} />
-
-            <div style={{ position: "relative", zIndex: 1, padding: "64px 72px", maxWidth: 600 }}>
-              <div style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "5px 14px", borderRadius: 999, backgroundColor: `${GA}20`, marginBottom: 28 }}>
-                <div style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: "#34D399" }} />
-                <span style={{ fontSize: 11, color: "#34D399", fontWeight: 700 }}>Free consultation — No obligation</span>
-              </div>
-              <h2 style={{ fontSize: "clamp(28px, 4vw, 52px)", fontWeight: 900, color: "#FFFFFF", letterSpacing: "-0.04em", lineHeight: 1.08, marginBottom: 20 }}>
-                Your legal partner<br />in every situation.
-              </h2>
-              <p style={{ fontSize: 16, color: "rgba(255,255,255,0.65)", marginBottom: 44, lineHeight: 1.7 }}>
-                From Karachi to Islamabad — let Pakistan's most advanced AI legal platform work for you.
-              </p>
-              <div style={{ display: "flex", gap: 16 }}>
-                <button onClick={() => navigate("find-lawyer")} style={{ ...btnPrimary, boxShadow: `0 0 60px ${GA}60` }}>
-                  Book Free Consultation <ArrowRight size={15} />
-                </button>
-                <button onClick={() => navigate("login")} style={{ ...btnSecondary, color: "rgba(255,255,255,0.7)", border: "1px solid rgba(255,255,255,0.2)" }}>
-                  Access Platform
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ══ Interactive Product Demo ══════════════════════════════════════════ */}
-      <LandingProductDemo dark={dark} navigate={navigate} />
-
-      {/* ══ AI Features Grid ══════════════════════════════════════════════════ */}
-      <LandingAIFeaturesGrid dark={dark} />
-
-      {/* ══ Security & Privacy ════════════════════════════════════════════════ */}
-      <LandingSecuritySection dark={dark} />
-
-      {/* ══ Integrations ══════════════════════════════════════════════════════ */}
-      <LandingIntegrations dark={dark} />
-
-      {/* ══ Pricing ═══════════════════════════════════════════════════════════ */}
-      <LandingPricingSection dark={dark} navigate={navigate} />
-
-      {/* ══ FAQ ═══════════════════════════════════════════════════════════════ */}
-      <LandingFAQ dark={dark} />
-
       <PublicFooter navigate={navigate} dark={dark} />
     </div>
   );
@@ -1317,7 +1260,217 @@ export function LandingFAQ({ dark }: { dark: boolean }) {
   const CARDBG = dark ? "#1E2530" : "#FFFFFF";
 
   const faqs = [
-    { …3592 tokens truncated…40, letterSpacing: "-0.03em" }}>Common questions</h2>
+    { q: "How accurate is wukaLAW's AI prediction?", a: "Our AI achieves 94.2% accuracy verified against historical Pakistani court cases spanning 2010–2024. The model is trained on over 200,000 case outcomes from the Supreme Court, all four High Courts, and district courts across Pakistan." },
+    { q: "Is my client data secure?", a: "Absolutely. We use AES-256 encryption at rest and TLS 1.3 in transit. Our zero-knowledge architecture means our team cannot access your case data. Your data is never used to train our models — it's fully isolated per firm." },
+    { q: "Does it work for all Pakistani courts?", a: "Yes. wukaLAW covers the Supreme Court of Pakistan, all four High Courts (Lahore, Sindh, Islamabad, Peshawar), Federal Shariat Court, and district courts across all provinces including AJK and Gilgit-Baltistan." },
+    { q: "How quickly can I get started?", a: "Most firms are fully onboarded in under 30 minutes. We offer guided setup, data import tools, and a dedicated onboarding specialist for Firm and Enterprise plans. Solo practitioners can self-serve in minutes." },
+    { q: "Can I import existing cases?", a: "Yes. wukaLAW supports bulk import from PDF, DOCX, Excel/Sheets, and CSV formats. We also offer integrations with Clio, Thomson Reuters, and LexisNexis for seamless migration from existing case management systems." },
+    { q: "Is there a free trial?", a: "Yes — all plans come with a 14-day free trial with no credit card required. You get full access to all features in your chosen tier. Enterprise trials are available upon request with a demo call." },
+  ];
+
+  return (
+    <section style={{ padding: "0 24px 100px", fontFamily: "Inter, sans-serif" }}>
+      <div style={{ maxWidth: 800, margin: "0 auto" }}>
+        <div style={{ textAlign: "center" as const, marginBottom: 52 }}>
+          <h2 style={{ fontSize: "clamp(26px, 3.5vw, 42px)", fontWeight: 900, color: TX, letterSpacing: "-0.04em", marginBottom: 14 }}>Frequently asked questions</h2>
+          <p style={{ fontSize: 16, color: TX2 }}>Everything you need to know about wukaLAW.</p>
+        </div>
+        <div style={{ display: "flex", flexDirection: "column" as const, gap: 8 }}>
+          {faqs.map((faq, i) => (
+            <div key={i} style={{ borderRadius: 14, border: `1px solid ${openIdx === i ? GA + "40" : BD}`, backgroundColor: CARDBG, overflow: "hidden", transition: "border-color 0.2s" }}>
+              <button
+                onClick={() => setOpenIdx(openIdx === i ? -1 : i)}
+                style={{ width: "100%", padding: "20px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, background: "none", border: "none", cursor: "pointer", fontFamily: "Inter, sans-serif", textAlign: "left" as const }}>
+                <span style={{ fontSize: 15, fontWeight: 600, color: TX, lineHeight: 1.4 }}>{faq.q}</span>
+                <span style={{ color: openIdx === i ? GA : TX2, flexShrink: 0, transition: "transform 0.2s", transform: openIdx === i ? "rotate(180deg)" : "rotate(0deg)" }}>
+                  <ChevronDown size={18} />
+                </span>
+              </button>
+              {openIdx === i && (
+                <div style={{ padding: "0 24px 20px", fontSize: 14, color: TX2, lineHeight: 1.7 }}>{faq.a}</div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ─── Pricing Page ─────────────────────────────────────────────────────────────
+
+export function PricingPage({ navigate, dark, toggleDark }: { navigate: (p: Page) => void; dark: boolean; toggleDark: () => void }) {
+  const [annual, setAnnual] = useState(false);
+  const [openFaq, setOpenFaq] = useState(-1);
+  const BG = dark ? "#0D1117" : "#F8F4EC";
+  const TX = dark ? "#FFFFFF" : "#1A1005";
+  const TX2 = dark ? "#B3B3B3" : "#6B5533";
+  const GA = dark ? "#D4AF37" : "#8B6514";
+  const BD = dark ? "rgba(255,255,255,0.07)" : "rgba(60,30,0,0.09)";
+  const CARDBG = dark ? "#1E2530" : "#FFFFFF";
+
+  const tiers = [
+    {
+      name: "Advocate",
+      monthly: 5000,
+      desc: "Solo practitioners starting their AI journey",
+      recommended: false,
+      features: [
+        { label: "Active cases", value: "5" },
+        { label: "AI court prediction", value: true },
+        { label: "Case workspace", value: true },
+        { label: "Document storage", value: "5 GB" },
+        { label: "Email support", value: true },
+        { label: "Similar case search", value: false },
+        { label: "Team seats", value: false },
+        { label: "API access", value: false },
+        { label: "White-label", value: false },
+      ],
+    },
+    {
+      name: "Firm",
+      monthly: 18000,
+      desc: "Small to mid-size firms scaling with AI",
+      recommended: true,
+      features: [
+        { label: "Active cases", value: "Unlimited" },
+        { label: "AI court prediction", value: true },
+        { label: "Case workspace", value: true },
+        { label: "Document storage", value: "100 GB" },
+        { label: "Priority support", value: true },
+        { label: "Similar case search", value: true },
+        { label: "Team seats", value: "5 seats" },
+        { label: "API access", value: true },
+        { label: "White-label", value: false },
+      ],
+    },
+    {
+      name: "Enterprise",
+      monthly: null,
+      desc: "Large firms and corporate legal departments",
+      recommended: false,
+      features: [
+        { label: "Active cases", value: "Unlimited" },
+        { label: "AI court prediction", value: true },
+        { label: "Case workspace", value: true },
+        { label: "Document storage", value: "Unlimited" },
+        { label: "Dedicated CSM", value: true },
+        { label: "Similar case search", value: true },
+        { label: "Team seats", value: "Custom" },
+        { label: "API access", value: true },
+        { label: "White-label", value: true },
+      ],
+    },
+  ];
+
+  const faqs = [
+    { q: "How accurate is wukaLAW's AI prediction?", a: "Our AI achieves 94.2% accuracy verified against historical Pakistani court cases spanning 2010–2024." },
+    { q: "Is my client data secure?", a: "Zero-knowledge architecture. AES-256 + TLS 1.3. Your data is never used to train our models — ever." },
+    { q: "Does it work for all Pakistani courts?", a: "Supreme Court, all 4 High Courts, Federal Shariat Court, and district courts across all provinces including AJK and GB." },
+    { q: "How quickly can I get started?", a: "Most firms onboard in under 30 minutes. Solo practitioners self-serve in minutes with guided setup." },
+    { q: "Can I import existing cases?", a: "Yes — PDF, DOCX, Excel/Sheets, CSV. Plus direct integrations with Clio, Thomson Reuters, and LexisNexis." },
+    { q: "Is there a free trial?", a: "14-day free trial on all plans. No credit card required. Enterprise trials available with a demo call." },
+  ];
+
+  const price = (monthly: number | null) => {
+    if (monthly === null) return "Custom";
+    const v = annual ? Math.round(monthly * 0.8) : monthly;
+    return `PKR ${v.toLocaleString()}`;
+  };
+
+  return (
+    <div style={{ minHeight: "100vh", backgroundColor: BG, fontFamily: "Inter, sans-serif" }}>
+      <PublicNav navigate={navigate} dark={dark} toggleDark={toggleDark} current="pricing" />
+
+      {/* Hero */}
+      <section style={{ padding: "80px 24px 60px", textAlign: "center" as const }}>
+        <div style={{ maxWidth: 640, margin: "0 auto" }}>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "5px 16px", borderRadius: 999, backgroundColor: `${GA}15`, marginBottom: 24 }}>
+            <div style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: GA }} />
+            <span style={{ fontSize: 11, color: GA, fontWeight: 700, letterSpacing: "0.08em" }}>14-DAY FREE TRIAL · NO CREDIT CARD</span>
+          </div>
+          <h1 style={{ fontSize: "clamp(32px, 5vw, 60px)", fontWeight: 900, color: TX, letterSpacing: "-0.04em", lineHeight: 1.08, marginBottom: 20 }}>Simple, transparent pricing</h1>
+          <p style={{ fontSize: 18, color: TX2, marginBottom: 40, lineHeight: 1.6 }}>Start free, scale as you grow. Every plan includes full AI capabilities.</p>
+
+          {/* Monthly/Annual Toggle */}
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 12, padding: "6px 6px 6px 16px", borderRadius: 999, border: `1px solid ${BD}`, backgroundColor: CARDBG }}>
+            <span style={{ fontSize: 13, fontWeight: 600, color: annual ? TX2 : TX }}>Monthly</span>
+            <button onClick={() => setAnnual(a => !a)}
+              style={{ width: 48, height: 26, borderRadius: 999, border: "none", cursor: "pointer", position: "relative", backgroundColor: annual ? GA : dark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.1)", transition: "background-color 0.2s" }}>
+              <div style={{ width: 20, height: 20, borderRadius: "50%", backgroundColor: "#FFFFFF", position: "absolute", top: 3, left: annual ? 25 : 3, transition: "left 0.2s" }} />
+            </button>
+            <span style={{ fontSize: 13, fontWeight: 600, color: annual ? TX : TX2 }}>Annual</span>
+            <span style={{ fontSize: 11, padding: "4px 10px", borderRadius: 999, backgroundColor: annual ? "rgba(52,211,153,0.15)" : dark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)", color: annual ? "#34D399" : TX2, fontWeight: 700 }}>Save 20%</span>
+          </div>
+        </div>
+      </section>
+
+      {/* Pricing Cards */}
+      <section style={{ padding: "0 24px 80px" }}>
+        <div style={{ maxWidth: 1100, margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20, alignItems: "stretch" }}>
+          {tiers.map(tier => (
+            <div key={tier.name} style={{ borderRadius: 20, border: `1px solid ${tier.recommended ? GA + "60" : BD}`, backgroundColor: CARDBG, overflow: "hidden", display: "flex", flexDirection: "column" as const, boxShadow: tier.recommended ? `0 0 60px ${GA}20` : "none" }}>
+              {tier.recommended && <div style={{ height: 4, backgroundColor: GA }} />}
+              <div style={{ padding: 28, flex: 1 }}>
+                {tier.recommended && (
+                  <div style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "4px 12px", borderRadius: 999, backgroundColor: `${GA}20`, marginBottom: 14 }}>
+                    <Star size={10} fill={GA} color={GA} />
+                    <span style={{ fontSize: 11, fontWeight: 700, color: GA }}>Most Popular</span>
+                  </div>
+                )}
+                <div style={{ fontSize: 20, fontWeight: 800, color: TX, marginBottom: 6 }}>{tier.name}</div>
+                <div style={{ fontSize: 13, color: TX2, marginBottom: 20, lineHeight: 1.5 }}>{tier.desc}</div>
+                <div style={{ display: "flex", alignItems: "baseline", gap: 4, marginBottom: 8 }}>
+                  <span style={{ fontSize: 36, fontWeight: 900, color: TX, letterSpacing: "-0.03em" }}>{price(tier.monthly)}</span>
+                  {tier.monthly !== null && <span style={{ fontSize: 14, color: TX2 }}>{annual ? "/mo, billed annually" : "/mo"}</span>}
+                </div>
+                {annual && tier.monthly !== null && (
+                  <div style={{ fontSize: 12, color: TX2, marginBottom: 20, textDecoration: "line-through" }}>PKR {tier.monthly.toLocaleString()}/mo</div>
+                )}
+                {!annual && <div style={{ marginBottom: 20 }} />}
+                <div style={{ display: "flex", flexDirection: "column" as const, gap: 10, marginBottom: 28 }}>
+                  {tier.features.map(f => (
+                    <div key={f.label} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: 14 }}>
+                      <span style={{ color: TX2 }}>{f.label}</span>
+                      <span style={{ color: f.value === true ? "#34D399" : f.value === false ? dark ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.2)" : TX, fontWeight: typeof f.value === "string" ? 600 : 400 }}>
+                        {f.value === true ? <Check size={14} /> : f.value === false ? <X size={14} /> : f.value}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div style={{ padding: "0 28px 28px" }}>
+                <button onClick={() => tier.monthly === null ? navigate("contact") : navigate("register")}
+                  style={{ width: "100%", padding: "14px", borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: "pointer", fontFamily: "Inter, sans-serif", backgroundColor: tier.recommended ? GA : "transparent", color: tier.recommended ? (dark ? "#0D1117" : "#FFFFFF") : TX, border: tier.recommended ? "none" : `1px solid ${BD}` }}>
+                  {tier.monthly === null ? "Contact Sales" : "Start Free Trial"}
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Social Proof */}
+      <section style={{ padding: "0 24px 80px" }}>
+        <div style={{ maxWidth: 1100, margin: "0 auto", textAlign: "center" as const }}>
+          <div style={{ padding: "32px 40px", borderRadius: 20, border: `1px solid ${BD}`, backgroundColor: dark ? "rgba(22,27,34,0.5)" : "rgba(237,232,216,0.5)" }}>
+            <p style={{ fontSize: 15, color: TX2, marginBottom: 24 }}>Trusted by legal professionals across Pakistan</p>
+            <div style={{ display: "flex", justifyContent: "center", gap: 48, flexWrap: "wrap" as const }}>
+              {[["200+", "Law Firms"], ["12,000+", "Cases Processed"], ["94.2%", "Prediction Accuracy"], ["4.9★", "Average Rating"]].map(([v, l]) => (
+                <div key={l} style={{ textAlign: "center" as const }}>
+                  <div style={{ fontSize: 28, fontWeight: 900, color: GA, letterSpacing: "-0.03em" }}>{v}</div>
+                  <div style={{ fontSize: 13, color: TX2, marginTop: 4 }}>{l}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section style={{ padding: "0 24px 100px" }}>
+        <div style={{ maxWidth: 720, margin: "0 auto" }}>
+          <h2 style={{ fontSize: 32, fontWeight: 900, color: TX, textAlign: "center" as const, marginBottom: 40, letterSpacing: "-0.03em" }}>Common questions</h2>
           <div style={{ display: "flex", flexDirection: "column" as const, gap: 8 }}>
             {faqs.map((faq, i) => (
               <div key={i} style={{ borderRadius: 14, border: `1px solid ${openFaq === i ? GA + "40" : BD}`, backgroundColor: CARDBG, overflow: "hidden" }}>
@@ -2186,6 +2339,8 @@ export function FeaturesPage({ navigate, dark, toggleDark }: { navigate: (p: Pag
           wukaLAW brings the full power of artificial intelligence to every stage of the legal process — from research to courtroom strategy.
         </p>
       </div>
+      <LandingProductDemo dark={dark} navigate={navigate} />
+      <LandingAIFeaturesGrid dark={dark} />
       {/* Feature grid */}
       <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 24px 96px" }}>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 20 }}>
@@ -2264,6 +2419,8 @@ export function SolutionsPage({ navigate, dark, toggleDark }: { navigate: (p: Pa
           </div>
         ))}
       </div>
+      <LandingSecuritySection dark={dark} />
+      <LandingIntegrations dark={dark} />
       <PublicFooter navigate={navigate} dark={dark} />
     </div>
   );
